@@ -1,0 +1,10 @@
+src/static/build/web/**
+src/static/.packages
+src/static/packages/**
+src/static/.pub/**
+src/static/.pub/transformers/manifest.txt
+src/static/.pub/transformers/transformers.snapshot
+src/static/pubspec.lock
+src/static/web/packages
+
+infrastructure/
