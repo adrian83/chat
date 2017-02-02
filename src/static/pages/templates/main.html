@@ -1,0 +1,33 @@
+{{ define "base" }}
+<html lang="en">
+  <head>
+
+    <!-- Site head -->
+    {{ template "head.html" }}
+
+    {{ block "js" . }}
+    {{ end }}
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <!-- Site navigation -->
+      {{ template "navigation.html" . }}
+
+      {{ block "content" . }}
+        <h2>Default content</h2>
+      {{ end }}
+
+      <!-- Site footer -->
+      {{ template "footer.html" }}
+
+    </div> <!-- /container -->
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
+{{ end }}
