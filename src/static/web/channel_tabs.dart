@@ -4,42 +4,40 @@ import 'messages.dart';
 import 'listeners.dart';
 import 'html_utils.dart';
 import 'utils.dart';
+import 'dart:async';
 
 const String MAIN = "main";
 
 class ChannelsManager extends MessageListener {
   String _clientId;
   Map<String, NewChannel> _channels = new Map<String, NewChannel>();
-  List<ChannelTabClosedListener> _onTabClosedListener =
-      new List<ChannelTabClosedListener>();
-  List<LogoutListener> _onLogoutListeners = new List<LogoutListener>();
-  List<MessageSentListener> _onSentListeners = new List<MessageSentListener>();
+
+  StreamController _onTabClosedController = new StreamController.broadcast();
+  StreamController _onUserLoggedOutController =
+      new StreamController.broadcast();
+  StreamController _onMessageController = new StreamController.broadcast();
+
+  Stream<String> get closedTabs => _onTabClosedController.stream;
+  Stream<bool> get loggedOut => _onUserLoggedOutController.stream;
+  Stream<TMessage> get messages => _onMessageController.stream;
+
+  void newMessage(TMessage msg) {
+    _onMessageController.add(msg);
+  }
+
+  void userLoggedOut() {
+    _onUserLoggedOutController.add(true);
+  }
+
+  void tabClosed(String name) {
+    _onTabClosedController.add(name);
+  }
 
   ChannelsManager(this._clientId);
 
-  void addChannelTabClosedListener(ChannelTabClosedListener listener) {
-    _onTabClosedListener.add(listener);
-    _channels.forEach((n, ch) => ch.addChannelTabClosedListener(listener));
-  }
-
-  void addMessageSentListener(MessageSentListener listener) {
-    _onSentListeners.add(listener);
-    _channels.forEach((n, ch) => ch.addMessageSentListener(listener));
-  }
-
-  void addLogoutListener(LogoutListener listener) {
-    _onLogoutListeners.add(listener);
-    _channels.forEach((n, ch) => ch.addLogoutListener(listener));
-  }
-
   void addChannel(String name) {
-    var channel = new NewChannel(name);
+    var channel = new NewChannel(name, this);
     channel.show();
-
-    _onTabClosedListener.forEach((l) => channel.addChannelTabClosedListener(l));
-    _onSentListeners.forEach((l) => channel.addMessageSentListener(l));
-    _onLogoutListeners.forEach((l) => channel.addLogoutListener(l));
-
     _channels[name] = channel;
   }
 
@@ -71,26 +69,19 @@ class ChannelsManager extends MessageListener {
   }
 }
 
+class TMessage {
+  String channel, text;
+  TMessage(this.channel, this.text);
+}
+
 class NewChannel {
-  List<ChannelTabClosedListener> _onCloseListeners = new List<ChannelTabClosedListener>();
-  List<LogoutListener> _onLogoutListeners = new List<LogoutListener>();
+  ChannelsManager _manager;
+
   List<MessageSentListener> _onSentListeners = new List<MessageSentListener>();
 
   String _name;
 
-  NewChannel(this._name);
-
-  void addChannelTabClosedListener(ChannelTabClosedListener listener) {
-    this._onCloseListeners.add(listener);
-  }
-
-  void addMessageSentListener(MessageSentListener listener) {
-    this._onSentListeners.add(listener);
-  }
-
-  void addLogoutListener(LogoutListener listener) {
-    this._onLogoutListeners.add(listener);
-  }
+  NewChannel(this._name, this._manager);
 
   void show() {
     var attrs = new Map<String, String>();
@@ -116,25 +107,26 @@ class NewChannel {
       var text = getMessageText();
       if (text == "exit") {
         if (_name != MAIN) {
-          _onCloseListeners.forEach((listener) => listener.onClose(_name));
+          _manager.tabClosed(_name);
           close();
         }
       } else if (text == "logout") {
-        _onLogoutListeners.forEach((listener) => listener.onLogout());
+        _manager.userLoggedOut();
       } else {
-        _onSentListeners.forEach((listener) => listener.onSent(_name, text));
+        var tMsg = new TMessage(_name, text);
+        _manager.newMessage(tMsg);
       }
     }
 
-    var sendMsgButton = createButton(
-        "msg-send-" + removeWhitespace(_name), "Send", const ["btn", "btn-default"], onSent);
+    var sendMsgButton = createButton("msg-send-" + removeWhitespace(_name),
+        "Send", const ["btn", "btn-default"], onSent);
 
     var sp = new Element.tag('span');
     sp.classes.add("input-group-btn");
     sp.children.add(sendMsgButton);
 
-    var textInput = createTextInput(
-        "msg-content-" + removeWhitespace(_name), const ["form-control"], handleEnter(onSent));
+    var textInput = createTextInput("msg-content-" + removeWhitespace(_name),
+        const ["form-control"], handleEnter(onSent));
 
     var inputGroupDiv = new Element.tag('div');
     inputGroupDiv.classes.add("input-group");
@@ -162,7 +154,8 @@ class NewChannel {
     tabs().forEach((tab) => tab.classes.remove("active"));
     querySelector("#ch-" + removeWhitespace(_name)).classes.add("active");
     contents().forEach((div) => div.style.display = "none");
-    querySelector("#content-" + removeWhitespace(_name)).style.display = "block";
+    querySelector("#content-" + removeWhitespace(_name)).style.display =
+        "block";
     querySelector("#msg-content-" + removeWhitespace(_name)).focus();
   }
 
@@ -187,8 +180,9 @@ class NewChannel {
     return querySelector("#ch-contents").children;
   }
 
-  String getMessageText(){
-    InputElement element = querySelector("#msg-content-" + removeWhitespace(_name));
+  String getMessageText() {
+    InputElement element =
+        querySelector("#msg-content-" + removeWhitespace(_name));
     var text = element.value;
     element.value = "";
     return text;

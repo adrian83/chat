@@ -81,6 +81,6 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/", http.StatusFound)
+	http.Redirect(w, req, "/conversation", http.StatusFound)
 
 }

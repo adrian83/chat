@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	talkTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("index").WithTags("footer", "navigation", "head").Build()
+	indexTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("index").WithTags("footer", "navigation", "head").Build()
 )
 
 // IndexHandler struct responsible for handling actions
@@ -23,24 +23,5 @@ func NewIndexHandler(session *websession.Session) *IndexHandler {
 
 // ShowIndexPage renders Index page.
 func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
-
-	sessionID := websession.FindSessionID(req)
-	if sessionID == "" {
-		http.Redirect(w, req, "/login", http.StatusFound)
-		return
-	}
-
-	user, err := h.session.FindUserData(sessionID)
-	if err != nil {
-		RenderError500(w, err)
-		return
-	}
-
-	if user.Empty() {
-		http.Redirect(w, req, "/login", http.StatusFound)
-		return
-	}
-
-	RenderTemplateWithModel(w, talkTmpl, Model(map[string]interface{}{"sessionId": sessionID}))
-
+	RenderTemplate(w, indexTmpl)
 }

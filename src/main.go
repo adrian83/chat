@@ -5,8 +5,9 @@ import (
 
 	"db"
 	"logger"
+	"ws"
 
-	handler "handler"
+	"handler"
 	gsession "session"
 
 	//gws "websocket"
@@ -16,6 +17,11 @@ import (
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/websocket"
+)
+
+var (
+	channels = ws.NewChannels()
 )
 
 func main() {
@@ -75,10 +81,8 @@ func main() {
 	logoutHandler := handler.NewLogoutHandler(simpleSession)
 	registerHandler := handler.NewRegisterHandler(userRepository)
 	indexHandler := handler.NewIndexHandler(simpleSession)
-	/*
-		wsServer := gwsserver.New()
-		wsServer.Start()
-	*/
+	conversationHandler := handler.NewConversationHandler(simpleSession)
+
 	mux := mux.NewRouter()
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 
@@ -91,9 +95,11 @@ func main() {
 
 	mux.HandleFunc("/register", registerHandler.ShowRegisterPage).Methods("GET")
 	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST")
-	/*
-		mux.Handle("/talk", ws.Handler(connect(sessionStore, wsServer, simpleSession)))
-	*/
+
+	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
+
+	mux.Handle("/talk", websocket.Handler(connect(simpleSession)))
+
 	server := &http.Server{Addr: "0.0.0.0:7070", Handler: mux}
 	if err2 := server.ListenAndServe(); err2 != nil {
 		logger.Errorf("Main", "main", "Error while starting server! Error: %v", err2)
@@ -101,9 +107,9 @@ func main() {
 
 }
 
-/*
-func connect(sessionStore redisSession.Store, wsServer gws.Server, simpleSession *gsession.Session) func(*ws.Conn) {
-	return func(wsc *ws.Conn) {
+func connect(simpleSession *gsession.Session) func(*websocket.Conn) {
+	logger.Infof("Main", "Connect", "New connection")
+	return func(wsc *websocket.Conn) {
 
 		sessionID := gsession.FindSessionID(wsc.Request())
 		if sessionID == "" {
@@ -117,15 +123,11 @@ func connect(sessionStore redisSession.Store, wsServer gws.Server, simpleSession
 			return
 		}
 
-		conn := gwsconnection.WsConnection{Conn: wsc}
-		client := gwsclient.New(sessionID, user.Name, conn, wsServer)
+		client := ws.NewClient(sessionID, user, wsc)
+		channels.RegisterClient(client)
 
-		logger.Infof("Main", "Connect", "New connection received from %v - %v", client)
-
-		wsServer.RegisterClient(client)
+		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 
 		client.Start()
-
 	}
 }
-*/

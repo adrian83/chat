@@ -1,25 +1,21 @@
 import 'dart:html';
 import 'dart:convert';
+import 'dart:async';
 
 import 'messages.dart';
-import 'listeners.dart';
 
 class WSClient {
   String sessionId;
   WebSocket _socket;
+  StreamController _onExitController = new StreamController.broadcast();
 
-  List<MessageListener> _msgListeners = new List<MessageListener>();
+  WSClient(this.sessionId, this._socket);
 
-  WSClient(this.sessionId, this._socket) {}
-
-  void addMessageListener(MessageListener listener) {
-    _msgListeners.add(listener);
-  }
+  Stream<Message> get messages => _onExitController.stream;
 
   void start() {
-    
     this._socket.onOpen.listen((e) {
-      print("<----- connection opened ----->");
+      print("<----- connection opened ----->" + e.toString());
     });
 
     this._socket.onClose.listen((e) {
@@ -27,22 +23,20 @@ class WSClient {
     });
 
     this._socket.onError.listen((e) {
-      print("<----- error ----->");
+      print("<----- error ----->" + e.toString());
     });
 
     this._socket.onMessage.listen((MessageEvent e) {
       Map parsedMap = JSON.decode(e.data);
       var msg = fromJSONMap(parsedMap);
-      print("[ON MESSAGE] Message: " + msg.toString());
-      for (var listener in _msgListeners) {
-        listener.onMessage(msg);
-      }
+      print("[ON MESSAGE] Message: " + e.data.toString());
+      //send(e.data);
+      _onExitController.add(msg);
     });
   }
 
-  void send(Message msg) {
-    var jsonStr = msg.toJSON();
-    print("[SEND] JSON: " + jsonStr);
-    this._socket.send(jsonStr);
+  void send(String msg) {
+    print("[SEND] JSON: " + msg);
+    this._socket.send(msg);
   }
 }

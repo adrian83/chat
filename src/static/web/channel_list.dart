@@ -4,23 +4,17 @@ import 'messages.dart';
 import 'listeners.dart';
 import 'html_utils.dart';
 import 'utils.dart';
+import 'dart:async';
 
 class NewChannelList extends MessageListener {
-  List<ChannelSelectedListener> _channelSelectedListeners =
-      new List<ChannelSelectedListener>();
-  List<ChannelCreatedListener> _channelCreatedListeners =
-      new List<ChannelCreatedListener>();
+  StreamController _onCreatedController = new StreamController.broadcast();
+  StreamController _onSelectedController = new StreamController.broadcast();
 
-  void addChannelSelectedListener(ChannelSelectedListener listener) {
-    _channelSelectedListeners.add(listener);
-  }
-
-  void addChannelCreatedListener(ChannelCreatedListener listener) {
-    _channelCreatedListeners.add(listener);
-  }
+  Stream<String> get selectedChannel => _onSelectedController.stream;
+  Stream<String> get createdChannel => _onCreatedController.stream;
 
   void createChannel() {
-    _channelCreatedListeners.forEach((l) => l.onCreated(getChannelName()));
+    _onCreatedController.add(getChannelName());
   }
 
   void show() {
@@ -38,7 +32,7 @@ class NewChannelList extends MessageListener {
         "#",
         channel,
         const ["list-group-item"],
-        (e) => _channelSelectedListeners.forEach((l) => l.onSelect(channel)));
+        (e) => _onSelectedController.add(channel));
     return link;
   }
 

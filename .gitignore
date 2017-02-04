@@ -8,3 +8,5 @@ src/static/pubspec.lock
 src/static/web/packages
 
 infrastructure/
+pkg/
+bin/

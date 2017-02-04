@@ -9,6 +9,7 @@ usage() {
     run-rethink           Starts RethinkDB docker image.
     run-redis             Starts Redis docker image.
     run-infra             Starts Docker, RethinkDB and Redis
+		run-go                Starts application (go run main.go)
     dart                  Downloads Dart dependencies and rebuilds Dart files
 
 EOF
@@ -49,6 +50,12 @@ dart() {
 	set +e
 }
 
+run-go() {
+	set -e
+		cd src/ && go run main.go
+	set +e
+}
+
 CMD="$1"
 shift
 case "$CMD" in
@@ -63,6 +70,9 @@ case "$CMD" in
 	;;
 	run-infra)
 		run-infra
+	;;
+	run-go)
+		run-go
 	;;
 	dart)
 		dart
