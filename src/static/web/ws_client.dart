@@ -7,15 +7,15 @@ import 'messages.dart';
 class WSClient {
   String sessionId;
   WebSocket _socket;
-  StreamController _onExitController = new StreamController.broadcast();
+  StreamController _onExitCtrl = new StreamController.broadcast();
 
   WSClient(this.sessionId, this._socket);
 
-  Stream<Message> get messages => _onExitController.stream;
+  Stream<Message> get messages => _onExitCtrl.stream;
 
   void start() {
     this._socket.onOpen.listen((e) {
-      print("<----- connection opened ----->" + e.toString());
+      print("<----- connection opened ----->");
     });
 
     this._socket.onClose.listen((e) {
@@ -23,7 +23,7 @@ class WSClient {
     });
 
     this._socket.onError.listen((e) {
-      print("<----- error ----->" + e.toString());
+      print("<----- error ----->");
     });
 
     this._socket.onMessage.listen((MessageEvent e) {
@@ -31,7 +31,7 @@ class WSClient {
       var msg = fromJSONMap(parsedMap);
       print("[ON MESSAGE] Message: " + e.data.toString());
       //send(e.data);
-      _onExitController.add(msg);
+      _onExitCtrl.add(msg);
     });
   }
 

@@ -1,7 +1,5 @@
 package ws
 
-import ()
-
 const (
 	main = "main"
 )
@@ -29,4 +27,5 @@ type Channels struct {
 
 func (ch *Channels) RegisterClient(client *Client) {
 	ch.channels[main].clients[client.id] = client
+	client.AddChannel(ch.channels[main])
 }

@@ -12,28 +12,19 @@ class ChannelsManager extends MessageListener {
   String _clientId;
   Map<String, NewChannel> _channels = new Map<String, NewChannel>();
 
-  StreamController _onTabClosedController = new StreamController.broadcast();
-  StreamController _onUserLoggedOutController =
-      new StreamController.broadcast();
-  StreamController _onMessageController = new StreamController.broadcast();
+  StreamController _onTabClosedCtrl = new StreamController.broadcast();
+  StreamController _onLoggedOutCtrl = new StreamController.broadcast();
+  StreamController _onMessageCtrl = new StreamController.broadcast();
 
-  Stream<String> get closedTabs => _onTabClosedController.stream;
-  Stream<bool> get loggedOut => _onUserLoggedOutController.stream;
-  Stream<TMessage> get messages => _onMessageController.stream;
-
-  void newMessage(TMessage msg) {
-    _onMessageController.add(msg);
-  }
-
-  void userLoggedOut() {
-    _onUserLoggedOutController.add(true);
-  }
-
-  void tabClosed(String name) {
-    _onTabClosedController.add(name);
-  }
+  Stream<String> get closedTabs => _onTabClosedCtrl.stream;
+  Stream<bool> get loggedOut => _onLoggedOutCtrl.stream;
+  Stream<TMessage> get messages => _onMessageCtrl.stream;
 
   ChannelsManager(this._clientId);
+
+  void newMessage(TMessage msg) => _onMessageCtrl.add(msg);
+  void userLoggedOut() => _onLoggedOutCtrl.add(true);
+  void tabClosed(String name) => _onTabClosedCtrl.add(name);
 
   void addChannel(String name) {
     var channel = new NewChannel(name, this);
@@ -46,9 +37,7 @@ class ChannelsManager extends MessageListener {
     _channels[n].setVisible();
   }
 
-  bool channelExists(String name) {
-    return _channels.containsKey(name);
-  }
+  bool channelExists(String name) => _channels.containsKey(name);
 
   void onMessage(Message msg) {
     if (msg is ChannelsListMsg) {
@@ -70,15 +59,14 @@ class ChannelsManager extends MessageListener {
 }
 
 class TMessage {
-  String channel, text;
-  TMessage(this.channel, this.text);
+  String _channel, _text;
+  TMessage(this._channel, this._text);
+  String get channel => _channel;
+  String get text => _text;
 }
 
 class NewChannel {
   ChannelsManager _manager;
-
-  List<MessageSentListener> _onSentListeners = new List<MessageSentListener>();
-
   String _name;
 
   NewChannel(this._name, this._manager);
@@ -88,9 +76,7 @@ class NewChannel {
     attrs['role'] = 'presentation';
     var liTab = createListElem("ch-" + removeWhitespace(_name), attrs);
 
-    void onSelect(e) {
-      setVisible();
-    }
+    void onSelect(e) => setVisible();
 
     //var tabTitle = createLink("#", _name, onSelect);
 
@@ -172,13 +158,9 @@ class NewChannel {
     elem.children.insert(0, textP);
   }
 
-  List<Element> tabs() {
-    return querySelector("#ch-tabs").children;
-  }
+  List<Element> tabs() => querySelector("#ch-tabs").children;
 
-  List<Element> contents() {
-    return querySelector("#ch-contents").children;
-  }
+  List<Element> contents() => querySelector("#ch-contents").children;
 
   String getMessageText() {
     InputElement element =

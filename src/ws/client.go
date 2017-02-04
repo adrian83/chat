@@ -9,12 +9,14 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// NewClient returns new Client instance
 func NewClient(ID string, user db.User, wsc *websocket.Conn) *Client {
 	client := Client{
 		connection: NewConnection(wsc),
 		interrupt:  make(chan bool),
 		user:       user,
 		id:         ID,
+		channels:   make(map[string]*Channel),
 	}
 
 	return &client
@@ -25,6 +27,19 @@ type Client struct {
 	user       db.User
 	connection *WsConnection
 	interrupt  chan bool
+	channels   map[string]*Channel
+}
+
+func (c *Client) AddChannel(channel *Channel) {
+	c.channels[channel.name] = channel
+}
+
+func (c *Client) channelsNames() []string {
+	names := make([]string, 0)
+	for name := range c.channels {
+		names = append(names, name)
+	}
+	return names
 }
 
 func (c *Client) String() string {
@@ -38,7 +53,7 @@ func (c *Client) Start() {
 		"senderId":   "0",
 		"senderName": "system",
 		"receiver":   c.id,
-		"channels":   []string{"abc", "main", "dfg"},
+		"channels":   c.channelsNames(),
 	}
 
 	err := c.connection.Send(msg)
