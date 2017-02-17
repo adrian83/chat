@@ -29,17 +29,17 @@ func NewConnection(connnection *websocket.Conn) *WsConnection {
 	go func() {
 		for {
 			logger.Info("WsConnection", "NewConnection", "Waiting for message")
-			select {
-			case <-conn.interrupt:
-				return
-			default:
 
-				msg := make(map[string]interface{})
-				err := websocket.JSON.Receive(conn.connnection, &msg)
-				conn.ToClient <- WsMessage{
-					Message: msg,
-					Error:   err,
-				}
+			msg := make(map[string]interface{})
+			err := websocket.JSON.Receive(conn.connnection, &msg)
+
+			conn.ToClient <- WsMessage{
+				Message: msg,
+				Error:   err,
+			}
+			if err != nil {
+				logger.Info("WsConnection", "NewConnection", "Connection stopped")
+				break
 			}
 		}
 	}()

@@ -13,7 +13,7 @@ import (
 func NewClient(ID string, user db.User, wsc *websocket.Conn) *Client {
 	client := Client{
 		connection: NewConnection(wsc),
-		interrupt:  make(chan bool),
+		interrupt:  make(chan bool, 5),
 		user:       user,
 		id:         ID,
 		channels:   make(map[string]*Channel),
@@ -67,9 +67,46 @@ outer:
 		select {
 		case msgToClient := <-c.connection.ToClient:
 			logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
+
+			if msgToClient.Error != nil {
+				logger.Warnf("Client", "Start", "Error while getting message for client %v. Error: %v", c, msgToClient.Error)
+				continue
+			}
+
+			msg := Message(msgToClient.Message)
+			msgType, err := msg.getType()
+			if err != nil {
+				logger.Warnf("Client", "Start", "Error while getting type of message. Error: %v", err)
+				continue
+			}
+
+			switch msgType {
+			case "LOGOUT_USER":
+				logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgType)
+
+				// remove client from channels
+				for _, channel := range c.channels {
+					delete(channel.clients, c.id)
+					// if channel is empty then remove channel
+				}
+
+				// stop client
+				c.interrupt <- true
+
+				// stop connection
+				err = c.connection.Send(msgToClient.Message)
+				if err != nil {
+					logger.Infof("Client", "Start", "Error while sending message: %v", err)
+				}
+
+			default:
+				logger.Infof("Client", "Start", "Unknown message: %v", msgType)
+			}
+
 			//c.server.Receive(incommingMsg)
 
 		case exit := <-c.interrupt:
+			logger.Info("Client", "Start", "Interrupted")
 			if exit {
 				logger.Infof("Client", "Start", "%v received interupt msg", c)
 				close(c.interrupt)

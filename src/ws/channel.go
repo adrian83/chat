@@ -29,3 +29,9 @@ func (ch *Channels) RegisterClient(client *Client) {
 	ch.channels[main].clients[client.id] = client
 	client.AddChannel(ch.channels[main])
 }
+
+func (ch *Channels) RemoveClient(client *Client) {
+	for _, channel := range ch.channels {
+		delete(channel.clients, client.id)
+	}
+}

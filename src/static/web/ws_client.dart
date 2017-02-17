@@ -35,6 +35,12 @@ class WSClient {
     });
   }
 
+  void logout() {
+    print("logout sent");
+    var msg = new LogoutMsg(this.sessionId);
+    send(msg.toJSON());
+  }
+
   void send(String msg) {
     print("[SEND] JSON: " + msg);
     this._socket.send(msg);

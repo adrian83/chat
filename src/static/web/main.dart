@@ -30,7 +30,7 @@ main() {
   client.messages.listen((msg) => channelList.onMessage(msg));
 
   channelManager.closedTabs.listen((name) => print("Tab closed: " + name));
-  channelManager.loggedOut.listen((b) => print("User logged out"));
+  channelManager.loggedOut.listen((b) => client.logout());
   channelManager.messages.listen((msg) => sendTextMessage(msg));
 
 
