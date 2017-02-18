@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	indexTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("index").WithTags("footer", "navigation", "head").Build()
+	indexTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("index").WithTags("footer", "navigation", "head", "info").Build()
 )
 
 // IndexHandler struct responsible for handling actions
@@ -23,5 +23,11 @@ func NewIndexHandler(session *websession.Session) *IndexHandler {
 
 // ShowIndexPage renders Index page.
 func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
-	RenderTemplate(w, indexTmpl)
+	model := NewModel()
+
+	if reason := req.URL.Query().Get("reason"); reason == "logout" {
+		model.AddInfo("You have been logged out.")
+	}
+
+	RenderTemplateWithModel(w, indexTmpl, model)
 }

@@ -53,3 +53,7 @@ Function handleEnter(Function handler) {
   }
   return realHandler;
 }
+
+void hideElement(String elemId) {
+  querySelector(elemId).style.display = "none";
+}

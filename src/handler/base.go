@@ -12,8 +12,10 @@ type Model map[string]interface{}
 // NewModel function returns new instance of Model struct.
 func NewModel() Model {
 	e := make([]string, 0)
+	i := make([]string, 0)
 	m := Model(make(map[string]interface{}))
 	m["errors"] = e
+	m["info"] = i
 	return m
 }
 
@@ -21,6 +23,12 @@ func NewModel() Model {
 func (m Model) AddError(errMsg string) {
 	e := m["errors"].([]string)
 	m["errors"] = append(e, errMsg)
+}
+
+// AddInfo adds info message to model.
+func (m Model) AddInfo(infoMsg string) {
+	e := m["info"].([]string)
+	m["info"] = append(e, infoMsg)
 }
 
 // HasErrors returns 'true' if at least one erros message is in the

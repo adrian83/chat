@@ -88,12 +88,15 @@ outer:
 				for _, channel := range c.channels {
 					delete(channel.clients, c.id)
 					// if channel is empty then remove channel
+					// send msg that user has left the channel
 				}
 
 				// stop client
 				c.interrupt <- true
 
-				// stop connection
+				// TODO stop connection
+
+				// resend message
 				err = c.connection.Send(msgToClient.Message)
 				if err != nil {
 					logger.Infof("Client", "Start", "Error while sending message: %v", err)
