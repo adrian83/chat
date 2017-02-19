@@ -14,7 +14,8 @@ main() {
   InputElement element = querySelector("#session-id");
   var sessionId = element.value;
 
-  var wssocket = new WebSocket("ws://localhost:7070/talk");
+  var host = window.location.hostname + (window.location.port != null ? ':' + window.location.port : '');
+  var wssocket = new WebSocket("ws://" + host + "/talk");
 
   var client = new WSClient(sessionId, wssocket);
   var channelManager = new ChannelsManager(sessionId);
