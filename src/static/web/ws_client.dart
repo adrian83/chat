@@ -7,6 +7,7 @@ import 'messages.dart';
 class WSClient {
   String sessionId;
   WebSocket _socket;
+  bool _closedByMe;
   StreamController _onMsgCtrl = new StreamController.broadcast();
   StreamController _onOpenCtrl = new StreamController.broadcast();
   StreamController _onCloseCtrl = new StreamController.broadcast();
@@ -27,7 +28,9 @@ class WSClient {
 
     this._socket.onClose.listen((e) {
       print("<----- connection closed ----->");
-      _onCloseCtrl.add(true);
+      if(!_closedByMe){
+        _onCloseCtrl.add(true);
+      }
     });
 
     this._socket.onError.listen((e) {
@@ -45,7 +48,13 @@ class WSClient {
   }
 
   void closeClient() {
+    _closedByMe = true;
     _socket.close();
+  }
+
+  void sendTextMessage(String text, String channel) {
+    var msg = new TextMsg(sessionId, "x", text, channel);
+    send(msg.toJSON());
   }
 
   void logout() {

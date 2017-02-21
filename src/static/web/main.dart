@@ -8,13 +8,11 @@ import 'errors.dart';
 import 'html_utils.dart';
 
 main() {
-
-
-
   InputElement element = querySelector("#session-id");
   var sessionId = element.value;
 
-  var host = window.location.hostname + (window.location.port != null ? ':' + window.location.port : '');
+  var host = window.location.hostname +
+      (window.location.port != null ? ':' + window.location.port : '');
   var wssocket = new WebSocket("ws://" + host + "/talk");
 
   var client = new WSClient(sessionId, wssocket);
@@ -24,40 +22,32 @@ main() {
 
   client.start();
 
-  void sendTextMessage(TMessage tMsg) {
-    var msg = new TextMsg(sessionId, "x", tMsg.text, tMsg.channel);
-    client.send(msg.toJSON());
+  void onMsg(Message msg) {
+    if (msg is LogoutMsg) {
+      client.closeClient();
+      window.location.assign('/?reason=logout');
+    }
   }
 
   client.messages.listen((msg) => print("Data: " + msg.toString()));
   client.messages.listen((msg) => channelManager.onMessage(msg));
   client.messages.listen((msg) => channelList.onMessage(msg));
+  client.messages.listen((msg) => onMsg(msg));
 
   void onSocketClose() {
     //hideElement("#panels");
     //hideElement("#logout-info");
-    //var errMsg = new ErrorMsg("system", "system", "Connection has been closed. Maybe server is down.");
-    //errorsPanel.onMessage(errMsg);
-    print("socket close");
-    window.location.assign('/?reason=logout');
+    var errMsg = new ErrorMsg("system", "system",
+        "Connection has been closed. Maybe server is down.");
+    errorsPanel.onMessage(errMsg);
   }
 
   client.close.listen((b) => onSocketClose());
   client.open.listen((b) => hideElement("#connection-info"));
-  client.errors.listen((b) => onSocketClose() );
-
-  void onMsg(Message msg) {
-    if(msg is LogoutMsg) {
-      client.closeClient();
-      //window.location.assign('/');
-    }
-  }
+  client.errors.listen((b) => onSocketClose());
 
   channelManager.closedTabs.listen((name) => print("Tab closed: " + name));
   channelManager.loggedOut.listen((b) => client.logout());
-  channelManager.messages.listen((msg) => onMsg(msg));
-
-
-
-
+  channelManager.messages
+      .listen((msg) => client.sendTextMessage(msg.text, msg.channel));
 }
