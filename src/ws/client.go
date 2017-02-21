@@ -46,6 +46,10 @@ func (c *Client) String() string {
 	return fmt.Sprintf("Client { name: %v }", c.user.Name)
 }
 
+func (c *Client) Send(msg map[string]interface{}) error {
+	return c.connection.Send(msg)
+}
+
 func (c *Client) Start() {
 
 	msg := map[string]interface{}{
@@ -104,9 +108,17 @@ outer:
 
 			case "TEXT_MSG":
 				msgToClient.Message["senderName"] = c.user.Name
-				err = c.connection.Send(msgToClient.Message)
-				if err != nil {
-					logger.Infof("Client", "Start", "Error while sending message: %v", err)
+				channelName := msgToClient.Message["channel"]
+				channel, ok := c.channels[channelName.(string)]
+				if ok {
+					for _, client := range channel.clients {
+						err = client.Send(msgToClient.Message)
+						if err != nil {
+							logger.Infof("Client", "Start", "Error while sending message: %v", err)
+						}
+					}
+				} else {
+
 				}
 
 			default:
