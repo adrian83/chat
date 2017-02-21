@@ -102,6 +102,13 @@ outer:
 					logger.Infof("Client", "Start", "Error while sending message: %v", err)
 				}
 
+			case "TEXT_MSG":
+				msgToClient.Message["senderName"] = c.user.Name
+				err = c.connection.Send(msgToClient.Message)
+				if err != nil {
+					logger.Infof("Client", "Start", "Error while sending message: %v", err)
+				}
+
 			default:
 				logger.Infof("Client", "Start", "Unknown message: %v", msgType)
 			}
