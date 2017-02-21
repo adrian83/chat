@@ -6,24 +6,24 @@ import 'html_utils.dart';
 import 'utils.dart';
 import 'dart:async';
 
-class NewChannelList extends MessageListener {
+class ChannelList extends MessageListener {
   StreamController _onCreatedController = new StreamController.broadcast();
   StreamController _onSelectedController = new StreamController.broadcast();
 
   Stream<String> get selectedChannel => _onSelectedController.stream;
   Stream<String> get createdChannel => _onCreatedController.stream;
 
-  void createChannel() {
-    _onCreatedController.add(getChannelName());
-  }
-
-  void show() {
+  ChannelList() {
     querySelector("#ch-create")
         .addEventListener("click", (event) => createChannel());
 
     querySelector("#ch-name")
         .onKeyUp
         .listen(handleEnter((event) => createChannel()));
+  }
+
+  void createChannel() {
+    _onCreatedController.add(getChannelName());
   }
 
   createLinkElement(String channel) {

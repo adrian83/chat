@@ -17,7 +17,7 @@ main() {
 
   var client = new WSClient(sessionId, wssocket);
   var channelManager = new ChannelsManager(sessionId);
-  var channelList = new NewChannelList();
+  var channelList = new ChannelList();
   var errorsPanel = new ErrorsPanel();
 
   client.start();
@@ -31,7 +31,16 @@ main() {
     }
   }
 
-  channelList.selectedChannel.listen((name) => print("Selected: " + name));
+  void switchTab(String name) {
+    if(channelManager.channelExists(name)) {
+      channelManager.setVisible(name);
+    } else {
+      channelManager.addChannel(name);
+      channelManager.setVisible(name);
+    }
+  }
+
+  channelList.selectedChannel.listen((name) => switchTab(name));
   channelList.createdChannel.listen((name) => client.sendCreateChannelMessage(name));
 
 
