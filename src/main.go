@@ -98,7 +98,7 @@ func main() {
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
-	mux.Handle("/talk", websocket.Handler(connect(simpleSession)))
+	mux.Handle("/talk", websocket.Handler(connect(simpleSession, channels)))
 
 	server := &http.Server{Addr: "0.0.0.0:7070", Handler: mux}
 	if err2 := server.ListenAndServe(); err2 != nil {
@@ -107,7 +107,7 @@ func main() {
 
 }
 
-func connect(simpleSession *gsession.Session) func(*websocket.Conn) {
+func connect(simpleSession *gsession.Session, allChannels *ws.Channels) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 
@@ -123,7 +123,7 @@ func connect(simpleSession *gsession.Session) func(*websocket.Conn) {
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, wsc)
+		client := ws.NewClient(sessionID, user, wsc, allChannels)
 		channels.RegisterClient(client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)

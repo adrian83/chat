@@ -21,6 +21,8 @@ main() {
   var errorsPanel = new ErrorsPanel();
 
   client.start();
+  channelList.show();
+
 
   void onMsg(Message msg) {
     if (msg is LogoutMsg) {
@@ -28,6 +30,10 @@ main() {
       window.location.assign('/?reason=logout');
     }
   }
+
+  channelList.selectedChannel.listen((name) => print("Selected: " + name));
+  channelList.createdChannel.listen((name) => client.sendCreateChannelMessage(name));
+
 
   client.messages.listen((msg) => print("Data: " + msg.toString()));
   client.messages.listen((msg) => channelManager.onMessage(msg));

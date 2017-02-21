@@ -10,24 +10,26 @@ import (
 )
 
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, wsc *websocket.Conn) *Client {
+func NewClient(ID string, user db.User, wsc *websocket.Conn, allChannels *Channels) *Client {
 	client := Client{
-		connection: NewConnection(wsc),
-		interrupt:  make(chan bool, 5),
-		user:       user,
-		id:         ID,
-		channels:   make(map[string]*Channel),
+		connection:  NewConnection(wsc),
+		interrupt:   make(chan bool, 5),
+		user:        user,
+		id:          ID,
+		channels:    make(map[string]*Channel),
+		allChannels: allChannels,
 	}
 
 	return &client
 }
 
 type Client struct {
-	id         string
-	user       db.User
-	connection *WsConnection
-	interrupt  chan bool
-	channels   map[string]*Channel
+	id          string
+	user        db.User
+	connection  *WsConnection
+	interrupt   chan bool
+	channels    map[string]*Channel
+	allChannels *Channels
 }
 
 func (c *Client) AddChannel(channel *Channel) {
@@ -57,7 +59,7 @@ func (c *Client) Start() {
 		"senderId":   "0",
 		"senderName": "system",
 		"receiver":   c.id,
-		"channels":   c.channelsNames(),
+		"channels":   c.allChannels.Names(),
 	}
 
 	err := c.connection.Send(msg)
@@ -117,8 +119,22 @@ outer:
 							logger.Infof("Client", "Start", "Error while sending message: %v", err)
 						}
 					}
+				}
+			case "ADD_CH":
+				channelName := msgToClient.Message["channel"]
+				_, ok := c.channels[channelName.(string)]
+				if ok {
+					logger.Infof("Client", "Start", "Channel: %v already exists", channelName)
 				} else {
-
+					channel := NewChannel(channelName.(string), c)
+					c.allChannels.AddChannel(channel)
+					m := c.channels["main"]
+					for _, client := range m.clients {
+						err = client.Send(msgToClient.Message)
+						if err != nil {
+							logger.Infof("Client", "Start", "Error while sending message: %v", err)
+						}
+					}
 				}
 
 			default:

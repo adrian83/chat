@@ -57,6 +57,11 @@ class WSClient {
     send(msg.toJSON());
   }
 
+  void sendCreateChannelMessage(String channelName) {
+    var msg = new ChannelAddedMsg(sessionId, channelName);
+    send(msg.toJSON());
+  }
+
   void logout() {
     print("logout sent");
     var msg = new LogoutMsg(this.sessionId);
