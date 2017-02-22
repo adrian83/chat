@@ -58,7 +58,13 @@ class WSClient {
   }
 
   void sendCreateChannelMessage(String channelName) {
+    print("join");
     var msg = new ChannelAddedMsg(sessionId, channelName);
+    send(msg.toJSON());
+  }
+
+  void sendJoinChannelMessage(String channelName) {
+    var msg = new UserJoinedChannelMsg(sessionId, channelName);
     send(msg.toJSON());
   }
 

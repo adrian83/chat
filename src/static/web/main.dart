@@ -21,28 +21,32 @@ main() {
   var errorsPanel = new ErrorsPanel();
 
   client.start();
-  channelList.show();
-
 
   void onMsg(Message msg) {
     if (msg is LogoutMsg) {
       client.closeClient();
       window.location.assign('/?reason=logout');
+    } else if (msg is UserJoinedChannelMsg) {
+      if (channelManager.channelExists(msg.channel)) {
+        channelManager.setVisible(msg.channel);
+      } else {
+        channelManager.addChannel(msg.channel);
+        channelManager.setVisible(msg.channel);
+      }
     }
   }
 
   void switchTab(String name) {
-    if(channelManager.channelExists(name)) {
+    if (channelManager.channelExists(name)) {
       channelManager.setVisible(name);
     } else {
-      channelManager.addChannel(name);
-      channelManager.setVisible(name);
+      client.sendJoinChannelMessage(name);
     }
   }
 
   channelList.selectedChannel.listen((name) => switchTab(name));
-  channelList.createdChannel.listen((name) => client.sendCreateChannelMessage(name));
-
+  channelList.createdChannel
+      .listen((name) => client.sendCreateChannelMessage(name));
 
   client.messages.listen((msg) => print("Data: " + msg.toString()));
   client.messages.listen((msg) => channelManager.onMessage(msg));

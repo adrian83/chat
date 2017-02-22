@@ -16,7 +16,6 @@ func NewClient(ID string, user db.User, wsc *websocket.Conn, allChannels *Channe
 		interrupt:   make(chan bool, 5),
 		user:        user,
 		id:          ID,
-		channels:    make(map[string]*Channel),
 		allChannels: allChannels,
 	}
 
@@ -28,20 +27,7 @@ type Client struct {
 	user        db.User
 	connection  *WsConnection
 	interrupt   chan bool
-	channels    map[string]*Channel
 	allChannels *Channels
-}
-
-func (c *Client) AddChannel(channel *Channel) {
-	c.channels[channel.name] = channel
-}
-
-func (c *Client) channelsNames() []string {
-	names := make([]string, 0)
-	for name := range c.channels {
-		names = append(names, name)
-	}
-	return names
 }
 
 func (c *Client) String() string {
@@ -91,10 +77,12 @@ outer:
 				logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgType)
 
 				// remove client from channels
-				for _, channel := range c.channels {
-					delete(channel.clients, c.id)
-					// if channel is empty then remove channel
-					// send msg that user has left the channel
+				for _, channel := range c.allChannels.ClientsChannels(c) {
+					if errors := channel.RemoveClient(c); len(errors) > 0 {
+						for _, sendErr := range errors {
+							logger.Warnf("Client", "Start", "Error while sending 'TEXT_MSG' message. Error: %v", sendErr)
+						}
+					}
 				}
 
 				// stop client
@@ -103,37 +91,40 @@ outer:
 				// TODO stop connection
 
 				// resend message
-				err = c.connection.Send(msgToClient.Message)
-				if err != nil {
+				if err = c.connection.Send(msgToClient.Message); err != nil {
 					logger.Infof("Client", "Start", "Error while sending message: %v", err)
 				}
 
 			case "TEXT_MSG":
 				msgToClient.Message["senderName"] = c.user.Name
 				channelName := msgToClient.Message["channel"]
-				channel, ok := c.channels[channelName.(string)]
+				logger.Warnf("Client", "Start", "Received 'TEXT_MSG' message on channel %v.", channelName.(string))
+				channel, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]
 				if ok {
-					for _, client := range channel.clients {
-						err = client.Send(msgToClient.Message)
-						if err != nil {
-							logger.Infof("Client", "Start", "Error while sending message: %v", err)
+					if errors := channel.SendToEveryone(msgToClient.Message); len(errors) > 0 {
+						for _, sendErr := range errors {
+							logger.Warnf("Client", "Start", "Error while sending 'TEXT_MSG' message. Error: %v", sendErr)
 						}
 					}
+
 				}
 			case "ADD_CH":
 				channelName := msgToClient.Message["channel"]
-				_, ok := c.channels[channelName.(string)]
+				_, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]
 				if ok {
 					logger.Infof("Client", "Start", "Channel: %v already exists", channelName)
 				} else {
-					channel := NewChannel(channelName.(string), c)
+					logger.Infof("Client", "Start", "Channel: %v does not exist", channelName)
+					channel := NewChannel(channelName.(string), c, c.allChannels)
 					c.allChannels.AddChannel(channel)
-					m := c.channels["main"]
-					for _, client := range m.clients {
-						err = client.Send(msgToClient.Message)
-						if err != nil {
-							logger.Infof("Client", "Start", "Error while sending message: %v", err)
-						}
+				}
+
+			case "USER_JOINED_CH":
+				channelName := msgToClient.Message["channel"]
+				if _, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]; !ok {
+					c.allChannels.AddClientToChannel(channelName.(string), c)
+					if err = c.connection.Send(msgToClient.Message); err != nil {
+						logger.Infof("Client", "Start", "Error while sending message: %v", err)
 					}
 				}
 
