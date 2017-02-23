@@ -94,6 +94,7 @@ class NewChannel {
       if (text == "exit") {
         if (_name != MAIN) {
           _manager.tabClosed(_name);
+          _manager.setVisible(MAIN);
           close();
         }
       } else if (text == "logout") {

@@ -139,6 +139,11 @@ func (ch *Channels) AddClientToChannel(channelName string, client *Client) {
 	ch.channels[channelName].clients[client.id] = client
 }
 
+// RemoveClientFromChannel removes given client from channel with given name.
+func (ch *Channels) RemoveClientFromChannel(channelName string, client *Client) []SendError {
+	return ch.channels[channelName].RemoveClient(client)
+}
+
 func (ch *Channels) RegisterClient(client *Client) {
 	ch.channels[main].clients[client.id] = client
 }

@@ -128,6 +128,14 @@ outer:
 					}
 				}
 
+			case "USER_LEFT_CH":
+				channelName := msgToClient.Message["channel"].(string)
+				if errors := c.allChannels.RemoveClientFromChannel(channelName, c); len(errors) > 0 {
+					for _, sendErr := range errors {
+						logger.Warnf("Client", "Start", "Error while sending 'USER_LEFT_CH' message. Error: %v", sendErr)
+					}
+				}
+
 			default:
 				logger.Infof("Client", "Start", "Unknown message: %v", msgType)
 			}

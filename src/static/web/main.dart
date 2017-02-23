@@ -65,7 +65,11 @@ main() {
   client.open.listen((b) => hideElement("#connection-info"));
   client.errors.listen((b) => onSocketClose());
 
-  channelManager.closedTabs.listen((name) => print("Tab closed: " + name));
+  void onTabClosed(String channelName) {
+    client.sendUserLeftChannelMessage(channelName);
+  }
+
+  channelManager.closedTabs.listen((name) => onTabClosed(name));
   channelManager.loggedOut.listen((b) => client.logout());
   channelManager.messages
       .listen((msg) => client.sendTextMessage(msg.text, msg.channel));

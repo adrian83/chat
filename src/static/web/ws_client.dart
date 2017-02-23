@@ -28,7 +28,7 @@ class WSClient {
 
     this._socket.onClose.listen((e) {
       print("<----- connection closed ----->");
-      if(!_closedByMe){
+      if (!_closedByMe) {
         _onCloseCtrl.add(true);
       }
     });
@@ -58,8 +58,12 @@ class WSClient {
   }
 
   void sendCreateChannelMessage(String channelName) {
-    print("join");
     var msg = new ChannelAddedMsg(sessionId, channelName);
+    send(msg.toJSON());
+  }
+
+  void sendUserLeftChannelMessage(String channelName) {
+    var msg = new UserLeftChannelMsg(sessionId, channelName);
     send(msg.toJSON());
   }
 
