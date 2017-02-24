@@ -1,11 +1,11 @@
 {{ define "content" }}
 
-
 <div class="inner cover">
 
   <h1 class="cover-heading">Register</h1>
 
   <h4>Already have an account -> <a href="/login">login</a></h4>
+  
   <br/>
 
   {{ template "errors.html" .errors }}
@@ -21,8 +21,8 @@
         <input type="password" name="password2" class="form-control" placeholder="repeat password">
         <br/>
 				<input type="submit" class="btn btn-default" value="Register">
-			</div><!-- /.col-lg-6 -->
-		</div><!-- /.row -->
+			</div>
+		</div>
 
 	</form>
 

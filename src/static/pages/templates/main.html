@@ -2,7 +2,6 @@
 <html lang="en">
   <head>
 
-    <!-- Site head -->
     {{ template "head.html" }}
 
     {{ block "js" . }}
@@ -14,19 +13,16 @@
 
     <div class="container">
 
-      <!-- Site navigation -->
       {{ template "navigation.html" . }}
 
       {{ block "content" . }}
         <h2>Default content</h2>
       {{ end }}
 
-      <!-- Site footer -->
       {{ template "footer.html" }}
 
-    </div> <!-- /container -->
+    </div>
 
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
   </body>
 </html>
 {{ end }}
