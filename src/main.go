@@ -107,7 +107,7 @@ func main() {
 
 }
 
-func connect(simpleSession *gsession.Session, allChannels *ws.Channels) func(*websocket.Conn) {
+func connect(simpleSession *gsession.Session, channels *ws.Channels) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 
@@ -123,8 +123,11 @@ func connect(simpleSession *gsession.Session, allChannels *ws.Channels) func(*we
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, wsc, allChannels)
-		channels.RegisterClient(client)
+		client := ws.NewClient(sessionID, user, wsc, channels)
+
+		if err := channels.RegisterClient(client); err != nil {
+			logger.Infof("Main", "Connect", "Error while sending message: %v", err)
+		}
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 

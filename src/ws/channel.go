@@ -151,8 +151,17 @@ func (ch *Channels) RemoveClientFromChannel(channelName string, client *Client) 
 	return ch.channels[channelName].RemoveClient(client)
 }
 
-func (ch *Channels) RegisterClient(client *Client) {
+// RegisterClient registers new client and sends him some information
+func (ch *Channels) RegisterClient(client *Client) error {
 	ch.channels[main].clients[client.id] = client
+
+	channelNamesMsg := Message{
+		MsgType:    "CHAN_LIST_MSG",
+		SenderID:   "system",
+		SenderName: "system",
+		Channels:   ch.Names(),
+	}
+	return client.Send(channelNamesMsg)
 }
 
 func (ch *Channels) RemoveClient(client *Client) {
