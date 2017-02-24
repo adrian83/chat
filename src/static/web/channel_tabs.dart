@@ -1,14 +1,13 @@
 import 'dart:html';
 
 import 'messages.dart';
-import 'listeners.dart';
 import 'html_utils.dart';
 import 'utils.dart';
 import 'dart:async';
 
 const String MAIN = "main";
 
-class ChannelsManager extends MessageListener {
+class ChannelsManager {
   String _clientId;
   Map<String, NewChannel> _channels = new Map<String, NewChannel>();
 
@@ -71,13 +70,16 @@ class TMessage {
 class NewChannel {
   ChannelsManager _manager;
   String _name;
+  String _escapedName;
 
-  NewChannel(this._name, this._manager);
+  NewChannel(this._name, this._manager) {
+    this._escapedName = removeWhitespace(_name);
+  }
 
   void show() {
     var attrs = new Map<String, String>();
     attrs['role'] = 'presentation';
-    var liTab = createListElem("ch-" + removeWhitespace(_name), attrs);
+    var liTab = createListElem("ch-" + _escapedName, attrs);
 
     void onSelect(e) => setVisible();
 
@@ -108,14 +110,14 @@ class NewChannel {
       }
     }
 
-    var sendMsgButton = createButton("msg-send-" + removeWhitespace(_name),
+    var sendMsgButton = createButton("msg-send-" + _escapedName,
         "Send", const ["btn", "btn-default"], onSent);
 
     var sp = new Element.tag('span');
     sp.classes.add("input-group-btn");
     sp.children.add(sendMsgButton);
 
-    var textInput = createTextInput("msg-content-" + removeWhitespace(_name),
+    var textInput = createTextInput("msg-content-" + _escapedName,
         const ["form-control"], handleEnter(onSent));
 
     var inputGroupDiv = new Element.tag('div');
@@ -124,7 +126,7 @@ class NewChannel {
     inputGroupDiv.children.add(sp);
 
     var conversationDiv = new Element.tag('div');
-    conversationDiv.id = "conversation-" + removeWhitespace(this._name);
+    conversationDiv.id = "conversation-" + _escapedName;
     conversationDiv.style.maxHeight = "400px";
     conversationDiv.style.overflowY = "scroll";
 
@@ -133,7 +135,7 @@ class NewChannel {
     contentDiv.children.add(inputGroupDiv);
     contentDiv.children.add(new Element.tag('br'));
     contentDiv.children.add(conversationDiv);
-    contentDiv.id = "content-" + removeWhitespace(this._name);
+    contentDiv.id = "content-" + _escapedName;
 
     contentDiv.style.display = "none";
 
@@ -142,23 +144,22 @@ class NewChannel {
 
   void setVisible() {
     tabs().forEach((tab) => tab.classes.remove("active"));
-    querySelector("#ch-" + removeWhitespace(_name)).classes.add("active");
+    querySelector("#ch-" + _escapedName).classes.add("active");
     contents().forEach((div) => div.style.display = "none");
-    querySelector("#content-" + removeWhitespace(_name)).style.display =
-        "block";
-    querySelector("#msg-content-" + removeWhitespace(_name)).focus();
+    querySelector("#content-" + _escapedName).style.display = "block";
+    querySelector("#msg-content-" + _escapedName).focus();
   }
 
   void close() {
-    print("close " + removeWhitespace(_name));
-    querySelector("#ch-" + removeWhitespace(_name)).remove();
-    querySelector("#content-" + removeWhitespace(_name)).remove();
+    print("close " + _escapedName);
+    querySelector("#ch-" + _escapedName).remove();
+    querySelector("#content-" + _escapedName).remove();
   }
 
   void displayMessage(String author, String text) {
     var textP = new Element.tag('p');
     textP.text = author + ": " + text;
-    var elem = querySelector("#conversation-" + removeWhitespace(this._name));
+    var elem = querySelector("#conversation-" + _escapedName);
     elem.children.insert(0, textP);
   }
 
@@ -167,8 +168,7 @@ class NewChannel {
   List<Element> contents() => querySelector("#ch-contents").children;
 
   String getMessageText() {
-    InputElement element =
-        querySelector("#msg-content-" + removeWhitespace(_name));
+    InputElement element = querySelector("#msg-content-" + _escapedName);
     var text = element.value;
     element.value = "";
     return text;

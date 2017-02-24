@@ -1,12 +1,11 @@
 import 'dart:html';
 
 import 'messages.dart';
-import 'listeners.dart';
 import 'html_utils.dart';
 import 'utils.dart';
 import 'dart:async';
 
-class ChannelList extends MessageListener {
+class ChannelList {
   StreamController _onCreatedController = new StreamController.broadcast();
   StreamController _onSelectedController = new StreamController.broadcast();
 

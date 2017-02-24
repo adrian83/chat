@@ -1,10 +1,8 @@
 import 'dart:html';
-import 'dart:math';
 
 import 'messages.dart';
-import 'listeners.dart';
 
-class ErrorsPanel extends MessageListener {
+class ErrorsPanel {
   int _id = 0;
 
   void onMessage(Message msg) {
