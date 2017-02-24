@@ -128,10 +128,8 @@ func (ch *Channels) AddChannel(channel *Channel) []SendError {
 			msg["senderId"] = c.id
 		}
 		return mainChannel.SendToEveryone(msg)
-
 	}
 	return errs
-
 }
 
 // AddClientToChannel adds given client to channel with given name.

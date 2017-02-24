@@ -24,7 +24,10 @@ class ChannelsManager extends MessageListener {
 
   void newMessage(TMessage msg) => _onMessageCtrl.add(msg);
   void userLoggedOut() => _onLoggedOutCtrl.add(true);
-  void tabClosed(String name) => _onTabClosedCtrl.add(name);
+  void tabClosed(String name) {
+    _onTabClosedCtrl.add(name);
+    _channels.remove(name);
+  }
 
   void addChannel(String name) {
     var channel = new NewChannel(name, this);
