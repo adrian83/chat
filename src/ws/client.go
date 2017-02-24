@@ -10,8 +10,8 @@ import (
 )
 
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, wsc *websocket.Conn, channels *Channels) *Client {
-	client := Client{
+func NewClient(ID string, user db.User, wsc *websocket.Conn, channels *Channels) Client {
+	client := DefaultClient{
 		connection: NewConnection(wsc),
 		interrupt:  make(chan bool, 5),
 		user:       user,
@@ -22,29 +22,46 @@ func NewClient(ID string, user db.User, wsc *websocket.Conn, channels *Channels)
 	return &client
 }
 
-type Client struct {
+// Client interface definig client of the app.
+type Client interface {
+	Send(msg Message) error
+	Start()
+	Stop()
+	ID() string
+}
+
+// DefaultClient default implementation of the Client interface.
+type DefaultClient struct {
 	id         string
 	user       db.User
-	connection *WsConnection
+	connection Connection
 	interrupt  chan bool
 	channels   *Channels
 }
 
-func (c *Client) String() string {
+// ID returns id of the client.
+func (c *DefaultClient) ID() string {
+	return c.id
+}
+
+// String returns string representation of DefaultClient struct.
+func (c *DefaultClient) String() string {
 	return fmt.Sprintf("Client { name: %v }", c.user.Name)
 }
 
-func (c *Client) Send(msg Message) error {
+// Send sends message through connection.
+func (c *DefaultClient) Send(msg Message) error {
 	return c.connection.Send(msg)
 }
 
-func (c *Client) Start() {
+// Start starts client main loop.
+func (c *DefaultClient) Start() {
 
 outer:
 	for {
 		logger.Infof("Client", "Start", "%v waithing for a msg", c)
 		select {
-		case msgToClient := <-c.connection.ToClient:
+		case msgToClient := <-c.connection.Incomming():
 			logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
 
 			if msgToClient.Error != nil {
@@ -124,14 +141,14 @@ outer:
 	logger.Infof("Client", "Start", "%v end", c)
 }
 
-func (c *Client) logSendErrors(msg Message, errors []SendError) {
+func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 	for _, sendErr := range errors {
 		logger.Warnf("Client", "logSendErrors", "Error while sending message %v to %v. Error: %v", msg, sendErr.Client, sendErr.Err)
 	}
 }
 
-// Stop stops client goroutine
-func (c *Client) Stop() {
+// Stop stops client.
+func (c *DefaultClient) Stop() {
 	c.interrupt <- true
 	c.connection.Close()
 }

@@ -6,53 +6,65 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type WsMessage struct {
+// Connection interface definig connection which can be used to comunicate between clients.
+type Connection interface {
+	Send(msg Message) error
+	Close() error
+	Start()
+	Incomming() chan CommunicationResult
+}
+
+// CommunicationResult contains result of the  communication (msg or error)
+type CommunicationResult struct {
 	Message Message
 	Error   error
 }
 
-// WsConnection represents web socket connection, implements Connection interface.
-type WsConnection struct {
+// wsConnection represents web socket connection, implements Connection interface.
+type wsConnection struct {
 	connnection *websocket.Conn
-	ToClient    chan WsMessage
-	interrupt   chan bool
+	incomming   chan CommunicationResult
 }
 
-func NewConnection(connnection *websocket.Conn) *WsConnection {
-	logger.Info("WsConnection", "NewConnection", "New connection")
-	conn := WsConnection{
+// NewConnection returns implementation of Connection interface - in this case wsConnection.
+func NewConnection(connnection *websocket.Conn) Connection {
+	logger.Info("WsConnection", "NewConnection", "New connection created")
+	conn := wsConnection{
 		connnection: connnection,
-		ToClient:    make(chan WsMessage, 100),
-		interrupt:   make(chan bool),
+		incomming:   make(chan CommunicationResult, 100),
 	}
 
-	go func() {
-		for {
-			logger.Info("WsConnection", "NewConnection", "Waiting for message")
+	go conn.Start()
 
-			msg := Message{}
-			err := websocket.JSON.Receive(conn.connnection, &msg)
-
-			conn.ToClient <- WsMessage{
-				Message: msg,
-				Error:   err,
-			}
-			if err != nil {
-				logger.Info("WsConnection", "NewConnection", "Connection stopped")
-				break
-			}
-		}
-	}()
 	return &conn
 }
 
+// Start starts the connection.
+func (c wsConnection) Start() {
+	for {
+		logger.Info("wsConnection", "Start", "Waiting for message")
+
+		msg := Message{}
+		err := websocket.JSON.Receive(c.connnection, &msg)
+
+		c.incomming <- CommunicationResult{
+			Message: msg,
+			Error:   err,
+		}
+	}
+}
+
+// Incomming returns the channel which can be used to get incomming messages.
+func (c wsConnection) Incomming() chan CommunicationResult {
+	return c.incomming
+}
+
 // Send sends message through the connection.
-func (c WsConnection) Send(msg Message) error {
+func (c wsConnection) Send(msg Message) error {
 	return websocket.JSON.Send(c.connnection, msg)
 }
 
 // Close closes the connection
-func (c WsConnection) Close() error {
-	c.interrupt <- true
+func (c wsConnection) Close() error {
 	return c.connnection.Close()
 }
