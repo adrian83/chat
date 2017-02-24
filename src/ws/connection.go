@@ -7,7 +7,7 @@ import (
 )
 
 type WsMessage struct {
-	Message map[string]interface{}
+	Message Message
 	Error   error
 }
 
@@ -30,7 +30,7 @@ func NewConnection(connnection *websocket.Conn) *WsConnection {
 		for {
 			logger.Info("WsConnection", "NewConnection", "Waiting for message")
 
-			msg := make(map[string]interface{})
+			msg := Message{}
 			err := websocket.JSON.Receive(conn.connnection, &msg)
 
 			conn.ToClient <- WsMessage{
@@ -47,7 +47,7 @@ func NewConnection(connnection *websocket.Conn) *WsConnection {
 }
 
 // Send sends message through the connection.
-func (c WsConnection) Send(msg interface{}) error {
+func (c WsConnection) Send(msg Message) error {
 	return websocket.JSON.Send(c.connnection, msg)
 }
 

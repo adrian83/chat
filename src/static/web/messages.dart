@@ -25,7 +25,7 @@ Message fromJSONMap(Map json) {
           json["senderId"], json["senderName"], json["content"]);
     case CHANNELS_LIST:
       return new ChannelsListMsg(json["senderId"], json["senderName"],
-          json["receiver"], json["channels"]);
+          json["channels"]);
     case USER_JOINED_CHANNEL:
       return new UserJoinedChannelMsg(json["senderId"], json["channel"]);
     case LOGOUT_MSG:
@@ -289,11 +289,10 @@ class TextMsg extends Message {
 
 class ChannelsListMsg extends Message {
   String senderName;
-  String receiver;
   List<String> channels;
 
   ChannelsListMsg(
-      String senderId, this.senderName, this.receiver, this.channels) {
+      String senderId, this.senderName, this.channels) {
     this._msgType = CHANNELS_LIST;
     this._senderId = senderId;
   }
@@ -305,8 +304,6 @@ class ChannelsListMsg extends Message {
         this._senderId +
         ", senderName: " +
         this.senderName +
-        ", receiver: " +
-        this.receiver +
         ", channels: [" +
         this.channels.join(",") +
         "] }";
@@ -319,8 +316,6 @@ class ChannelsListMsg extends Message {
         this._senderId +
         "\", \"senderName\":\"" +
         this.senderName +
-        "\", \"receiver\":\"" +
-        this.receiver +
         "\", \"channels\":\"" +
         this.channels.join(",") +
         "\" }";

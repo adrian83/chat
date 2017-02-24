@@ -32,7 +32,7 @@ func (ch *Channel) Empty() bool {
 }
 
 // SendToEveryone sends message to everyone from that channel.
-func (ch *Channel) SendToEveryone(msg map[string]interface{}) []SendError {
+func (ch *Channel) SendToEveryone(msg Message) []SendError {
 	logger.Infof("Channel", "SendToEveryone", "Sending msg to everyone from channel '%v'.", ch.name)
 	errors := make([]SendError, 0)
 	for _, client := range ch.clients {
@@ -53,7 +53,12 @@ func (ch *Channel) RemoveClient(client *Client) []SendError {
 	if ch.name != main {
 		delete(ch.clients, client.id)
 		if ch.Empty() {
-			msg := map[string]interface{}{"msgType": "REM_CH", "channel": ch.name, "senderId": "system"}
+			msg := Message{
+				MsgType:  "REM_CH",
+				Channel:  ch.name,
+				SenderID: "system",
+			}
+
 			mainChannel := ch.channels.channels[main]
 			return mainChannel.SendToEveryone(msg)
 		}
@@ -111,7 +116,11 @@ func (ch *Channels) Names() []string {
 // AddChannel add channel to collection of channels.
 func (ch *Channels) AddChannel(channel *Channel) []SendError {
 	errs := make([]SendError, 0)
-	msg := map[string]interface{}{"msgType": "ADD_CH", "channel": channel.name, "senderId": "system"}
+	msg := Message{
+		MsgType:  "ADD_CH",
+		Channel:  channel.name,
+		SenderID: "system",
+	}
 	if cha, ok := ch.channels[channel.name]; ok {
 		for name, c := range channel.clients {
 			cha.clients[name] = c
@@ -125,7 +134,7 @@ func (ch *Channels) AddChannel(channel *Channel) []SendError {
 		ch.channels[channel.name] = channel
 		mainChannel := ch.channels[main]
 		for _, c := range channel.clients {
-			msg["senderId"] = c.id
+			msg.SenderID = c.id
 		}
 		return mainChannel.SendToEveryone(msg)
 	}

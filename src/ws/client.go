@@ -34,21 +34,20 @@ func (c *Client) String() string {
 	return fmt.Sprintf("Client { name: %v }", c.user.Name)
 }
 
-func (c *Client) Send(msg map[string]interface{}) error {
+func (c *Client) Send(msg Message) error {
 	return c.connection.Send(msg)
 }
 
 func (c *Client) Start() {
 
-	msg := map[string]interface{}{
-		"msgType":    "CHAN_LIST_MSG",
-		"senderId":   "0",
-		"senderName": "system",
-		"receiver":   c.id,
-		"channels":   c.allChannels.Names(),
+	channelNamesMsg := Message{
+		MsgType:    "CHAN_LIST_MSG",
+		SenderID:   "system",
+		SenderName: "system",
+		Channels:   c.allChannels.Names(),
 	}
 
-	err := c.connection.Send(msg)
+	err := c.connection.Send(channelNamesMsg)
 	if err != nil {
 		logger.Infof("Client", "Start", "Error while sending message: %v", err)
 	}
@@ -65,16 +64,19 @@ outer:
 				continue
 			}
 
-			msg := Message(msgToClient.Message)
-			msgType, err := msg.getType()
-			if err != nil {
-				logger.Warnf("Client", "Start", "Error while getting type of message. Error: %v", err)
-				continue
+			msgOld := msgToClient.Message
+			msg := Message{
+				MsgType:    msgOld.MsgType,
+				SenderID:   msgOld.SenderID,
+				SenderName: c.user.Name,
+				Channels:   msgOld.Channels,
+				Channel:    msgOld.Channel,
+				Content:    msgOld.Content,
 			}
 
-			switch msgType {
+			switch msg.MsgType {
 			case "LOGOUT_USER":
-				logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgType)
+				logger.Infof("Client", "Start", "%v received incomming message: %v", c, msg.MsgType)
 
 				// remove client from channels
 				for _, channel := range c.allChannels.ClientsChannels(c) {
@@ -96,12 +98,11 @@ outer:
 				}
 
 			case "TEXT_MSG":
-				msgToClient.Message["senderName"] = c.user.Name
-				channelName := msgToClient.Message["channel"]
-				logger.Warnf("Client", "Start", "Received 'TEXT_MSG' message on channel %v.", channelName.(string))
-				channel, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]
+
+				logger.Warnf("Client", "Start", "Received 'TEXT_MSG' message on channel %v.", msg.Channel)
+				channel, ok := c.allChannels.ClientsChannels(c)[msg.Channel]
 				if ok {
-					if errors := channel.SendToEveryone(msgToClient.Message); len(errors) > 0 {
+					if errors := channel.SendToEveryone(msg); len(errors) > 0 {
 						for _, sendErr := range errors {
 							logger.Warnf("Client", "Start", "Error while sending 'TEXT_MSG' message. Error: %v", sendErr)
 						}
@@ -109,35 +110,35 @@ outer:
 
 				}
 			case "ADD_CH":
-				channelName := msgToClient.Message["channel"]
-				_, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]
+
+				_, ok := c.allChannels.ClientsChannels(c)[msg.Channel]
 				if ok {
-					logger.Infof("Client", "Start", "Channel: %v already exists", channelName)
+					logger.Infof("Client", "Start", "Channel: %v already exists", msg.Channel)
 				} else {
-					logger.Infof("Client", "Start", "Channel: %v does not exist", channelName)
-					channel := NewChannel(channelName.(string), c, c.allChannels)
+					logger.Infof("Client", "Start", "Channel: %v does not exist", msg.Channel)
+					channel := NewChannel(msg.Channel, c, c.allChannels)
 					c.allChannels.AddChannel(channel)
 				}
 
 			case "USER_JOINED_CH":
-				channelName := msgToClient.Message["channel"]
-				if _, ok := c.allChannels.ClientsChannels(c)[channelName.(string)]; !ok {
-					c.allChannels.AddClientToChannel(channelName.(string), c)
+
+				if _, ok := c.allChannels.ClientsChannels(c)[msg.Channel]; !ok {
+					c.allChannels.AddClientToChannel(msg.Channel, c)
 					if err = c.connection.Send(msgToClient.Message); err != nil {
 						logger.Infof("Client", "Start", "Error while sending message: %v", err)
 					}
 				}
 
 			case "USER_LEFT_CH":
-				channelName := msgToClient.Message["channel"].(string)
-				if errors := c.allChannels.RemoveClientFromChannel(channelName, c); len(errors) > 0 {
+
+				if errors := c.allChannels.RemoveClientFromChannel(msg.Channel, c); len(errors) > 0 {
 					for _, sendErr := range errors {
 						logger.Warnf("Client", "Start", "Error while sending 'USER_LEFT_CH' message. Error: %v", sendErr)
 					}
 				}
 
 			default:
-				logger.Infof("Client", "Start", "Unknown message: %v", msgType)
+				logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
 			}
 
 			//c.server.Receive(incommingMsg)
