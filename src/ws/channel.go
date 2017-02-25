@@ -19,20 +19,38 @@ func (e SendError) Error() string {
 	return e.Error()
 }
 
-// Channel struct representing chat channel.
-type Channel struct {
+// Channel is an interface for defining channels.
+type Channel interface {
+	Name() string
+	Clients() map[string]Client
+	SendToEveryone(msg Message) []SendError
+	RemoveClient(client Client) []SendError
+}
+
+// DefaultChannel struct representing chat channel.
+type DefaultChannel struct {
 	name     string
 	clients  map[string]Client
 	channels *Channels
 }
 
 // Empty returns true if there is no clients in this channel, false otherwise
-func (ch *Channel) Empty() bool {
+func (ch *DefaultChannel) Empty() bool {
 	return 0 == len(ch.clients)
 }
 
+// Name returns chanel's name.
+func (ch *DefaultChannel) Name() string {
+	return ch.name
+}
+
+// Clients returns chanel's clients.
+func (ch *DefaultChannel) Clients() map[string]Client {
+	return ch.clients
+}
+
 // SendToEveryone sends message to everyone from that channel.
-func (ch *Channel) SendToEveryone(msg Message) []SendError {
+func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
 	logger.Infof("Channel", "SendToEveryone", "Sending msg to everyone from channel '%v'.", ch.name)
 	errors := make([]SendError, 0)
 	for _, client := range ch.clients {
@@ -49,7 +67,7 @@ func (ch *Channel) SendToEveryone(msg Message) []SendError {
 }
 
 // RemoveClient removes client from the channel.
-func (ch *Channel) RemoveClient(client Client) []SendError {
+func (ch *DefaultChannel) RemoveClient(client Client) []SendError {
 	if ch.name != main {
 		delete(ch.clients, client.ID())
 		if ch.Empty() {
@@ -62,8 +80,8 @@ func (ch *Channel) RemoveClient(client Client) []SendError {
 }
 
 // NewChannel functions returns new Channel struct.
-func NewChannel(name string, client Client, channels *Channels) *Channel {
-	return &Channel{
+func NewChannel(name string, client Client, channels *Channels) Channel {
+	return &DefaultChannel{
 		name:     name,
 		clients:  map[string]Client{client.ID(): client},
 		channels: channels,
@@ -72,8 +90,8 @@ func NewChannel(name string, client Client, channels *Channels) *Channel {
 
 // NewChannels returns new Channels struct.
 func NewChannels() *Channels {
-	ch := make(map[string]*Channel)
-	ch[main] = &Channel{
+	ch := make(map[string]Channel)
+	ch[main] = &DefaultChannel{
 		name:    main,
 		clients: make(map[string]Client),
 	}
@@ -85,15 +103,15 @@ func NewChannels() *Channels {
 
 // Channels struct represents collections of ll channels.
 type Channels struct {
-	channels map[string]*Channel
+	channels map[string]Channel
 }
 
 // ClientsChannels returns all clients channels .
-func (ch *Channels) ClientsChannels(client Client) map[string]*Channel {
-	chs := make(map[string]*Channel, 0)
+func (ch *Channels) ClientsChannels(client Client) map[string]Channel {
+	chs := make(map[string]Channel, 0)
 	for _, ch := range ch.channels {
-		if _, ok := ch.clients[client.ID()]; ok {
-			chs[ch.name] = ch
+		if _, ok := ch.Clients()[client.ID()]; ok {
+			chs[ch.Name()] = ch
 		}
 	}
 	return chs
@@ -109,12 +127,12 @@ func (ch *Channels) Names() []string {
 }
 
 // AddChannel add channel to collection of channels.
-func (ch *Channels) AddChannel(channel *Channel) []SendError {
+func (ch *Channels) AddChannel(channel Channel) []SendError {
 	errs := make([]SendError, 0)
-	msg := NewAddChannelMessage(channel.name)
-	if cha, ok := ch.channels[channel.name]; ok {
-		for name, c := range channel.clients {
-			cha.clients[name] = c
+	msg := NewAddChannelMessage(channel.Name())
+	if cha, ok := ch.channels[channel.Name()]; ok {
+		for name, c := range channel.Clients() {
+			cha.Clients()[name] = c
 			sendErr := SendError{
 				Client: c,
 				Err:    c.Send(msg),
@@ -122,9 +140,9 @@ func (ch *Channels) AddChannel(channel *Channel) []SendError {
 			errs = append(errs, sendErr)
 		}
 	} else {
-		ch.channels[channel.name] = channel
+		ch.channels[channel.Name()] = channel
 		mainChannel := ch.channels[main]
-		for _, c := range channel.clients {
+		for _, c := range channel.Clients() {
 			msg.SenderID = c.ID()
 		}
 		return mainChannel.SendToEveryone(msg)
@@ -134,7 +152,7 @@ func (ch *Channels) AddChannel(channel *Channel) []SendError {
 
 // AddClientToChannel adds given client to channel with given name.
 func (ch *Channels) AddClientToChannel(channelName string, client Client) {
-	ch.channels[channelName].clients[client.ID()] = client
+	ch.channels[channelName].Clients()[client.ID()] = client
 }
 
 // RemoveClientFromChannel removes given client from channel with given name.
@@ -144,13 +162,14 @@ func (ch *Channels) RemoveClientFromChannel(channelName string, client Client) [
 
 // RegisterClient registers new client and sends him some information
 func (ch *Channels) RegisterClient(client Client) error {
-	ch.channels[main].clients[client.ID()] = client
+	ch.channels[main].Clients()[client.ID()] = client
 	channelNamesMsg := ChannelsNamesMessage(ch.Names())
 	return client.Send(channelNamesMsg)
 }
 
+// RemoveClient removes client.
 func (ch *Channels) RemoveClient(client Client) {
 	for _, channel := range ch.channels {
-		delete(channel.clients, client.ID())
+		delete(channel.Clients(), client.ID())
 	}
 }

@@ -75,67 +75,24 @@ outer:
 
 			switch msg.MsgType {
 			case "LOGOUT_USER":
-
-				// remove client from channels
-				for _, channel := range c.channels.ClientsChannels(c) {
-					if errors := channel.RemoveClient(c); len(errors) > 0 {
-						c.logSendErrors(msg, errors)
-					}
-				}
-
-				// stop client
-				c.interrupt <- true
-
-				// TODO stop connection
-
-				// resend message
-				if err := c.Send(msgToClient.Message); err != nil {
-					logger.Infof("Client", "Start", "Error while sending message: %v", err)
-				}
-
+				c.handleLogoutMessage(msg)
 			case "TEXT_MSG":
-
-				channel, ok := c.channels.ClientsChannels(c)[msg.Channel]
-				if ok {
-					if errors := channel.SendToEveryone(msg); len(errors) > 0 {
-						c.logSendErrors(msg, errors)
-					}
-
-				}
+				c.handleTextMessage(msg)
 			case "ADD_CH":
-
-				channel := NewChannel(msg.Channel, c, c.channels)
-				if errors := c.channels.AddChannel(channel); len(errors) > 0 {
-					c.logSendErrors(msg, errors)
-				}
-
+				c.handleCreateChannelMessage(msg)
 			case "USER_JOINED_CH":
-
-				if _, ok := c.channels.ClientsChannels(c)[msg.Channel]; !ok {
-					c.channels.AddClientToChannel(msg.Channel, c)
-					if err := c.connection.Send(msgToClient.Message); err != nil {
-						logger.Warnf("Client", "Start", "Error while sending message %v to %v. Error: %v", msg, c, err)
-					}
-				}
-
+				c.handleJoinChannelMessage(msg)
 			case "USER_LEFT_CH":
-				if errors := c.channels.RemoveClientFromChannel(msg.Channel, c); len(errors) > 0 {
-					c.logSendErrors(msg, errors)
-				}
-
+				c.handleLeaveChannelMessage(msg)
 			default:
 				logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
 			}
 
-			//c.server.Receive(incommingMsg)
+		case <-c.interrupt:
+			logger.Infof("Client", "Start", "%v received interupt msg", c)
+			close(c.interrupt)
+			break outer
 
-		case exit := <-c.interrupt:
-			logger.Info("Client", "Start", "Interrupted")
-			if exit {
-				logger.Infof("Client", "Start", "%v received interupt msg", c)
-				close(c.interrupt)
-				break outer
-			}
 		}
 	}
 	logger.Infof("Client", "Start", "%v end", c)
@@ -151,4 +108,54 @@ func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 func (c *DefaultClient) Stop() {
 	c.interrupt <- true
 	c.connection.Close()
+}
+
+func (c *DefaultClient) handleLogoutMessage(msg Message) {
+	// remove client from channels
+	for _, channel := range c.channels.ClientsChannels(c) {
+		if errors := channel.RemoveClient(c); len(errors) > 0 {
+			c.logSendErrors(msg, errors)
+		}
+	}
+
+	// stop client
+	c.interrupt <- true
+
+	// TODO stop connection
+
+	// resend message
+	if err := c.Send(msg); err != nil {
+		logger.Warnf("Client", "Start", "Error while sending message: %v", err)
+	}
+}
+
+func (c *DefaultClient) handleTextMessage(msg Message) {
+	channel, ok := c.channels.ClientsChannels(c)[msg.Channel]
+	if ok {
+		if errors := channel.SendToEveryone(msg); len(errors) > 0 {
+			c.logSendErrors(msg, errors)
+		}
+	}
+}
+
+func (c *DefaultClient) handleCreateChannelMessage(msg Message) {
+	channel := NewChannel(msg.Channel, c, c.channels)
+	if errors := c.channels.AddChannel(channel); len(errors) > 0 {
+		c.logSendErrors(msg, errors)
+	}
+}
+
+func (c *DefaultClient) handleJoinChannelMessage(msg Message) {
+	if _, ok := c.channels.ClientsChannels(c)[msg.Channel]; !ok {
+		c.channels.AddClientToChannel(msg.Channel, c)
+		if err := c.connection.Send(msg); err != nil {
+			logger.Warnf("Client", "Start", "Error while sending message %v to %v. Error: %v", msg, c, err)
+		}
+	}
+}
+
+func (c *DefaultClient) handleLeaveChannelMessage(msg Message) {
+	if errors := c.channels.RemoveClientFromChannel(msg.Channel, c); len(errors) > 0 {
+		c.logSendErrors(msg, errors)
+	}
 }
