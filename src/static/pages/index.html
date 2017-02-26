@@ -11,10 +11,15 @@
 	<div class="row" id="errors-list"></div>
 
 	<div class="jumbotron">
-	  <h1>Hello, world!</h1>
-	  <p>...</p>
-	  <p><a class="btn btn-primary btn-lg" href="#" role="button">Register</a></p>
-		<p><a class="btn btn-primary btn-lg" href="#" role="button">Login</a></p>
+	  <h1>Hello</h1>
+	  <p>Where do you want to go?</p>
+		{{if .loggedIn }}
+			<p><a class="btn btn-primary btn-lg" href="/conversation" role="button">Conversation</a></p>
+			<p><a class="btn btn-primary btn-lg" href="/logout" role="button">Logout</a></p>
+		{{else}}
+			<p><a class="btn btn-primary btn-lg" href="/register" role="button">Register</a></p>
+			<p><a class="btn btn-primary btn-lg" href="/login" role="button">Login</a></p>
+		{{end}}
 	</div>
 
 </div>

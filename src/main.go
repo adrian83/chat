@@ -10,11 +10,6 @@ import (
 	"handler"
 	gsession "session"
 
-	//gws "websocket"
-	//gwsclient "websocket/client"
-	//gwsconnection "websocket/connection"
-	//gwsserver "websocket/server"
-
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"

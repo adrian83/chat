@@ -29,5 +29,22 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		model.AddInfo("You have been logged out.")
 	}
 
+	loggedIn := false
+
+	sessionID := websession.FindSessionID(req)
+	if sessionID != "" {
+		user, err := h.session.FindUserData(sessionID)
+		if err != nil {
+			RenderError500(w, err)
+			return
+		}
+
+		if !user.Empty() {
+			loggedIn = true
+		}
+	}
+
+	model["loggedIn"] = loggedIn
+
 	RenderTemplateWithModel(w, indexTmpl, model)
 }

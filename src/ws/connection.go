@@ -3,6 +3,8 @@ package ws
 import (
 	"logger"
 
+	"io"
+
 	"golang.org/x/net/websocket"
 )
 
@@ -50,6 +52,11 @@ func (c wsConnection) Start() {
 		c.incomming <- CommunicationResult{
 			Message: msg,
 			Error:   err,
+		}
+
+		if err == io.EOF {
+			logger.Info("wsConnection", "Start", "Received EOF. Exiting")
+			break
 		}
 	}
 }

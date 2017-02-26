@@ -23,5 +23,5 @@ func (h *LogoutHandler) Logout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(w, req, "/login", http.StatusFound)
+	http.Redirect(w, req, "/?reason=logout", http.StatusFound)
 }

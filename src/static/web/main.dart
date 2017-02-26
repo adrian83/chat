@@ -25,7 +25,7 @@ main() {
   void onMsg(Message msg) {
     if (msg is LogoutMsg) {
       client.closeClient();
-      window.location.assign('/?reason=logout');
+      window.location.assign('/logout');
     } else if (msg is UserJoinedChannelMsg) {
       if (channelManager.channelExists(msg.channel)) {
         channelManager.setVisible(msg.channel);

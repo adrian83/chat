@@ -5,6 +5,7 @@ import (
 	"logger"
 
 	"fmt"
+	"io"
 
 	"golang.org/x/net/websocket"
 )
@@ -64,14 +65,19 @@ outer:
 		case msgToClient := <-c.connection.Incomming():
 			logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
 
-			if msgToClient.Error != nil {
-				logger.Warnf("Client", "Start", "Error while getting message for client %v. Error: %v", c, msgToClient.Error)
-				continue
-			}
-
 			msg := msgToClient.Message
 			msg.SenderName = c.user.Name
 			msg.SenderID = c.id
+
+			if msgToClient.Error != nil {
+				if msgToClient.Error == io.EOF {
+					c.handleLogoutMessage(msg)
+					break outer
+				}
+
+				logger.Warnf("Client", "Start", "Error while getting message for client %v. Error: %v", c, msgToClient.Error)
+				continue
+			}
 
 			switch msg.MsgType {
 			case "LOGOUT_USER":
