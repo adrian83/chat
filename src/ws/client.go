@@ -6,14 +6,12 @@ import (
 
 	"fmt"
 	"io"
-
-	"golang.org/x/net/websocket"
 )
 
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, wsc *websocket.Conn, channels *Channels) Client {
+func NewClient(ID string, user db.User, conn Connection, channels *Channels) Client {
 	client := DefaultClient{
-		connection: NewConnection(wsc),
+		connection: conn,
 		interrupt:  make(chan bool, 5),
 		user:       user,
 		id:         ID,

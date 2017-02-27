@@ -118,7 +118,7 @@ func connect(simpleSession *gsession.Session, channels *ws.Channels) func(*webso
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, wsc, channels)
+		client := ws.NewClient(sessionID, user, ws.NewConnection(wsc), channels)
 
 		if err := channels.RegisterClient(client); err != nil {
 			logger.Infof("Main", "Connect", "Error while sending message: %v", err)
