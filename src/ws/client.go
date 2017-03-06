@@ -58,10 +58,10 @@ func (c *DefaultClient) Start() {
 
 outer:
 	for {
-		logger.Infof("Client", "Start", "%v waithing for a msg", c)
+		//logger.Infof("Client", "Start", "%v waithing for a msg", c)
 		select {
 		case msgToClient := <-c.connection.Incomming():
-			logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
+			//logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
 
 			msg := msgToClient.Message
 			msg.SenderName = c.user.Name
@@ -70,6 +70,7 @@ outer:
 			if msgToClient.Error != nil {
 				if msgToClient.Error == io.EOF {
 					c.handleLogoutMessage(msg)
+					logger.Warnf("Client", "Start", "WAAAAAT! EOF! client %v. Error: %v", c, msgToClient.Error)
 					break outer
 				}
 
@@ -91,13 +92,14 @@ outer:
 			default:
 				logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
 			}
-
+			//logger.Infof("Client", "Start", "%v handled incomming message: %v", c, msgToClient)
 		case <-c.interrupt:
 			logger.Infof("Client", "Start", "%v received interupt msg", c)
-			close(c.interrupt)
+			//close(c.interrupt)
 			break outer
 
 		}
+		//logger.Warnf("Client", "Start", "%v Outside of select", c)
 	}
 	logger.Infof("Client", "Start", "%v end", c)
 }
@@ -116,6 +118,7 @@ func (c *DefaultClient) Stop() {
 
 func (c *DefaultClient) handleLogoutMessage(msg Message) {
 	// remove client from channels
+	logger.Infof("Client", "Start", "Logging out client: %v", c)
 	for _, channel := range c.channels.ClientsChannels(c) {
 		if errors := channel.RemoveClient(c); len(errors) > 0 {
 			c.logSendErrors(msg, errors)
