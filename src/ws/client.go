@@ -9,7 +9,7 @@ import (
 )
 
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, conn Connection, channels *Channels) Client {
+func NewClient(ID string, user db.User, conn Connection, channels Channels) Client {
 	client := DefaultClient{
 		connection: conn,
 		interrupt:  make(chan bool, 5),
@@ -35,7 +35,7 @@ type DefaultClient struct {
 	user       db.User
 	connection Connection
 	interrupt  chan bool
-	channels   *Channels
+	channels   Channels
 }
 
 // ID returns id of the client.

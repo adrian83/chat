@@ -26,7 +26,7 @@ func main() {
 
 	for i := 0; i < clients; i++ {
 
-		go func(i int, channels *ws.Channels) {
+		go func(i int, channels ws.Channels) {
 
 			strID := strconv.Itoa(i)
 
@@ -50,7 +50,7 @@ func main() {
 			}
 			connection.Receive(msg2)
 
-			channels.RegisterClient(client)
+			channels.AddClient(client)
 			time.Sleep(time.Second * 1)
 			go client.Start()
 			time.Sleep(time.Second * 1)
@@ -60,7 +60,7 @@ func main() {
 			time.Sleep(time.Second * 1)
 
 			time.Sleep(time.Second * 1)
-			go func(connection *MockConnection, clientId string, channels *ws.Channels) {
+			go func(connection *MockConnection, clientId string, channels ws.Channels) {
 				for ii := 0; ii < 500; ii++ {
 					msg := ws.Message{
 						MsgType:    "TEXT_MSG",
