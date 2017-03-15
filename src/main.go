@@ -2,7 +2,10 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 
+	config "chatconfig"
 	"db"
 	"logger"
 	"ws"
@@ -21,12 +24,26 @@ var (
 
 func main() {
 
+	// ---------------------------------------
+	// application config
+	// ---------------------------------------
+	configPath := os.Args[1]
+	logger.Infof("Main", "main", "Reading configuration from: %v", configPath)
+	appConfig, err := config.ReadConfig(configPath)
+	if err != nil {
+		logger.Errorf("Main", "main", "Error while reading configuration! Error: %v", err)
+		panic(err)
+	}
+
+	// ---------------------------------------
+	// database
+	// ---------------------------------------
 	rethinkConfig := &db.Config{
-		Host:             "localhost",
-		Port:             28016,
-		DBName:           "chat_go",
-		UsersTableName:   "users",
-		UsersTablePKName: "name",
+		Host:             appConfig.Database.Host,
+		Port:             appConfig.Database.Port,
+		DBName:           appConfig.Database.DBName,
+		UsersTableName:   appConfig.Database.UsersTableName,
+		UsersTablePKName: appConfig.Database.UsersTablePKName,
 	}
 
 	database, err := db.New(rethinkConfig)
@@ -42,18 +59,24 @@ func main() {
 
 	logger.Info("Main", "main", "RethinkDB session created")
 
+	// ---------------------------------------
+	// database setup
+	// ---------------------------------------
 	if err = database.Setup(); err != nil {
 		logger.Errorf("Main", "main", "Error during RethinkDB database setup! Error: %v", err)
 		panic(err)
 	}
 	logger.Info("Main", "main", "RethinkDB database initialized")
 
+	// ---------------------------------------
+	// session
+	// ---------------------------------------
 	sessionStoreConfig := redisSession.Config{
-		DB:       0,
-		Password: "",
-		Host:     "localhost",
-		Port:     6380,
-		IDLength: 50,
+		DB:       appConfig.Session.DB,
+		Password: appConfig.Session.Password,
+		Host:     appConfig.Session.Host,
+		Port:     appConfig.Session.Port,
+		IDLength: appConfig.Session.IDLength,
 	}
 
 	sessionStore, err := redisSession.NewStore(sessionStoreConfig)
@@ -68,6 +91,9 @@ func main() {
 	}()
 	logger.Info("Main", "main", "SessionStore created.")
 
+	// ---------------------------------------
+	// useful structures
+	// ---------------------------------------
 	simpleSession := gsession.New(sessionStore)
 
 	userRepository := db.NewUserRepository(database)
@@ -78,6 +104,9 @@ func main() {
 	indexHandler := handler.NewIndexHandler(simpleSession)
 	conversationHandler := handler.NewConversationHandler(simpleSession)
 
+	// ---------------------------------------
+	// routing
+	// ---------------------------------------
 	mux := mux.NewRouter()
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 
@@ -95,7 +124,12 @@ func main() {
 
 	mux.Handle("/talk", websocket.Handler(connect(simpleSession, channels)))
 
-	server := &http.Server{Addr: "0.0.0.0:7070", Handler: mux}
+	// ---------------------------------------
+	// http server
+	// ---------------------------------------
+	serverAddress := appConfig.Server.Host + ":" + strconv.Itoa(appConfig.Server.Port)
+	logger.Infof("Main", "main", "Starting server on: %v", serverAddress)
+	server := &http.Server{Addr: serverAddress, Handler: mux}
 	if err2 := server.ListenAndServe(); err2 != nil {
 		logger.Errorf("Main", "main", "Error while starting server! Error: %v", err2)
 	}

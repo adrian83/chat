@@ -52,7 +52,7 @@ dart() {
 
 run-go() {
 	set -e
-		cd src/ && go run main.go
+		cd src/ && go run main.go $PWD/config.json
 	set +e
 }
 
