@@ -7,11 +7,10 @@ import (
 
 	config "chatconfig"
 	"db"
-	"logger"
-	"ws"
-
 	"handler"
-	gsession "session"
+	"logger"
+	chatsession "session"
+	"ws"
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
@@ -38,7 +37,7 @@ func main() {
 	// ---------------------------------------
 	// database
 	// ---------------------------------------
-	rethinkConfig := &db.Config{
+	databaseConfig := &db.Config{
 		Host:             appConfig.Database.Host,
 		Port:             appConfig.Database.Port,
 		DBName:           appConfig.Database.DBName,
@@ -46,7 +45,7 @@ func main() {
 		UsersTablePKName: appConfig.Database.UsersTablePKName,
 	}
 
-	database, err := db.New(rethinkConfig)
+	database, err := db.New(databaseConfig)
 	if err != nil {
 		logger.Errorf("Main", "main", "Error while creating RethinkDB session! Error: %v", err)
 		panic(err)
@@ -94,7 +93,7 @@ func main() {
 	// ---------------------------------------
 	// useful structures
 	// ---------------------------------------
-	simpleSession := gsession.New(sessionStore)
+	simpleSession := chatsession.New(sessionStore)
 
 	userRepository := db.NewUserRepository(database)
 
@@ -136,11 +135,11 @@ func main() {
 
 }
 
-func connect(simpleSession *gsession.Session, channels ws.Channels) func(*websocket.Conn) {
+func connect(simpleSession *chatsession.Session, channels ws.Channels) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 
-		sessionID := gsession.FindSessionID(wsc.Request())
+		sessionID := chatsession.FindSessionID(wsc.Request())
 		if sessionID == "" {
 			logger.Errorf("Main", "Connect", "Error while getting sessionID from WebSocket.")
 			return
