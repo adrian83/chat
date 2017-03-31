@@ -10,18 +10,18 @@ var (
 	conversationTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("conversation").WithTags("footer", "navigation", "head").Build()
 )
 
-// IndexHandler struct responsible for handling actions
+// ConversationHandler struct responsible for handling actions
 // made on index html page.
 type ConversationHandler struct {
 	session *websession.Session
 }
 
-// NewIndexHandler returns new IndexHandler struct.
+// NewConversationHandler returns new ConversationHandler struct.
 func NewConversationHandler(session *websession.Session) *ConversationHandler {
 	return &ConversationHandler{session: session}
 }
 
-// ShowIndexPage renders Index page.
+// ShowConversationPage renders conversation page.
 func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *http.Request) {
 
 	sessionID := websession.FindSessionID(req)

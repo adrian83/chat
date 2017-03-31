@@ -15,14 +15,14 @@ type Config struct {
 	UsersTablePKName string
 }
 
-// DataBase struct used for working with RethinkDB
-type DataBase struct {
+// Database struct used for working with RethinkDB
+type Database struct {
 	Config  *Config
 	Session *r.Session
 }
 
-// New returns pointer to new instance of DataBase and error
-func New(config *Config) (*DataBase, error) {
+// New returns pointer to new instance of Database and error
+func New(config *Config) (*Database, error) {
 	session, err := r.Connect(r.ConnectOpts{
 		Address:  config.Host + ":" + strconv.Itoa(config.Port),
 		Database: config.DBName,
@@ -31,15 +31,15 @@ func New(config *Config) (*DataBase, error) {
 		return nil, err
 	}
 
-	return &DataBase{Session: session, Config: config}, nil
+	return &Database{Session: session, Config: config}, nil
 }
 
 // Close closes RethinkDB session
-func (db *DataBase) Close() error {
+func (db *Database) Close() error {
 	return db.Session.Close()
 }
 
-func (db *DataBase) createUUID() (string, error) {
+func (db *Database) createUUID() (string, error) {
 	c, err := r.UUID().Run(db.Session)
 	if err != nil {
 		return "", err
@@ -52,7 +52,7 @@ func (db *DataBase) createUUID() (string, error) {
 }
 
 // Setup initializes database.
-func (db *DataBase) Setup() error {
+func (db *Database) Setup() error {
 	if err := db.createDbIfItDoesNotExist(db.Config.DBName); err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (db *DataBase) Setup() error {
 	return nil
 }
 
-func (db *DataBase) createDbIfItDoesNotExist(dbName string) error {
+func (db *Database) createDbIfItDoesNotExist(dbName string) error {
 	c, err1 := r.DBList().Contains(dbName).Run(db.Session)
 	if err1 != nil {
 		return err1
@@ -77,7 +77,7 @@ func (db *DataBase) createDbIfItDoesNotExist(dbName string) error {
 	return err3
 }
 
-func (db *DataBase) createTableIfItDoesNotExist(dbName, tableName, pkName string) error {
+func (db *Database) createTableIfItDoesNotExist(dbName, tableName, pkName string) error {
 
 	c, err1 := r.DB(dbName).TableList().Contains(tableName).Run(db.Session)
 	if err1 != nil {
@@ -94,7 +94,7 @@ func (db *DataBase) createTableIfItDoesNotExist(dbName, tableName, pkName string
 	return err3
 }
 
-func (db *DataBase) boolResp(cursor *r.Cursor) (bool, error) {
+func (db *Database) boolResp(cursor *r.Cursor) (bool, error) {
 	resp := new(bool)
 	if err := cursor.One(resp); err != nil {
 		return false, err

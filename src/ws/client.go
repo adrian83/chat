@@ -25,7 +25,7 @@ func NewClient(ID string, user db.User, conn Connection, channels Channels) Clie
 type Client interface {
 	Send(msg Message) error
 	Start()
-	Stop()
+	Stop() error
 	ID() string
 }
 
@@ -78,20 +78,8 @@ outer:
 				continue
 			}
 
-			switch msg.MsgType {
-			case "LOGOUT_USER":
-				c.handleLogoutMessage(msg)
-			case "TEXT_MSG":
-				c.handleTextMessage(msg)
-			case "ADD_CH":
-				c.handleCreateChannelMessage(msg)
-			case "USER_JOINED_CH":
-				c.handleJoinChannelMessage(msg)
-			case "USER_LEFT_CH":
-				c.handleLeaveChannelMessage(msg)
-			default:
-				logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
-			}
+			c.handleMessage(msg)
+
 			//logger.Infof("Client", "Start", "%v handled incomming message: %v", c, msgToClient)
 		case <-c.interrupt:
 			logger.Infof("Client", "Start", "%v received interupt msg", c)
@@ -104,6 +92,23 @@ outer:
 	logger.Infof("Client", "Start", "%v end", c)
 }
 
+func (c *DefaultClient) handleMessage(msg Message) {
+	switch msg.MsgType {
+	case "LOGOUT_USER":
+		c.handleLogoutMessage(msg)
+	case "TEXT_MSG":
+		c.handleTextMessage(msg)
+	case "ADD_CH":
+		c.handleCreateChannelMessage(msg)
+	case "USER_JOINED_CH":
+		c.handleJoinChannelMessage(msg)
+	case "USER_LEFT_CH":
+		c.handleLeaveChannelMessage(msg)
+	default:
+		logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
+	}
+}
+
 func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 	for _, sendErr := range errors {
 		logger.Warnf("Client", "logSendErrors", "Error while sending message %v to %v. Error: %v", msg, sendErr.Client, sendErr.Err)
@@ -111,9 +116,9 @@ func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 }
 
 // Stop stops client.
-func (c *DefaultClient) Stop() {
+func (c *DefaultClient) Stop() error {
 	c.interrupt <- true
-	c.connection.Close()
+	return c.connection.Close()
 }
 
 func (c *DefaultClient) handleLogoutMessage(msg Message) {

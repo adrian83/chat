@@ -18,12 +18,12 @@ func (u *User) Empty() bool {
 
 // UserRepository struct representing repository for user data.
 type UserRepository struct {
-	database *DataBase
+	database *Database
 }
 
 // NewUserRepository returns new instance of UserRepository struct
 // based on RethinkDB session struct.
-func NewUserRepository(database *DataBase) *UserRepository {
+func NewUserRepository(database *Database) *UserRepository {
 	return &UserRepository{database: database}
 }
 

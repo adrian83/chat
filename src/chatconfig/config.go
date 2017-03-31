@@ -30,7 +30,7 @@ func ReadConfig(configPath string) (*Config, error) {
 type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Session  SessionConfig  `json:"session"`
-	Database DatabaseConfig `json"database"`
+	Database DatabaseConfig `json:"database"`
 }
 
 // ServerConfig represents http server configuration.
