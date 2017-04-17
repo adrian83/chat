@@ -4,9 +4,39 @@ import 'dart:async';
 
 import 'messages.dart';
 
+class WebSocketWrapper {
+  WebSocket _socket;
+
+  WebSocketWrapper(this._socket);
+
+  void onOpen(fun) {
+    this._socket.onOpen.listen((e) => fun(e));
+  }
+
+  void onClose(fun) {
+    this._socket.onError.listen((e) => fun(e));
+  }
+
+  void onError(fun) {
+    this._socket.onError.listen((e) => fun(e));
+  }
+
+  void onMessage(fun) {
+    this._socket.onMessage.listen((MessageEvent e) => fun(e));
+  }
+
+  void close() {
+    this._socket.close();
+  }
+
+  void send(String msg) {
+    this._socket.send(msg);
+  }
+}
+
 class WSClient {
   String sessionId;
-  WebSocket _socket;
+  WebSocketWrapper _socket;
   bool _closedByMe;
   StreamController _onMsgCtrl = new StreamController.broadcast();
   StreamController _onOpenCtrl = new StreamController.broadcast();
@@ -21,24 +51,24 @@ class WSClient {
   Stream<bool> get errors => _onErrorCtrl.stream;
 
   void start() {
-    this._socket.onOpen.listen((e) {
+    this._socket.onOpen((e) {
       print("<----- connection opened ----->");
       _onOpenCtrl.add(true);
     });
 
-    this._socket.onClose.listen((e) {
+    this._socket.onClose((e) {
       print("<----- connection closed ----->");
       if (!_closedByMe) {
         _onCloseCtrl.add(true);
       }
     });
 
-    this._socket.onError.listen((e) {
+    this._socket.onError((e) {
       print("<----- error ----->");
       _onErrorCtrl.add(true);
     });
 
-    this._socket.onMessage.listen((MessageEvent e) {
+    this._socket.onMessage((MessageEvent e) {
       Map parsedMap = JSON.decode(e.data);
       var msg = fromJSONMap(parsedMap);
       print("[ON MESSAGE] Message: " + e.data.toString());

@@ -15,7 +15,7 @@ main() {
       (window.location.port != null ? ':' + window.location.port : '');
   var wssocket = new WebSocket("ws://" + host + "/talk");
 
-  var client = new WSClient(sessionId, wssocket);
+  var client = new WSClient(sessionId, new WebSocketWrapper(wssocket));
   var channelManager = new ChannelsManager(sessionId);
   var channelList = new ChannelList();
   var errorsPanel = new ErrorsPanel();
