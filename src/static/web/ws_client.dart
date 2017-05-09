@@ -14,7 +14,7 @@ class WebSocketWrapper {
   }
 
   void onClose(fun) {
-    this._socket.onError.listen((e) => fun(e));
+    this._socket.onClose.listen((e) => fun(e));
   }
 
   void onError(fun) {
