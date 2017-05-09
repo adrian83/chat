@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"time"
 
 	config "chatconfig"
 	"db"
@@ -126,12 +129,25 @@ func main() {
 	// ---------------------------------------
 	// http server
 	// ---------------------------------------
+
+	stopChan := make(chan os.Signal)
+	signal.Notify(stopChan, os.Interrupt, os.Kill)
+
 	serverAddress := appConfig.Server.Host + ":" + strconv.Itoa(appConfig.Server.Port)
 	logger.Infof("Main", "main", "Starting server on: %v", serverAddress)
 	server := &http.Server{Addr: serverAddress, Handler: mux}
-	if err2 := server.ListenAndServe(); err2 != nil {
-		logger.Errorf("Main", "main", "Error while starting server! Error: %v", err2)
-	}
+	go func() {
+		if err2 := server.ListenAndServe(); err2 != nil {
+			logger.Errorf("Main", "main", "Server error! Error: %v", err2)
+		}
+	}()
+
+	<-stopChan
+
+	ctx, _ := context.WithTimeout(context.Background(), 50*time.Second)
+	server.Shutdown(ctx)
+
+	logger.Info("Main", "main", "Server stopped.")
 
 }
 
