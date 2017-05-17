@@ -1,15 +1,15 @@
+import 'dart:async';
 import 'dart:html';
 
 import 'messages.dart';
 import 'html_utils.dart';
 import 'utils.dart';
-import 'dart:async';
 
 const String MAIN = "main";
 
 class ChannelsManager {
   String _clientId;
-  Map<String, NewChannel> _channels = new Map<String, NewChannel>();
+  Map<String, ChannelTab> _channels = new Map<String, ChannelTab>();
 
   StreamController _onTabClosedCtrl = new StreamController.broadcast();
   StreamController _onLoggedOutCtrl = new StreamController.broadcast();
@@ -29,7 +29,7 @@ class ChannelsManager {
   }
 
   void addChannel(String name) {
-    var channel = new NewChannel(name, this);
+    var channel = new ChannelTab(name, this);
     channel.show();
     _channels[name] = channel;
   }
@@ -67,12 +67,12 @@ class TMessage {
   String get text => _text;
 }
 
-class NewChannel {
+class ChannelTab {
   ChannelsManager _manager;
   String _name;
   String _escapedName;
 
-  NewChannel(this._name, this._manager) {
+  ChannelTab(this._name, this._manager) {
     this._escapedName = removeWhitespace(_name);
   }
 
@@ -110,8 +110,8 @@ class NewChannel {
       }
     }
 
-    var sendMsgButton = createButton("msg-send-" + _escapedName,
-        "Send", const ["btn", "btn-default"], onSent);
+    var sendMsgButton = createButton("msg-send-" + _escapedName, "Send",
+        const ["btn", "btn-default"], onSent);
 
     var sp = new Element.tag('span');
     sp.classes.add("input-group-btn");

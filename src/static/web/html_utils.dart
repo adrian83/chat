@@ -57,3 +57,7 @@ Function handleEnter(Function handler) {
 void hideElement(String elemId) {
   querySelector(elemId).style.display = "none";
 }
+
+void withClasses(Element elem, List<String> classes) {
+  classes.forEach((cls) => elem.classes.add(cls));
+}
