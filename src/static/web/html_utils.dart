@@ -1,30 +1,72 @@
 import 'dart:html';
 
-ButtonElement createButton(
-    String id, String text, List<String> cssClasses, Function onClickListener) {
-  var button = new ButtonElement();
-  button.id = id;
-  button.text = text;
-  button.addEventListener("click", onClickListener);
 
-  cssClasses.forEach((cssClass) => button.classes.add(cssClass));
-  return button;
+class MyElement {
+  Element _elem;
+
+  MyElement(this._elem);
+
+  MyElement withId(String id) {
+    _elem.id = id;
+    return this;
+  }
+
+  MyElement withText(String text) {
+    _elem.text = text;
+    return this;
+  }
+
+  MyElement withHref(String href) {
+    _elem.href = href;
+    return this;
+  }
+
+  MyElement withOnClickListener(Function onClickListener) {
+    _elem.addEventListener("click", onClickListener);
+    return this;
+  }
+
+  MyElement withOnKeyPressListener(Function onKeyPressListener) {
+    _elem.onKeyPress.listen(onKeyPressListener);
+    return this;
+  }
+
+  MyElement withClass(String name) {
+    _elem.classes.add(name);
+    return this;
+  }
+
+  MyElement withClasses(List<String> names) {
+    _elem.classes.addAll(names);
+    return this;
+  }
+
+  Element create() {
+    return _elem;
+  }
 }
 
-InputElement createTextInput(String id, List<String> cssClasses, Function onKeyPressListener) {
-  var textInput = new InputElement(type: "text");
-  cssClasses.forEach((cssClass) => textInput.classes.add(cssClass));
-  textInput.id = id;
-  textInput.onKeyPress.listen(onKeyPressListener);
-  return textInput;
+MyElement button() {
+  return new MyElement(new ButtonElement());
+}
+
+MyElement textInput() {
+  return new MyElement(new InputElement(type: "text"));
+}
+
+MyElement link() {
+  return new MyElement(new LinkElement());
 }
 
 LinkElement createLink(String href, String text, Function onClickListener) {
+return link().withText(text).withHref(href).withOnClickListener(onClickListener).create();
+/*
   var link = new LinkElement();
   link.href = href;
   link.text = text;
   link.addEventListener("click", onClickListener);
   return link;
+  */
 }
 
 LinkElement createLink2(String id, String href, String text, List<String> cssClasses, Function onClickListener) {
@@ -54,6 +96,8 @@ Function handleEnter(Function handler) {
   return realHandler;
 }
 
+
+
 void hideElement(String elemId) {
   querySelector(elemId).style.display = "none";
 }
@@ -61,3 +105,5 @@ void hideElement(String elemId) {
 void withClasses(Element elem, List<String> classes) {
   classes.forEach((cls) => elem.classes.add(cls));
 }
+
+Element brake() => new Element.tag('br');

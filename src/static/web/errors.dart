@@ -18,7 +18,8 @@ class ErrorsPanel {
       spanE.text = "x";
 
       var buttonE = new Element.tag('button');
-      buttonE.classes.add("close");
+      withClasses(buttonE, const["close"]);
+      //buttonE.classes.add("close");
       buttonE.attributes["data-dismiss"] = "alert";
       buttonE.attributes["aria-label"] = "Close";
       buttonE.attributes["onclick"] = _closeErrorScript(_id);

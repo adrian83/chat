@@ -26,13 +26,14 @@ class ChannelList {
   }
 
   createLinkElement(String channel) {
-    var link = createLink2(
-        "ch-list-name-" + removeWhitespace(channel),
-        "#",
-        channel,
-        const ["list-group-item"],
-        (e) => _onSelectedController.add(channel));
-    return link;
+    return link()
+    .withId("ch-list-name-" + removeWhitespace(channel))
+    .withText(channel)
+    .withHref("#")
+    .withOnClickListener((e) => _onSelectedController.add(channel))
+    .withClass("list-group-item")
+    .create();
+
   }
 
   String getChannelName() {
@@ -45,14 +46,10 @@ class ChannelList {
   void onMessage(Message msg) {
     if (msg is ChannelAddedMsg) {
       querySelector("#ch-list").children.add(createLinkElement(msg.channel));
-    }
-
-    if (msg is ChannelsListMsg) {
+    } else if (msg is ChannelsListMsg) {
       var list = querySelector("#ch-list");
       msg.channels.forEach((ch) => list.children.add(createLinkElement(ch)));
-    }
-
-    if (msg is ChannelRemovedMsg) {
+    } else if (msg is ChannelRemovedMsg) {
       querySelector("#ch-list-name-" + removeWhitespace(msg.channel)).remove();
     }
   }

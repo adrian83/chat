@@ -83,7 +83,6 @@ class ChannelTab {
 
     void onSelect(e) => setVisible();
 
-    //var tabTitle = createLink("#", _name, onSelect);
 
     var tabTitle = new Element.tag('a');
     tabTitle.href = "#";
@@ -110,18 +109,25 @@ class ChannelTab {
       }
     }
 
-    var sendMsgButton = createButton("msg-send-" + _escapedName, "Send",
-        const ["btn", "btn-default"], onSent);
+    var sendMsgButton = button()
+        .withId("msg-send-" + _escapedName)
+        .withText("Send")
+        .withOnClickListener(onSent)
+        .withClasses(const ["btn", "btn-default"])
+        .create();
+    //createButton("msg-send-" + _escapedName, "Send",
+    //    const ["btn", "btn-default"], onSent);
 
     var sp = new Element.tag('span');
-    sp.classes.add("input-group-btn");
+    withClasses(sp, const ["input-group-btn"]);
+    //sp.classes.add("input-group-btn");
     sp.children.add(sendMsgButton);
 
-    var textInput = createTextInput("msg-content-" + _escapedName,
-        const ["form-control"], handleEnter(onSent));
+    var textInput = createMsgContentElem(onSent);
 
     var inputGroupDiv = new Element.tag('div');
-    inputGroupDiv.classes.add("input-group");
+    withClasses(inputGroupDiv, const ["input-group"]);
+    //inputGroupDiv.classes.add("input-group");
     inputGroupDiv.children.add(textInput);
     inputGroupDiv.children.add(sp);
 
@@ -131,9 +137,9 @@ class ChannelTab {
     conversationDiv.style.overflowY = "scroll";
 
     var contentDiv = new Element.tag('div');
-    contentDiv.children.add(new Element.tag('br'));
+    contentDiv.children.add(brake());
     contentDiv.children.add(inputGroupDiv);
-    contentDiv.children.add(new Element.tag('br'));
+    contentDiv.children.add(brake());
     contentDiv.children.add(conversationDiv);
     contentDiv.id = "content-" + _escapedName;
 
@@ -147,7 +153,7 @@ class ChannelTab {
     querySelector("#ch-" + _escapedName).classes.add("active");
     contents().forEach((div) => div.style.display = "none");
     querySelector("#content-" + _escapedName).style.display = "block";
-    querySelector("#msg-content-" + _escapedName).focus();
+    msgContentElem().focus();
   }
 
   void close() {
@@ -164,11 +170,27 @@ class ChannelTab {
   }
 
   List<Element> tabs() => querySelector("#ch-tabs").children;
-
   List<Element> contents() => querySelector("#ch-contents").children;
 
+  InputElement createMsgContentElem(onSent) =>  textInput()
+        .withId("msg-content-" + _escapedName)
+        .withOnKeyPressListener(handleEnter(onSent))
+        .withClass("form-control")
+        .create();
+
+/*
+  createTextInput(
+      "msg-content-" + _escapedName,
+      const ["form-control"],
+      handleEnter(onSent));
+*/
+
+
+  InputElement msgContentElem() =>
+      querySelector("#msg-content-" + _escapedName);
+
   String getMessageText() {
-    InputElement element = querySelector("#msg-content-" + _escapedName);
+    InputElement element = msgContentElem();
     var text = element.value;
     element.value = "";
     return text;
