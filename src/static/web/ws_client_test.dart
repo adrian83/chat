@@ -4,9 +4,11 @@ import "package:mockito/mockito.dart";
 import 'dart:convert';
 import 'dart:async';
 
+import 'ws_client.dart';
+
 class WebSocketMock extends Mock implements WebSocketWrapper {}
 
-/*
+
 void main() {
 
   var webSocketMock = new WebSocketMock();
@@ -26,4 +28,3 @@ void main() {
   });
 
 }
-*/

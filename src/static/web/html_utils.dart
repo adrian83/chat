@@ -58,16 +58,6 @@ MyElement link() {
   return new MyElement(new LinkElement());
 }
 
-LinkElement createLink(String href, String text, Function onClickListener) {
-return link().withText(text).withHref(href).withOnClickListener(onClickListener).create();
-/*
-  var link = new LinkElement();
-  link.href = href;
-  link.text = text;
-  link.addEventListener("click", onClickListener);
-  return link;
-  */
-}
 
 LinkElement createLink2(String id, String href, String text, List<String> cssClasses, Function onClickListener) {
   var link = new LinkElement();
