@@ -1,5 +1,6 @@
 import 'dart:html';
 
+import 'utils.dart';
 
 class MyElement {
   Element _elem;
@@ -36,6 +37,21 @@ class MyElement {
     return this;
   }
 
+  MyElement withChild(Element child) {
+    _elem.children.add(child);
+    return this;
+  }
+
+  MyElement withChildren(List<Element> children) {
+    _elem.children.addAll(children);
+    return this;
+  }
+
+  MyElement withStyle(Function setStylesFunction) {
+    setStylesFunction(_elem.style);
+    return this;
+  }
+
   MyElement withClasses(List<String> names) {
     _elem.classes.addAll(names);
     return this;
@@ -55,9 +71,20 @@ MyElement textInput() {
 }
 
 MyElement link() {
-  return new MyElement(new LinkElement());
+  return new MyElement(new Element.tag('a'));
 }
 
+MyElement span() {
+  return new MyElement(new Element.tag('span'));
+}
+
+MyElement div() {
+  return new MyElement(new Element.tag('div'));
+}
+
+MyElement findOne(String id) {
+  return new MyElement(querySelector(id));
+}
 
 LinkElement createLink2(String id, String href, String text, List<String> cssClasses, Function onClickListener) {
   var link = new LinkElement();

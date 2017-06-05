@@ -83,11 +83,11 @@ class ChannelTab {
 
     void onSelect(e) => setVisible();
 
-
-    var tabTitle = new Element.tag('a');
-    tabTitle.href = "#";
-    tabTitle.text = _name;
-    tabTitle.addEventListener("click", onSelect);
+    var tabTitle = link()
+        .withHref("#")
+        .withText(_name)
+        .withOnClickListener(onSelect)
+        .create();
 
     liTab.children.add(tabTitle);
 
@@ -113,39 +113,44 @@ class ChannelTab {
         .withId("msg-send-" + _escapedName)
         .withText("Send")
         .withOnClickListener(onSent)
-        .withClasses(const ["btn", "btn-default"])
+        .withClasses(["btn", "btn-default"]).create();
+
+    var sp = span()
+        .withClass("input-group-btn")
+        .withChild(sendMsgButton)
         .create();
-    //createButton("msg-send-" + _escapedName, "Send",
-    //    const ["btn", "btn-default"], onSent);
 
-    var sp = new Element.tag('span');
-    withClasses(sp, const ["input-group-btn"]);
-    //sp.classes.add("input-group-btn");
-    sp.children.add(sendMsgButton);
+    var textInput = textInput()
+        .withId("msg-content-" + _escapedName)
+        .withOnKeyPressListener(handleEnter(onSent))
+        .withClass("form-control")
+        .create();
 
-    var textInput = createMsgContentElem(onSent);
+    var inputGroupDiv =
+        div().withClass("input-group").withChildren([textInput, sp]).create();
 
-    var inputGroupDiv = new Element.tag('div');
-    withClasses(inputGroupDiv, const ["input-group"]);
-    //inputGroupDiv.classes.add("input-group");
-    inputGroupDiv.children.add(textInput);
-    inputGroupDiv.children.add(sp);
+    void setConversationDivStyles(CssStyleDeclaration style) {
+      style.maxHeight = "400px";
+      style.overflowY = "scroll";
+    }
 
-    var conversationDiv = new Element.tag('div');
-    conversationDiv.id = "conversation-" + _escapedName;
-    conversationDiv.style.maxHeight = "400px";
-    conversationDiv.style.overflowY = "scroll";
+    var conversationDiv = div()
+        .withId("conversation-" + _escapedName)
+        .withStyle(setConversationDivStyles)
+        .create();
 
-    var contentDiv = new Element.tag('div');
-    contentDiv.children.add(brake());
-    contentDiv.children.add(inputGroupDiv);
-    contentDiv.children.add(brake());
-    contentDiv.children.add(conversationDiv);
-    contentDiv.id = "content-" + _escapedName;
+    void setContentDivStyles(CssStyleDeclaration style) {
+      style.display = "none";
+    }
 
-    contentDiv.style.display = "none";
+    var contentDiv = div()
+        .withId("content-" + _escapedName)
+        .withChildren([brake(), inputGroupDiv, brake(), conversationDiv])
+        .withStyle(setContentDivStyles)
+        .create();
 
-    contents().add(contentDiv);
+    findOne("#ch-contents")
+    .withChild(contentDiv);
   }
 
   void setVisible() {
@@ -172,18 +177,6 @@ class ChannelTab {
   List<Element> tabs() => querySelector("#ch-tabs").children;
   List<Element> contents() => querySelector("#ch-contents").children;
 
-  InputElement createMsgContentElem(onSent) =>  textInput()
-        .withId("msg-content-" + _escapedName)
-        .withOnKeyPressListener(handleEnter(onSent))
-        .withClass("form-control")
-        .create();
-
-/*
-  createTextInput(
-      "msg-content-" + _escapedName,
-      const ["form-control"],
-      handleEnter(onSent));
-*/
 
 
   InputElement msgContentElem() =>
