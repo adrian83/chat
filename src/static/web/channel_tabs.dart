@@ -120,14 +120,14 @@ class ChannelTab {
         .withChild(sendMsgButton)
         .create();
 
-    var textInput = textInput()
+    var textIn = textInput()
         .withId("msg-content-" + _escapedName)
         .withOnKeyPressListener(handleEnter(onSent))
         .withClass("form-control")
         .create();
 
     var inputGroupDiv =
-        div().withClass("input-group").withChildren([textInput, sp]).create();
+        div().withClass("input-group").withChildren([textIn, sp]).create();
 
     void setConversationDivStyles(CssStyleDeclaration style) {
       style.maxHeight = "400px";
