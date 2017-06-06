@@ -1,4 +1,4 @@
-//import 'dart:html';
+import 'dart:html';
 import 'dart:convert';
 import 'dart:async';
 
@@ -22,7 +22,7 @@ class WebSocketWrapper {
   }
 
   void onMessage(fun) {
-    this._socket.onMessage.listen((MessageEvent e) => fun(e));
+    this._socket.onMessage.listen((e) => fun(e));
   }
 
   void close() {
@@ -68,7 +68,7 @@ class WSClient {
       _onErrorCtrl.add(true);
     });
 
-    this._socket.onMessage((MessageEvent e) {
+    this._socket.onMessage((e) {
       Map parsedMap = JSON.decode(e.data);
       var msg = fromJSONMap(parsedMap);
       print("[ON MESSAGE] Message: " + e.data.toString());

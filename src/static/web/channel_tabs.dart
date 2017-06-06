@@ -77,19 +77,19 @@ class ChannelTab {
   }
 
   void show() {
-    var attrs = new Map<String, String>();
-    attrs['role'] = 'presentation';
-    var liTab = createListElem("ch-" + _escapedName, attrs);
 
-    void onSelect(e) => setVisible();
 
     var tabTitle = link()
         .withHref("#")
         .withText(_name)
-        .withOnClickListener(onSelect)
+        .withOnClickListener((e) => setVisible())
         .create();
 
-    liTab.children.add(tabTitle);
+    var liTab = li()
+        .withId("ch-" + _escapedName)
+        .withAttributes([strPair("role", "presentation")])
+        .withChild(tabTitle).create();
+
 
     tabs().add(liTab);
 
@@ -129,36 +129,37 @@ class ChannelTab {
     var inputGroupDiv =
         div().withClass("input-group").withChildren([textIn, sp]).create();
 
-    void setConversationDivStyles(CssStyleDeclaration style) {
-      style.maxHeight = "400px";
-      style.overflowY = "scroll";
-    }
 
     var conversationDiv = div()
         .withId("conversation-" + _escapedName)
-        .withStyle(setConversationDivStyles)
+        .withStyle((style){
+          style.maxHeight = "400px";
+          style.overflowY = "scroll";
+        })
         .create();
-
-    void setContentDivStyles(CssStyleDeclaration style) {
-      style.display = "none";
-    }
 
     var contentDiv = div()
         .withId("content-" + _escapedName)
         .withChildren([brake(), inputGroupDiv, brake(), conversationDiv])
-        .withStyle(setContentDivStyles)
+        .withStyle((style){
+          style.display = "none";
+        })
         .create();
 
-    findOne("#ch-contents")
-    .withChild(contentDiv);
+    findOne("#ch-contents").withChild(contentDiv);
   }
 
   void setVisible() {
     tabs().forEach((tab) => tab.classes.remove("active"));
     querySelector("#ch-" + _escapedName).classes.add("active");
-    contents().forEach((div) => div.style.display = "none");
+    findOne("#ch-contents").forEachChild((ch){
+      ch.withStyle((style){
+        style.display = "none";
+      });
+    });
+
     querySelector("#content-" + _escapedName).style.display = "block";
-    msgContentElem().focus();
+    findOne("#msg-content-" + _escapedName).create().focus();
   }
 
   void close() {
@@ -168,22 +169,15 @@ class ChannelTab {
   }
 
   void displayMessage(String author, String text) {
-    var textP = new Element.tag('p');
-    textP.text = author + ": " + text;
-    var elem = querySelector("#conversation-" + _escapedName);
-    elem.children.insert(0, textP);
+    var textP = p().withText(author + ": " + text).create();
+    findOne("#conversation-" + _escapedName).withChildAtIndex(0, textP);
   }
 
   List<Element> tabs() => querySelector("#ch-tabs").children;
-  List<Element> contents() => querySelector("#ch-contents").children;
 
-
-
-  InputElement msgContentElem() =>
-      querySelector("#msg-content-" + _escapedName);
 
   String getMessageText() {
-    InputElement element = msgContentElem();
+    InputElement element = findOne("#msg-content-" + _escapedName).create();
     var text = element.value;
     element.value = "";
     return text;

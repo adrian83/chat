@@ -10,8 +10,8 @@ class Pair<T,P> {
 
   Pair(this._first, this._second);
 
-  String get fst => _first;
-  String get snd  => _second;
+  T get fst => _first;
+  P get snd  => _second;
 }
 
 Pair<String, String> strPair(String fst, String snd) {

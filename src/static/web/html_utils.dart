@@ -42,8 +42,23 @@ class MyElement {
     return this;
   }
 
+  MyElement withChildAtIndex(int index, Element child) {
+    _elem.children.insert(index, child);
+    return this;
+  }
+
+  MyElement withAttributes(List<Pair<String,String>> attrs) {
+    attrs.forEach((p) => _elem.attributes[p.fst] = p.snd);
+    return this;
+  }
+
   MyElement withChildren(List<Element> children) {
     _elem.children.addAll(children);
+    return this;
+  }
+
+  MyElement forEachChild(Function f) {
+    _elem.children.forEach((e) => f(new MyElement(e)));
     return this;
   }
 
@@ -82,25 +97,16 @@ MyElement div() {
   return new MyElement(new Element.tag('div'));
 }
 
+MyElement p() {
+  return new MyElement(new Element.tag('p'));
+}
+
+MyElement li() {
+  return new MyElement(new LIElement());
+}
+
 MyElement findOne(String id) {
   return new MyElement(querySelector(id));
-}
-
-LinkElement createLink2(String id, String href, String text, List<String> cssClasses, Function onClickListener) {
-  var link = new LinkElement();
-  link.id = id;
-  link.href = href;
-  link.text = text;
-  link.addEventListener("click", onClickListener);
-  cssClasses.forEach((cssClass) => link.classes.add(cssClass));
-  return link;
-}
-
-LIElement createListElem(String id, Map<String, String> attrs) {
-  var listElem = new LIElement();
-  listElem.id = id;
-  attrs.forEach((attrName, attrValue) => listElem.attributes[attrName] = attrValue);
-  return listElem;
 }
 
 Function handleEnter(Function handler) {
@@ -113,14 +119,8 @@ Function handleEnter(Function handler) {
   return realHandler;
 }
 
-
-
 void hideElement(String elemId) {
   querySelector(elemId).style.display = "none";
-}
-
-void withClasses(Element elem, List<String> classes) {
-  classes.forEach((cls) => elem.classes.add(cls));
 }
 
 Element brake() => new Element.tag('br');
