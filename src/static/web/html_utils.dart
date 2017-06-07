@@ -37,6 +37,11 @@ class MyElement {
     return this;
   }
 
+  MyElement withoutClass(String name) {
+    _elem.classes.remove(name);
+    return this;
+  }
+
   MyElement withChild(Element child) {
     _elem.children.add(child);
     return this;
@@ -72,42 +77,44 @@ class MyElement {
     return this;
   }
 
-  Element create() {
+  MyElement hide() {
+    _elem.style.display = "none";
+    return this;
+  }
+
+  MyElement show() {
+    _elem.style.display = "block";
+    return this;
+  }
+
+  MyElement remove() {
+    _elem.remove();
+    return this;
+  }
+
+  Element get() {
     return _elem;
   }
 }
 
-MyElement button() {
-  return new MyElement(new ButtonElement());
-}
+MyElement button() => new MyElement(new ButtonElement());
 
-MyElement textInput() {
-  return new MyElement(new InputElement(type: "text"));
-}
+MyElement textInput() => new MyElement(new InputElement(type: "text"));
 
-MyElement link() {
-  return new MyElement(new Element.tag('a'));
-}
+MyElement link() => new MyElement(new Element.tag('a'));
 
-MyElement span() {
-  return new MyElement(new Element.tag('span'));
-}
+MyElement span() => new MyElement(new Element.tag('span'));
 
-MyElement div() {
-  return new MyElement(new Element.tag('div'));
-}
+MyElement div() => new MyElement(new Element.tag('div'));
 
-MyElement p() {
-  return new MyElement(new Element.tag('p'));
-}
+MyElement p() => new MyElement(new Element.tag('p'));
 
-MyElement li() {
-  return new MyElement(new LIElement());
-}
+MyElement li() => new MyElement(new LIElement());
 
-MyElement findOne(String id) {
-  return new MyElement(querySelector(id));
-}
+MyElement brake() => new MyElement(new Element.tag('br'));
+
+MyElement findOne(String id) => new MyElement(querySelector(id));
+
 
 Function handleEnter(Function handler) {
   realHandler(KeyboardEvent event) {
@@ -118,9 +125,3 @@ Function handleEnter(Function handler) {
   }
   return realHandler;
 }
-
-void hideElement(String elemId) {
-  querySelector(elemId).style.display = "none";
-}
-
-Element brake() => new Element.tag('br');

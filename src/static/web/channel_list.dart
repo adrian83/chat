@@ -13,31 +13,24 @@ class ChannelList {
   Stream<String> get createdChannel => _onCreatedController.stream;
 
   ChannelList() {
-    querySelector("#ch-create")
-        .addEventListener("click", (event) => createChannel());
-
-    querySelector("#ch-name")
-        .onKeyUp
-        .listen(handleEnter((event) => createChannel()));
+    findOne("#ch-create").withOnClickListener((event) => createChannel());
+    findOne("#ch-name").withOnKeyPressListener(handleEnter((event) => createChannel()));
   }
 
-  void createChannel() {
-    _onCreatedController.add(getChannelName());
-  }
+  void createChannel() => _onCreatedController.add(getChannelName());
 
-  createLinkElement(String channel) {
+  Element createLinkElement(String channel) {
     return link()
-    .withId("ch-list-name-" + removeWhitespace(channel))
-    .withText(channel)
-    .withHref("#")
-    .withOnClickListener((e) => _onSelectedController.add(channel))
-    .withClass("list-group-item")
-    .create();
-
+        .withId("ch-list-name-" + removeWhitespace(channel))
+        .withText(channel)
+        .withHref("#")
+        .withOnClickListener((e) => _onSelectedController.add(channel))
+        .withClass("list-group-item")
+        .get();
   }
 
   String getChannelName() {
-    InputElement element = querySelector("#ch-name");
+    InputElement element = findOne("#ch-name").get();
     var name = element.value;
     element.value = "";
     return name;
@@ -45,12 +38,11 @@ class ChannelList {
 
   void onMessage(Message msg) {
     if (msg is ChannelAddedMsg) {
-      querySelector("#ch-list").children.add(createLinkElement(msg.channel));
+      findOne("#ch-list").withChild(createLinkElement(msg.channel));
     } else if (msg is ChannelsListMsg) {
-      var list = querySelector("#ch-list");
-      msg.channels.forEach((ch) => list.children.add(createLinkElement(ch)));
+      findOne("#ch-list").withChildren(msg.channels.map((ch) => createLinkElement(ch)));
     } else if (msg is ChannelRemovedMsg) {
-      querySelector("#ch-list-name-" + removeWhitespace(msg.channel)).remove();
+      findOne("#ch-list-name-" + removeWhitespace(msg.channel)).get().remove();
     }
   }
 }

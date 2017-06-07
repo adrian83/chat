@@ -6,6 +6,8 @@ import 'html_utils.dart';
 import 'utils.dart';
 
 const String MAIN = "main";
+const String EXIT = "exit";
+const String LOGOUT = "logout";
 
 class ChannelsManager {
   String _clientId;
@@ -17,11 +19,11 @@ class ChannelsManager {
 
   Stream<String> get closedTabs => _onTabClosedCtrl.stream;
   Stream<bool> get loggedOut => _onLoggedOutCtrl.stream;
-  Stream<TMessage> get messages => _onMessageCtrl.stream;
+  Stream<BaseMessage> get messages => _onMessageCtrl.stream;
 
   ChannelsManager(this._clientId);
 
-  void newMessage(TMessage msg) => _onMessageCtrl.add(msg);
+  void newMessage(BaseMessage msg) => _onMessageCtrl.add(msg);
   void userLoggedOut() => _onLoggedOutCtrl.add(true);
   void tabClosed(String name) {
     _onTabClosedCtrl.add(name);
@@ -35,6 +37,7 @@ class ChannelsManager {
   }
 
   void setVisible(String name) {
+    print("visible "+name);
     var n = _channels.containsKey(name) ? name : MAIN;
     _channels[n].setVisible();
   }
@@ -43,26 +46,27 @@ class ChannelsManager {
 
   void onMessage(Message msg) {
     if (msg is ChannelsListMsg) {
-      addChannel(MAIN);
+      msg.channels.forEach((name){
+        addChannel(name);
+      });
+      //addChannel(MAIN);
       setVisible(MAIN);
-    }
-    if (msg is TextMsg && channelExists(msg.channel)) {
-      _channels[msg.channel].displayMessage(msg.senderName, msg.content);
-    }
-    if (msg is ChannelAddedMsg && msg.senderId == _clientId) {
-      addChannel(msg.channel);
-      setVisible(msg.channel);
-    }
-    if (msg is UserJoinedChannelMsg) {
+    } else if (_shouldDisplayMessage(msg)) {
+      _channels[msg.channel]._displayMessage(msg.senderName, msg.content);
+    } else if (_shouldAddChannel(msg)) {
       addChannel(msg.channel);
       setVisible(msg.channel);
     }
   }
+
+  bool _shouldDisplayMessage(Message msg) => msg is TextMsg && channelExists(msg.channel);
+
+  bool _shouldAddChannel(Message msg) => msg is UserJoinedChannelMsg || (msg is ChannelAddedMsg && msg.senderId == _clientId);
 }
 
-class TMessage {
+class BaseMessage {
   String _channel, _text;
-  TMessage(this._channel, this._text);
+  BaseMessage(this._channel, this._text);
   String get channel => _channel;
   String get text => _text;
 }
@@ -78,106 +82,106 @@ class ChannelTab {
 
   void show() {
 
-
-    var tabTitle = link()
+    var tabTitleLink = link()
         .withHref("#")
         .withText(_name)
         .withOnClickListener((e) => setVisible())
-        .create();
+        .get();
 
-    var liTab = li()
-        .withId("ch-" + _escapedName)
+    var tabListElem = li()
+        .withId("ch-$_escapedName")
         .withAttributes([strPair("role", "presentation")])
-        .withChild(tabTitle).create();
+        .withChild(tabTitleLink)
+        .get();
 
+    findOne("#ch-tabs").withChild(tabListElem);
 
-    tabs().add(liTab);
-
-    void onSent(e) {
-      var text = getMessageText();
-      if (text == "exit") {
-        if (_name != MAIN) {
-          _manager.tabClosed(_name);
-          _manager.setVisible(MAIN);
-          close();
-        }
-      } else if (text == "logout") {
-        _manager.userLoggedOut();
-      } else {
-        var tMsg = new TMessage(_name, text);
-        _manager.newMessage(tMsg);
-      }
-    }
 
     var sendMsgButton = button()
-        .withId("msg-send-" + _escapedName)
+        .withId("msg-send-$_escapedName")
         .withText("Send")
-        .withOnClickListener(onSent)
-        .withClasses(["btn", "btn-default"]).create();
+        .withOnClickListener(_onSent)
+        .withClasses(["btn", "btn-default"]).get();
 
-    var sp = span()
+    var sendMegSpan = span()
         .withClass("input-group-btn")
         .withChild(sendMsgButton)
-        .create();
+        .get();
 
-    var textIn = textInput()
-        .withId("msg-content-" + _escapedName)
-        .withOnKeyPressListener(handleEnter(onSent))
+    var msgTextInput = textInput()
+        .withId("msg-content-$_escapedName")
+        .withOnKeyPressListener(handleEnter(_onSent))
         .withClass("form-control")
-        .create();
+        .get();
 
-    var inputGroupDiv =
-        div().withClass("input-group").withChildren([textIn, sp]).create();
-
+    var inputGroupDiv = div()
+        .withClass("input-group")
+        .withChildren([msgTextInput, sendMegSpan])
+        .get();
 
     var conversationDiv = div()
-        .withId("conversation-" + _escapedName)
+        .withId("conversation-$_escapedName")
         .withStyle((style){
           style.maxHeight = "400px";
           style.overflowY = "scroll";
         })
-        .create();
+        .get();
 
     var contentDiv = div()
-        .withId("content-" + _escapedName)
-        .withChildren([brake(), inputGroupDiv, brake(), conversationDiv])
+        .withId("content-$_escapedName")
+        .withChildren([
+          brake().get(),
+          inputGroupDiv,
+          brake().get(),
+          conversationDiv])
         .withStyle((style){
           style.display = "none";
         })
-        .create();
+        .get();
 
     findOne("#ch-contents").withChild(contentDiv);
   }
 
+  void _onSent(e) {
+    var text = _getMessageText();
+    if (text == EXIT) {
+      if (_name != MAIN) {
+        _manager.tabClosed(_name);
+        _manager.setVisible(MAIN);
+        close();
+      }
+    } else if (text == LOGOUT) {
+      _manager.userLoggedOut();
+    } else {
+      var tMsg = new BaseMessage(_name, text);
+      _manager.newMessage(tMsg);
+    }
+  }
+
   void setVisible() {
-    tabs().forEach((tab) => tab.classes.remove("active"));
-    querySelector("#ch-" + _escapedName).classes.add("active");
+    findOne("#ch-tabs").forEachChild((e) => e.withoutClass("active"));
+    findOne("#ch-$_escapedName").withClass("active");
     findOne("#ch-contents").forEachChild((ch){
       ch.withStyle((style){
         style.display = "none";
       });
     });
-
-    querySelector("#content-" + _escapedName).style.display = "block";
-    findOne("#msg-content-" + _escapedName).create().focus();
+    findOne("#content-$_escapedName").show();
+    findOne("#msg-content-$_escapedName").get().focus();
   }
 
   void close() {
-    print("close " + _escapedName);
-    querySelector("#ch-" + _escapedName).remove();
-    querySelector("#content-" + _escapedName).remove();
+    findOne("#ch-$_escapedName").remove();
+    findOne("#content-$_escapedName").remove();
   }
 
-  void displayMessage(String author, String text) {
-    var textP = p().withText(author + ": " + text).create();
-    findOne("#conversation-" + _escapedName).withChildAtIndex(0, textP);
+  void _displayMessage(String author, String text) {
+    var textParagraph = p().withText("$author: $text").get();
+    findOne("#conversation-$_escapedName").withChildAtIndex(0, textParagraph);
   }
 
-  List<Element> tabs() => querySelector("#ch-tabs").children;
-
-
-  String getMessageText() {
-    InputElement element = findOne("#msg-content-" + _escapedName).create();
+  String _getMessageText() {
+    InputElement element = findOne("#msg-content-$_escapedName").get();
     var text = element.value;
     element.value = "";
     return text;
