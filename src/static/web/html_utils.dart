@@ -107,7 +107,7 @@ MyElement span() => new MyElement(new Element.tag('span'));
 
 MyElement div() => new MyElement(new Element.tag('div'));
 
-MyElement p() => new MyElement(new Element.tag('p'));
+MyElement paragraph() => new MyElement(new Element.tag('p'));
 
 MyElement li() => new MyElement(new LIElement());
 

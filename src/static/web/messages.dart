@@ -8,6 +8,10 @@ const String USER_JOINED_CHANNEL = "USER_JOINED_CH";
 const String ERROR_MSG = "ERROR";
 const String LOGOUT_MSG = "LOGOUT_USER";
 
+abstract class MessageConsumer {
+  void onMessage(Message msg);
+}
+
 Message fromJSONMap(Map json) {
   var msgType = json["msgType"];
   print("msgType: " + msgType);

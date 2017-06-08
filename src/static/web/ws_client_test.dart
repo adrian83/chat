@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'ws_client.dart';
 
-class WebSocketMock extends Mock implements WebSocketWrapper {}
+class WebSocketMock extends Mock implements WSClient {}
 
 
 void main() {

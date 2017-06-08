@@ -7,7 +7,20 @@ import 'messages.dart';
 import 'errors.dart';
 import 'html_utils.dart';
 
+import 'package:logging/logging.dart';
+
+
+
 main() {
+
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((LogRecord rec) {
+    print('${rec.level.name}: ${rec.time}: ${rec.message}');
+  });
+
+  Logger logger = new Logger('Main');
+  logger.info("Application is starting...");
+
   InputElement element = querySelector("#session-id");
   var sessionId = element.value;
 
@@ -15,7 +28,7 @@ main() {
       (window.location.port != null ? ':' + window.location.port : '');
   var wssocket = new WebSocket("ws://" + host + "/talk");
 
-  var client = new WSClient(sessionId, new WebSocketWrapper(wssocket));
+  var client = new WSClient(sessionId, wssocket);
   var channelManager = new ChannelsManager(sessionId);
   var channelList = new ChannelList();
   var errorsPanel = new ErrorsPanel();

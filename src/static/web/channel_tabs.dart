@@ -9,7 +9,14 @@ const String MAIN = "main";
 const String EXIT = "exit";
 const String LOGOUT = "logout";
 
-class ChannelsManager {
+class BaseMessage {
+  String _channel, _text;
+  BaseMessage(this._channel, this._text);
+  String get channel => _channel;
+  String get text => _text;
+}
+
+class ChannelsManager implements MessageConsumer {
   String _clientId;
   Map<String, ChannelTab> _channels = new Map<String, ChannelTab>();
 
@@ -17,11 +24,11 @@ class ChannelsManager {
   StreamController _onLoggedOutCtrl = new StreamController.broadcast();
   StreamController _onMessageCtrl = new StreamController.broadcast();
 
+  ChannelsManager(this._clientId);
+
   Stream<String> get closedTabs => _onTabClosedCtrl.stream;
   Stream<bool> get loggedOut => _onLoggedOutCtrl.stream;
   Stream<BaseMessage> get messages => _onMessageCtrl.stream;
-
-  ChannelsManager(this._clientId);
 
   void newMessage(BaseMessage msg) => _onMessageCtrl.add(msg);
   void userLoggedOut() => _onLoggedOutCtrl.add(true);
@@ -30,14 +37,24 @@ class ChannelsManager {
     _channels.remove(name);
   }
 
+  void hideAll() {
+    findOne("#ch-tabs").forEachChild((e) => e.withoutClass("active"));
+    findOne("#ch-contents").forEachChild((ch) {
+      ch.withStyle((style) {
+        style.display = "none";
+      });
+    });
+  }
+
   void addChannel(String name) {
-    var channel = new ChannelTab(name, this);
-    channel.show();
-    _channels[name] = channel;
+    if (!channelExists(name)) {
+      var channel = new ChannelTab(name, this);
+      channel.show();
+      _channels[name] = channel;
+    }
   }
 
   void setVisible(String name) {
-    print("visible "+name);
     var n = _channels.containsKey(name) ? name : MAIN;
     _channels[n].setVisible();
   }
@@ -46,29 +63,43 @@ class ChannelsManager {
 
   void onMessage(Message msg) {
     if (msg is ChannelsListMsg) {
-      msg.channels.forEach((name){
-        addChannel(name);
-      });
-      //addChannel(MAIN);
-      setVisible(MAIN);
+      _handleChannelsListMsg(msg);
+    } else if (msg is UserJoinedChannelMsg) {
+      _handleUserJoinedChannelMsg(msg);
     } else if (_shouldDisplayMessage(msg)) {
-      _channels[msg.channel]._displayMessage(msg.senderName, msg.content);
+      _handleTextMsg(msg);
     } else if (_shouldAddChannel(msg)) {
-      addChannel(msg.channel);
-      setVisible(msg.channel);
+      _handleChannelAddedMsg(msg);
     }
   }
 
-  bool _shouldDisplayMessage(Message msg) => msg is TextMsg && channelExists(msg.channel);
+  void _handleChannelsListMsg(ChannelsListMsg msg) {
+    _addAndShowChannel(MAIN);
+    msg.channels.forEach((name) => addChannel(name));
+  }
 
-  bool _shouldAddChannel(Message msg) => msg is UserJoinedChannelMsg || (msg is ChannelAddedMsg && msg.senderId == _clientId);
-}
+  void _handleTextMsg(TextMsg msg) {
+    _channels[msg.channel]._displayMessage(msg.senderName, msg.content);
+  }
 
-class BaseMessage {
-  String _channel, _text;
-  BaseMessage(this._channel, this._text);
-  String get channel => _channel;
-  String get text => _text;
+  void _handleUserJoinedChannelMsg(UserJoinedChannelMsg msg) {
+    _addAndShowChannel(msg.channel);
+  }
+
+  void _handleChannelAddedMsg(ChannelAddedMsg msg) {
+    _addAndShowChannel(msg.channel);
+  }
+
+  void _addAndShowChannel(String name) {
+    addChannel(name);
+    setVisible(name);
+  }
+
+  bool _shouldDisplayMessage(Message msg) =>
+      msg is TextMsg && channelExists(msg.channel);
+
+  bool _shouldAddChannel(Message msg) =>
+      msg is ChannelAddedMsg && msg.senderId == _clientId;
 }
 
 class ChannelTab {
@@ -80,8 +111,14 @@ class ChannelTab {
     this._escapedName = removeWhitespace(_name);
   }
 
-  void show() {
+  void setVisible() {
+    _manager.hideAll();
+    findOne("#ch-$_escapedName").withClass("active");
+    findOne("#content-$_escapedName").show();
+    findOne("#msg-content-$_escapedName").get().focus();
+  }
 
+  void show() {
     var tabTitleLink = link()
         .withHref("#")
         .withText(_name)
@@ -96,12 +133,12 @@ class ChannelTab {
 
     findOne("#ch-tabs").withChild(tabListElem);
 
-
     var sendMsgButton = button()
         .withId("msg-send-$_escapedName")
         .withText("Send")
         .withOnClickListener(_onSent)
-        .withClasses(["btn", "btn-default"]).get();
+        .withClasses(["btn", "btn-default"])
+        .get();
 
     var sendMegSpan = span()
         .withClass("input-group-btn")
@@ -121,7 +158,7 @@ class ChannelTab {
 
     var conversationDiv = div()
         .withId("conversation-$_escapedName")
-        .withStyle((style){
+        .withStyle((style) {
           style.maxHeight = "400px";
           style.overflowY = "scroll";
         })
@@ -133,8 +170,9 @@ class ChannelTab {
           brake().get(),
           inputGroupDiv,
           brake().get(),
-          conversationDiv])
-        .withStyle((style){
+          conversationDiv
+        ])
+        .withStyle((style) {
           style.display = "none";
         })
         .get();
@@ -148,35 +186,22 @@ class ChannelTab {
       if (_name != MAIN) {
         _manager.tabClosed(_name);
         _manager.setVisible(MAIN);
-        close();
+        _close();
       }
     } else if (text == LOGOUT) {
       _manager.userLoggedOut();
     } else {
-      var tMsg = new BaseMessage(_name, text);
-      _manager.newMessage(tMsg);
+      _manager.newMessage(new BaseMessage(_name, text));
     }
   }
 
-  void setVisible() {
-    findOne("#ch-tabs").forEachChild((e) => e.withoutClass("active"));
-    findOne("#ch-$_escapedName").withClass("active");
-    findOne("#ch-contents").forEachChild((ch){
-      ch.withStyle((style){
-        style.display = "none";
-      });
-    });
-    findOne("#content-$_escapedName").show();
-    findOne("#msg-content-$_escapedName").get().focus();
-  }
-
-  void close() {
+  void _close() {
     findOne("#ch-$_escapedName").remove();
     findOne("#content-$_escapedName").remove();
   }
 
   void _displayMessage(String author, String text) {
-    var textParagraph = p().withText("$author: $text").get();
+    var textParagraph = paragraph().withText("$author: $text").get();
     findOne("#conversation-$_escapedName").withChildAtIndex(0, textParagraph);
   }
 

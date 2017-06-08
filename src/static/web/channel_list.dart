@@ -1,11 +1,16 @@
 import 'dart:html';
+import 'dart:async';
+
+import 'package:logging/logging.dart';
 
 import 'messages.dart';
 import 'html_utils.dart';
 import 'utils.dart';
-import 'dart:async';
 
-class ChannelList {
+class ChannelList implements MessageConsumer {
+  final Logger logger = new Logger('ChannelList');
+
+
   StreamController _onCreatedController = new StreamController.broadcast();
   StreamController _onSelectedController = new StreamController.broadcast();
 
@@ -13,13 +18,36 @@ class ChannelList {
   Stream<String> get createdChannel => _onCreatedController.stream;
 
   ChannelList() {
-    findOne("#ch-create").withOnClickListener((event) => createChannel());
-    findOne("#ch-name").withOnKeyPressListener(handleEnter((event) => createChannel()));
+    findOne("#ch-create").withOnClickListener((event) => _createChannel());
+    findOne("#ch-name")..withOnKeyPressListener(handleEnter((event) => _createChannel()));
+    logger.info("Created")
   }
 
-  void createChannel() => _onCreatedController.add(getChannelName());
+  void onMessage(Message msg) {
+    if (msg is ChannelAddedMsg) {
+      _handleChannelAddedMsg(msg);
+    } else if (msg is ChannelsListMsg) {
+      _handleChannelsListMsg(msg);
+    } else if (msg is ChannelRemovedMsg) {
+      _handleChannelRemovedMsg(msg);
+    }
+  }
 
-  Element createLinkElement(String channel) {
+  void _handleChannelAddedMsg(ChannelAddedMsg msg) {
+    findOne("#ch-list").withChild(_createLinkElement(msg.channel));
+  }
+
+  void _handleChannelsListMsg(ChannelsListMsg msg) {
+    findOne("#ch-list").withChildren(msg.channels.map((ch) => _createLinkElement(ch)));
+  }
+
+  void _handleChannelRemovedMsg(ChannelRemovedMsg msg) {
+    findOne("#ch-list-name-" + removeWhitespace(msg.channel)).remove();
+  }
+
+  void _createChannel() => _onCreatedController.add(_getChannelName());
+
+  Element _createLinkElement(String channel) {
     return link()
         .withId("ch-list-name-" + removeWhitespace(channel))
         .withText(channel)
@@ -29,20 +57,10 @@ class ChannelList {
         .get();
   }
 
-  String getChannelName() {
+  String _getChannelName() {
     InputElement element = findOne("#ch-name").get();
     var name = element.value;
     element.value = "";
     return name;
-  }
-
-  void onMessage(Message msg) {
-    if (msg is ChannelAddedMsg) {
-      findOne("#ch-list").withChild(createLinkElement(msg.channel));
-    } else if (msg is ChannelsListMsg) {
-      findOne("#ch-list").withChildren(msg.channels.map((ch) => createLinkElement(ch)));
-    } else if (msg is ChannelRemovedMsg) {
-      findOne("#ch-list-name-" + removeWhitespace(msg.channel)).get().remove();
-    }
   }
 }

@@ -4,18 +4,18 @@ import 'messages.dart';
 import 'utils.dart';
 import 'html_utils.dart';
 
-class ErrorsPanel {
+class ErrorsPanel implements MessageConsumer {
   int _id = 0;
 
   void onMessage(Message msg) {
     if (msg is ErrorMsg) {
-      var errorElem = create(this._id, msg.content);
+      var errorElem = _create(this._id, msg.content);
       findOne("#errors-list").withChild(errorElem);
       _id += 1;
     }
   }
 
-  Element create(int id, String text) {
+  Element _create(int id, String text) {
     var spanText = span().withText(text).get();
 
     var spanClose = span()

@@ -4,40 +4,12 @@ import 'dart:async';
 
 import 'messages.dart';
 
-class WebSocketWrapper {
-  WebSocket _socket;
-
-  WebSocketWrapper(this._socket);
-
-  void onOpen(fun) {
-    this._socket.onOpen.listen((e) => fun(e));
-  }
-
-  void onClose(fun) {
-    this._socket.onClose.listen((e) => fun(e));
-  }
-
-  void onError(fun) {
-    this._socket.onError.listen((e) => fun(e));
-  }
-
-  void onMessage(fun) {
-    this._socket.onMessage.listen((e) => fun(e));
-  }
-
-  void close() {
-    this._socket.close();
-  }
-
-  void send(String msg) {
-    this._socket.send(msg);
-  }
-}
 
 class WSClient {
   String sessionId;
-  WebSocketWrapper _socket;
+  WebSocket _socket;
   bool _closedByMe;
+
   StreamController _onMsgCtrl = new StreamController.broadcast();
   StreamController _onOpenCtrl = new StreamController.broadcast();
   StreamController _onCloseCtrl = new StreamController.broadcast();
@@ -51,35 +23,25 @@ class WSClient {
   Stream<bool> get errors => _onErrorCtrl.stream;
 
   void start() {
-    this._socket.onOpen((e) {
-      print("<----- connection opened ----->");
-      _onOpenCtrl.add(true);
-    });
+    this._socket.onOpen.listen((e) => _onOpenCtrl.add(true));
 
-    this._socket.onClose((e) {
-      print("<----- connection closed ----->");
-      if (!_closedByMe) {
-        _onCloseCtrl.add(true);
-      }
-    });
+    this._socket.onClose.listen((e) => _onCloseCtrl.add(true));
 
-    this._socket.onError((e) {
-      print("<----- error ----->");
-      _onErrorCtrl.add(true);
-    });
+    this._socket.onError.listen((e) => _onErrorCtrl.add(true));
 
-    this._socket.onMessage((e) {
+    this._socket.onMessage.listen((e){
       Map parsedMap = JSON.decode(e.data);
       var msg = fromJSONMap(parsedMap);
       print("[ON MESSAGE] Message: " + e.data.toString());
       //send(e.data);
       _onMsgCtrl.add(msg);
     });
+
   }
 
   void closeClient() {
     _closedByMe = true;
-    _socket.close();
+    this._socket.close();
   }
 
   void sendTextMessage(String text, String channel) {
