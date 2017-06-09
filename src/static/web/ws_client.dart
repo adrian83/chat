@@ -1,11 +1,15 @@
 import 'dart:html';
-import 'dart:convert';
 import 'dart:async';
+
+import 'package:logging/logging.dart';
 
 import 'messages.dart';
 
 
 class WSClient {
+  final Logger logger = new Logger('ChannelList');
+
+  MessageParser _parser = new MessageParser();
   String sessionId;
   WebSocket _socket;
   bool _closedByMe;
@@ -25,13 +29,16 @@ class WSClient {
   void start() {
     this._socket.onOpen.listen((e) => _onOpenCtrl.add(true));
 
-    this._socket.onClose.listen((e) => _onCloseCtrl.add(true));
+    this._socket.onClose.listen((e){
+      if (!_closedByMe) {
+         _onCloseCtrl.add(true);
+       }
+    });
 
     this._socket.onError.listen((e) => _onErrorCtrl.add(true));
 
     this._socket.onMessage.listen((e){
-      Map parsedMap = JSON.decode(e.data);
-      var msg = fromJSONMap(parsedMap);
+      var msg = _parser.parse(e.data.toString());
       print("[ON MESSAGE] Message: " + e.data.toString());
       //send(e.data);
       _onMsgCtrl.add(msg);
@@ -45,29 +52,35 @@ class WSClient {
   }
 
   void sendTextMessage(String text, String channel) {
-    var msg = new TextMsg(sessionId, "x", text, channel);
-    send(msg.toJSON());
+    var msg = new TextMsg(sessionId, sessionId, text, channel);
+    logger.info("Sending: $msg");
+    sendMsg(msg);
   }
 
   void sendCreateChannelMessage(String channelName) {
     var msg = new ChannelAddedMsg(sessionId, channelName);
-    send(msg.toJSON());
+    sendMsg(msg);
   }
 
   void sendUserLeftChannelMessage(String channelName) {
     var msg = new UserLeftChannelMsg(sessionId, channelName);
-    send(msg.toJSON());
+    sendMsg(msg);
   }
 
   void sendJoinChannelMessage(String channelName) {
     var msg = new UserJoinedChannelMsg(sessionId, channelName);
-    send(msg.toJSON());
+    sendMsg(msg);
   }
 
   void logout() {
-    print("logout sent");
     var msg = new LogoutMsg(this.sessionId);
-    send(msg.toJSON());
+    sendMsg(msg);
+  }
+
+  void sendMsg(Message msg) {
+    var str = _parser.stringify(msg);
+    logger.info("Sending stringified msg: $str");
+    this._socket.send(str);
   }
 
   void send(String msg) {

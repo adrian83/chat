@@ -10,7 +10,6 @@ import 'utils.dart';
 class ChannelList implements MessageConsumer {
   final Logger logger = new Logger('ChannelList');
 
-
   StreamController _onCreatedController = new StreamController.broadcast();
   StreamController _onSelectedController = new StreamController.broadcast();
 
@@ -20,7 +19,7 @@ class ChannelList implements MessageConsumer {
   ChannelList() {
     findOne("#ch-create").withOnClickListener((event) => _createChannel());
     findOne("#ch-name")..withOnKeyPressListener(handleEnter((event) => _createChannel()));
-    logger.info("Created")
+    logger.info("Created");
   }
 
   void onMessage(Message msg) {

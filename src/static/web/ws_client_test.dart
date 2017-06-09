@@ -1,12 +1,11 @@
 import "package:test/test.dart";
 import "package:mockito/mockito.dart";
 
-import 'dart:convert';
-import 'dart:async';
+import 'dart:html';
 
 import 'ws_client.dart';
 
-class WebSocketMock extends Mock implements WSClient {}
+class WebSocketMock extends Mock implements WebSocket {}
 
 
 void main() {

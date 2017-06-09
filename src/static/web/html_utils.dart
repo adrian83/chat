@@ -18,8 +18,12 @@ class MyElement {
   }
 
   MyElement withHref(String href) {
-    _elem.href = href;
+    _setHref(_elem, href);
     return this;
+  }
+
+  void _setHref(AnchorElement a, String href) {
+    a.href = href;
   }
 
   MyElement withOnClickListener(Function onClickListener) {
@@ -101,7 +105,7 @@ MyElement button() => new MyElement(new ButtonElement());
 
 MyElement textInput() => new MyElement(new InputElement(type: "text"));
 
-MyElement link() => new MyElement(new Element.tag('a'));
+MyElement link() => new MyElement(new AnchorElement());
 
 MyElement span() => new MyElement(new Element.tag('span'));
 
