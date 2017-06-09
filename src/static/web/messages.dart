@@ -60,33 +60,53 @@ class MessageParser {
 }
 
 class Message {
-  String msgType;
-  String senderId;
+  String _msgType;
+  String _senderId;
 
-  Message(this.msgType, this.senderId);
+  Message(this._msgType, this._senderId);
+
+  String get senderId => _senderId;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
-    map["msgType"] = msgType;
-    map["senderId"] = senderId;
+    map["msgType"] = _msgType;
+    map["senderId"] = _senderId;
     return map;
   }
 }
 
-class TextMsg extends Message {
-  String senderName;
-  String content;
-  String channel;
+class ChannelMessage extends Message {
+  String _channel;
 
-  TextMsg(String senderId, this.senderName, this.content, this.channel)
-      : super(TEXT_MSG, senderId);
+  ChannelMessage(String senderId, String msgType, this._channel)
+      : super(msgType, senderId);
+
+  String get channel => _channel;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
-    map["senderName"] = senderName;
-    map["content"] = content;
-    map["channel"] = channel;
+    map["channel"] = _channel;
+    return map;
+  }
+}
+
+class TextMsg extends ChannelMessage {
+  String _senderName;
+  String _content;
+
+
+  TextMsg(String senderId, String channel, this._senderName, this._content)
+      : super(senderId, TEXT_MSG, channel);
+
+  String get content => _content;
+  String get senderName => _senderName;
+
+  Map<String, Object> toJson() {
+    var map = new Map<String, Object>();
+    map.addAll(super.toJson());
+    map["senderName"] = _senderName;
+    map["content"] = _content;
     return map;
   }
 }
@@ -99,89 +119,62 @@ class UnknownOpMsg extends Message {
   UnknownOpMsg() : super(UNKNOWN, UNKNOWN);
 }
 
-class UserLeftChannelMsg extends Message {
-  String channel;
+class UserLeftChannelMsg extends ChannelMessage {
 
-  UserLeftChannelMsg(String senderId, this.channel)
-      : super(USER_LEFT_CHANNEL, senderId);
-
-  Map<String, Object> toJson() {
-    var map = new Map<String, Object>();
-    map.addAll(super.toJson());
-    map["channel"] = channel;
-    return map;
-  }
+  UserLeftChannelMsg(String senderId, String channel)
+      : super(senderId, USER_LEFT_CHANNEL, channel);
 }
 
-class UserJoinedChannelMsg extends Message {
-  String channel;
+class UserJoinedChannelMsg extends ChannelMessage {
 
-  UserJoinedChannelMsg(String senderId, this.channel)
-      : super(USER_JOINED_CHANNEL, senderId);
-
-  Map<String, Object> toJson() {
-    var map = new Map<String, Object>();
-    map.addAll(super.toJson());
-    map["channel"] = channel;
-    return map;
-  }
+  UserJoinedChannelMsg(String senderId, String channel)
+      : super(senderId, USER_JOINED_CHANNEL, channel);
 }
 
-class ChannelRemovedMsg extends Message {
-  String channel;
+class ChannelRemovedMsg extends ChannelMessage {
 
-  ChannelRemovedMsg(String senderId, this.channel)
-      : super(DEL_CHANNEL, senderId);
-
-  Map<String, Object> toJson() {
-    var map = new Map<String, Object>();
-    map.addAll(super.toJson());
-    map["channel"] = channel;
-    return map;
-  }
+  ChannelRemovedMsg(String senderId, String channel)
+      : super(senderId, DEL_CHANNEL, channel);
 }
 
-class ChannelAddedMsg extends Message {
-  String channel;
+class ChannelAddedMsg extends ChannelMessage {
 
-  ChannelAddedMsg(String senderId, this.channel) : super(ADD_CHANNEL, senderId);
-
-  Map<String, Object> toJson() {
-    var map = new Map<String, Object>();
-    map.addAll(super.toJson());
-    map["channel"] = channel;
-    return map;
-  }
+  ChannelAddedMsg(String senderId, String channel)
+      : super(senderId, ADD_CHANNEL, channel);
 }
 
 class ErrorMsg extends Message {
-  String senderName;
-  String content;
+  String _senderName;
+  String _content;
 
-  ErrorMsg(String senderId, this.senderName, this.content)
+  ErrorMsg(String senderId, this._senderName, this._content)
       : super(ERROR_MSG, senderId);
+
+  String get content => _content;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
-    map["senderName"] = senderName;
-    map["content"] = content;
+    map["senderName"] = _senderName;
+    map["content"] = _content;
     return map;
   }
 }
 
 class ChannelsListMsg extends Message {
-  String senderName;
-  List<String> channels;
+  String _senderName;
+  List<String> _channels;
 
-  ChannelsListMsg(String senderId, this.senderName, this.channels)
+  ChannelsListMsg(String senderId, this._senderName, this._channels)
       : super(CHANNELS_LIST, senderId);
+
+  List<String> get channels => _channels;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
-    map["senderName"] = senderName;
-    map["channels"] = channels;
+    map["senderName"] = _senderName;
+    map["channels"] = _channels;
     return map;
   }
 }

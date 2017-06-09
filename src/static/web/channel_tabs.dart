@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:html';
 
+import 'package:logging/logging.dart';
+
 import 'messages.dart';
 import 'html_utils.dart';
 import 'utils.dart';
@@ -17,6 +19,8 @@ class BaseMessage {
 }
 
 class ChannelsManager implements MessageConsumer {
+  final Logger logger = new Logger('ChannelsManager');
+
   String _clientId;
   Map<String, ChannelTab> _channels = new Map<String, ChannelTab>();
 
@@ -35,6 +39,7 @@ class ChannelsManager implements MessageConsumer {
   void tabClosed(String name) {
     _onTabClosedCtrl.add(name);
     _channels.remove(name);
+    logger.info("Tab with name '$name' should be closed");
   }
 
   void hideAll() {
@@ -51,6 +56,7 @@ class ChannelsManager implements MessageConsumer {
       var channel = new ChannelTab(name, this);
       channel.show();
       _channels[name] = channel;
+      logger.info("Tab with name '$name' should be added");
     }
   }
 
@@ -103,12 +109,15 @@ class ChannelsManager implements MessageConsumer {
 }
 
 class ChannelTab {
+  final Logger logger = new Logger('ChannelTab');
+
   ChannelsManager _manager;
   String _name;
   String _escapedName;
 
   ChannelTab(this._name, this._manager) {
     this._escapedName = removeWhitespace(_name);
+    logger.info("Created tab with name '$_name'");
   }
 
   void setVisible() {
@@ -116,6 +125,7 @@ class ChannelTab {
     findOne("#ch-$_escapedName").withClass("active");
     findOne("#content-$_escapedName").show();
     findOne("#msg-content-$_escapedName").get().focus();
+    logger.info("Tab with name '$_name' should be visible");
   }
 
   void show() {
@@ -182,14 +192,17 @@ class ChannelTab {
 
   void _onSent(e) {
     var text = _getMessageText();
+    logger.info("Sending text '$text' from tab with name '$_name'");
     if (text == EXIT) {
       if (_name != MAIN) {
         _manager.tabClosed(_name);
         _manager.setVisible(MAIN);
         _close();
+        logger.info("Exiting...");
       }
     } else if (text == LOGOUT) {
       _manager.userLoggedOut();
+      logger.info("Logging out...");
     } else {
       _manager.newMessage(new BaseMessage(_name, text));
     }

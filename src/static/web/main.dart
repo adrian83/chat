@@ -75,7 +75,11 @@ main() {
   }
 
   client.close.listen((b) => onSocketClose());
-  client.open.listen((b) => findOne("#connection-info").hide());
+  client.open.listen((b){
+    findOne("#connection-info").hide();
+    findOne("#panels").show();
+    findOne("#logout-info").show();
+  });
   client.errors.listen((b) => onSocketClose());
 
   void onTabClosed(String channelName) {

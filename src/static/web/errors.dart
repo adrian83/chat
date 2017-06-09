@@ -1,10 +1,14 @@
 import 'dart:html';
 
+import 'package:logging/logging.dart';
+
 import 'messages.dart';
 import 'utils.dart';
 import 'html_utils.dart';
 
 class ErrorsPanel implements MessageConsumer {
+  final Logger logger = new Logger('ErrorsPanel');
+
   int _id = 0;
 
   void onMessage(Message msg) {
@@ -16,6 +20,8 @@ class ErrorsPanel implements MessageConsumer {
   }
 
   Element _create(int id, String text) {
+    logger.info("Displaing error with id '$id' and text '$text'");
+
     var spanText = span().withText(text).get();
 
     var spanClose = span()

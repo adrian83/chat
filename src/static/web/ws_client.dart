@@ -52,7 +52,7 @@ class WSClient {
   }
 
   void sendTextMessage(String text, String channel) {
-    var msg = new TextMsg(sessionId, sessionId, text, channel);
+    var msg = new TextMsg(sessionId, channel, sessionId, text);
     logger.info("Sending: $msg");
     sendMsg(msg);
   }
