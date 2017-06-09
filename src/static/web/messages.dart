@@ -16,17 +16,29 @@ abstract class MessageConsumer {
   void onMessage(Message msg);
 }
 
+class MessageFactory {
+  String _senderId;
+
+  MessageFactory(this._senderId);
+
+  Message newTextMessage(String text, String channel) => new TextMsg(_senderId, channel, _senderId, text);
+  Message newCreateChannelMessage(String channelName) => new ChannelAddedMsg(_senderId, channelName);
+  Message newUserLeftChannelMessage(String channelName) => new UserLeftChannelMsg(_senderId, channelName);
+  Message newJoinChannelMessage(String channelName) => new UserJoinedChannelMsg(_senderId, channelName);
+  Message newLogoutMessage() => new LogoutMsg(_senderId);
+}
+
 class MessageParser {
   final Logger logger = new Logger('ChannelList');
 
   final JsonEncoder encoder = new JsonEncoder();
   final JsonDecoder decoder = new JsonDecoder();
 
-  String stringify(Message msg) {
+  String encode(Message msg) {
     return encoder.convert(msg);
   }
 
-  Message parse(String jsonStr) {
+  Message decode(String jsonStr) {
     logger.info("Parsing message: $jsonStr");
 
     Map json = decoder.convert(jsonStr);
@@ -46,7 +58,7 @@ class MessageParser {
       case TEXT_MSG:
         return new TextMsg(senderId, senderName, content, channel);
       case ERROR_MSG:
-        return new ErrorMsg(senderId, senderName, content);
+        return new ErrorMsg(senderId, content);
       case CHANNELS_LIST:
         return new ChannelsListMsg(senderId, senderName, channels);
       case USER_JOINED_CHANNEL:
@@ -144,10 +156,9 @@ class ChannelAddedMsg extends ChannelMessage {
 }
 
 class ErrorMsg extends Message {
-  String _senderName;
   String _content;
 
-  ErrorMsg(String senderId, this._senderName, this._content)
+  ErrorMsg(String senderId, this._content)
       : super(ERROR_MSG, senderId);
 
   String get content => _content;
@@ -155,7 +166,6 @@ class ErrorMsg extends Message {
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
-    map["senderName"] = _senderName;
     map["content"] = _content;
     return map;
   }

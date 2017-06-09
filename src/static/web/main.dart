@@ -10,7 +10,6 @@ import 'html_utils.dart';
 import 'package:logging/logging.dart';
 
 
-
 main() {
 
   Logger.root.level = Level.ALL;
@@ -24,53 +23,45 @@ main() {
   InputElement element = querySelector("#session-id");
   var sessionId = element.value;
 
-  var host = window.location.hostname +
-      (window.location.port != null ? ':' + window.location.port : '');
-  var wssocket = new WebSocket("ws://" + host + "/talk");
+  var host = window.location.hostname + (window.location.port != null ? ':' + window.location.port : '');
+  var wssocket = new WebSocket("ws://$host/talk");
 
   var client = new WSClient(sessionId, wssocket);
   var channelManager = new ChannelsManager(sessionId);
   var channelList = new ChannelList();
   var errorsPanel = new ErrorsPanel();
+  var messageFactory = new MessageFactory(sessionId);
 
   client.start();
 
-  void onMsg(Message msg) {
-    if (msg is LogoutMsg) {
-      client.closeClient();
-      window.location.assign('/logout');
-    } else if (msg is UserJoinedChannelMsg) {
-      if (channelManager.channelExists(msg.channel)) {
-        channelManager.setVisible(msg.channel);
-      } else {
-        channelManager.addChannel(msg.channel);
-        channelManager.setVisible(msg.channel);
-      }
-    }
-  }
 
-  void switchTab(String name) {
-    if (channelManager.channelExists(name)) {
-      channelManager.setVisible(name);
+  void switchTab(String channelName) {
+    if (channelManager.channelExists(channelName)) {
+      channelManager.setVisible(channelName);
     } else {
-      client.sendJoinChannelMessage(name);
+      var msg = messageFactory.newJoinChannelMessage(channelName);
+      client.send(msg);
     }
   }
 
   channelList.selectedChannel.listen((name) => switchTab(name));
-  channelList.createdChannel
-      .listen((name) => client.sendCreateChannelMessage(name));
+  channelList.createdChannel.listen((name) => client.send(messageFactory.newCreateChannelMessage(name)));
 
-  client.messages.listen((msg) => print("Data: " + msg.toString()));
-  client.messages.listen((msg) => channelManager.onMessage(msg));
-  client.messages.listen((msg) => channelList.onMessage(msg));
-  client.messages.listen((msg) => onMsg(msg));
+  var msgConsumers = [channelManager, channelList, errorsPanel];
+
+  client.messages.listen((msg){
+    msgConsumers.forEach((c){
+      c.onMessage(msg);
+    });
+    if (msg is LogoutMsg) {
+      client.closeClient();
+      window.location.assign('/logout');
+    }
+  });
+
 
   void onSocketClose() {
-    //hideElement("#panels");
-    //hideElement("#logout-info");
-    var errMsg = new ErrorMsg("system", "system",
-        "Connection has been closed. Maybe server is down.");
+    var errMsg = new ErrorMsg("system", "Connection has been closed. Maybe server is down.");
     errorsPanel.onMessage(errMsg);
   }
 
@@ -82,12 +73,8 @@ main() {
   });
   client.errors.listen((b) => onSocketClose());
 
-  void onTabClosed(String channelName) {
-    client.sendUserLeftChannelMessage(channelName);
-  }
 
-  channelManager.closedTabs.listen((name) => onTabClosed(name));
-  channelManager.loggedOut.listen((b) => client.logout());
-  channelManager.messages
-      .listen((msg) => client.sendTextMessage(msg.text, msg.channel));
+  channelManager.closedTabs.listen((name) => client.send(messageFactory.newUserLeftChannelMessage(name)));
+  channelManager.loggedOut.listen((b) => client.send(messageFactory.newLogoutMessage()));
+  channelManager.messages.listen((msg) => client.send(messageFactory.newTextMessage(msg.text, msg.channel)));
 }

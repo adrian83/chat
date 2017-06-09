@@ -38,9 +38,9 @@ class WSClient {
     this._socket.onError.listen((e) => _onErrorCtrl.add(true));
 
     this._socket.onMessage.listen((e){
-      var msg = _parser.parse(e.data.toString());
-      print("[ON MESSAGE] Message: " + e.data.toString());
-      //send(e.data);
+      var msgStr = e.data.toString();
+      logger.info("Received message string: $msgStr");
+      var msg = _parser.decode(msgStr);
       _onMsgCtrl.add(msg);
     });
 
@@ -51,40 +51,10 @@ class WSClient {
     this._socket.close();
   }
 
-  void sendTextMessage(String text, String channel) {
-    var msg = new TextMsg(sessionId, channel, sessionId, text);
-    logger.info("Sending: $msg");
-    sendMsg(msg);
-  }
-
-  void sendCreateChannelMessage(String channelName) {
-    var msg = new ChannelAddedMsg(sessionId, channelName);
-    sendMsg(msg);
-  }
-
-  void sendUserLeftChannelMessage(String channelName) {
-    var msg = new UserLeftChannelMsg(sessionId, channelName);
-    sendMsg(msg);
-  }
-
-  void sendJoinChannelMessage(String channelName) {
-    var msg = new UserJoinedChannelMsg(sessionId, channelName);
-    sendMsg(msg);
-  }
-
-  void logout() {
-    var msg = new LogoutMsg(this.sessionId);
-    sendMsg(msg);
-  }
-
-  void sendMsg(Message msg) {
-    var str = _parser.stringify(msg);
+  void send(Message msg) {
+    var str = _parser.encode(msg);
     logger.info("Sending stringified msg: $str");
     this._socket.send(str);
   }
 
-  void send(String msg) {
-    print("[SEND] JSON: " + msg);
-    this._socket.send(msg);
-  }
 }

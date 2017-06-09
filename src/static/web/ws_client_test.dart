@@ -4,11 +4,14 @@ import "package:mockito/mockito.dart";
 import 'dart:html';
 
 import 'ws_client.dart';
+import 'messages.dart';
 
 class WebSocketMock extends Mock implements WebSocket {}
 
 
 void main() {
+
+  var messageFactory = new MessageFactory("123-456");
 
   var webSocketMock = new WebSocketMock();
   var sessionId = "abc-def-ghi";
@@ -17,7 +20,7 @@ void main() {
 
   test("send(msg) should send given string message", () {
     // given
-    var msg = "Hello Dart";
+    var msg = messageFactory.newLogoutMessage();
 
     // when
     wsClient.send(msg);
