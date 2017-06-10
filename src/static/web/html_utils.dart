@@ -129,3 +129,7 @@ Function handleEnter(Function handler) {
   }
   return realHandler;
 }
+
+void changeLocation(String location) {
+  window.location.assign(location);
+}

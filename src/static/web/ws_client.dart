@@ -1,17 +1,18 @@
-import 'dart:html';
+//import 'dart:html';
 import 'dart:async';
 
 import 'package:logging/logging.dart';
 
 import 'messages.dart';
+import 'html_utils.dart';
 
 
-class WSClient {
+class WSClient implements MessageConsumer {
   final Logger logger = new Logger('ChannelList');
 
-  MessageParser _parser = new MessageParser();
+  MessageParser _parser;
   String sessionId;
-  WebSocket _socket;
+  var _socket;
   bool _closedByMe;
 
   StreamController _onMsgCtrl = new StreamController.broadcast();
@@ -19,7 +20,7 @@ class WSClient {
   StreamController _onCloseCtrl = new StreamController.broadcast();
   StreamController _onErrorCtrl = new StreamController.broadcast();
 
-  WSClient(this.sessionId, this._socket);
+  WSClient(this.sessionId, this._socket, this._parser);
 
   Stream<Message> get messages => _onMsgCtrl.stream;
   Stream<bool> get open => _onOpenCtrl.stream;
@@ -46,7 +47,14 @@ class WSClient {
 
   }
 
-  void closeClient() {
+  void onMessage(Message msg) {
+    if (msg is LogoutMsg) {
+      _closeClient();
+      changeLocation('/logout');
+    }
+  }
+
+  void _closeClient() {
     _closedByMe = true;
     this._socket.close();
   }

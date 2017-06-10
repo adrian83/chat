@@ -26,11 +26,13 @@ main() {
   var host = window.location.hostname + (window.location.port != null ? ':' + window.location.port : '');
   var wssocket = new WebSocket("ws://$host/talk");
 
-  var client = new WSClient(sessionId, wssocket);
+  var messageParser = new MessageParser();
+  var client = new WSClient(sessionId, wssocket, messageParser);
   var channelManager = new ChannelsManager(sessionId);
   var channelList = new ChannelList();
   var errorsPanel = new ErrorsPanel();
   var messageFactory = new MessageFactory(sessionId);
+
 
   client.start();
 
@@ -47,18 +49,13 @@ main() {
   channelList.selectedChannel.listen((name) => switchTab(name));
   channelList.createdChannel.listen((name) => client.send(messageFactory.newCreateChannelMessage(name)));
 
-  var msgConsumers = [channelManager, channelList, errorsPanel];
+  var msgConsumers = [channelManager, channelList, errorsPanel, client];
 
   client.messages.listen((msg){
     msgConsumers.forEach((c){
       c.onMessage(msg);
     });
-    if (msg is LogoutMsg) {
-      client.closeClient();
-      window.location.assign('/logout');
-    }
   });
-
 
   void onSocketClose() {
     var errMsg = new ErrorMsg("system", "Connection has been closed. Maybe server is down.");
