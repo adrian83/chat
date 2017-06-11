@@ -68,6 +68,7 @@ class ChannelsManager implements MessageConsumer {
   bool channelExists(String name) => _channels.containsKey(name);
 
   void onMessage(Message msg) {
+    logger.info("Received message: ${msg.toJson()}");
     if (msg is ChannelsListMsg) {
       _handleChannelsListMsg(msg);
     } else if (msg is UserJoinedChannelMsg) {
@@ -214,6 +215,7 @@ class ChannelTab {
   }
 
   void _displayMessage(String author, String text) {
+    logger.info("Displaing message from '$author' with content '$text'");
     var textParagraph = paragraph().withText("$author: $text").get();
     findOne("#conversation-$_escapedName").withChildAtIndex(0, textParagraph);
   }

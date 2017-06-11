@@ -56,7 +56,7 @@ class MessageParser {
       case ADD_CHANNEL:
         return new ChannelAddedMsg(senderId, channel);
       case TEXT_MSG:
-        return new TextMsg(senderId, senderName, content, channel);
+        return new TextMsg(senderId, channel, senderName, content);
       case ERROR_MSG:
         return new ErrorMsg(senderId, content);
       case CHANNELS_LIST:
