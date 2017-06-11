@@ -11,6 +11,8 @@ const (
 	RemoveChannelMsg = "REM_CH"
 	// ChannelsNamesMsg symbolizes message that contains names of all channel.
 	ChannelsNamesMsg = "CHAN_LIST_MSG"
+	// ErrorMsg symbolizes error message.
+	ErrorMsg = "ERROR"
 )
 
 const (
@@ -61,5 +63,15 @@ func ChannelsNamesMessage(channelNames []string) Message {
 		SenderID:   system,
 		SenderName: system,
 		Channels:   channelNames,
+	}
+}
+
+// ErrorMessage returns error message.
+func ErrorMessage(content string) Message {
+	return Message{
+		MsgType:    ErrorMsg,
+		SenderID:   system,
+		SenderName: system,
+		Content:    content,
 	}
 }

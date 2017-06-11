@@ -1,11 +1,18 @@
 package ws
 
 import (
+	"regexp"
+
 	"db"
 	"logger"
 
 	"fmt"
 	"io"
+)
+
+var (
+	channelNameRegexp = `^[a-zA-Z0-9_.-]*$`
+	validChannelName  = regexp.MustCompile(channelNameRegexp)
 )
 
 // NewClient returns new Client instance
@@ -151,6 +158,13 @@ func (c *DefaultClient) handleTextMessage(msg Message) {
 }
 
 func (c *DefaultClient) handleCreateChannelMessage(msg Message) {
+
+	if !validChannelName.MatchString(msg.Channel) {
+		errMsg := ErrorMessage(fmt.Sprintf("Invalid channel name. Name must match %v", channelNameRegexp))
+		c.connection.Send(errMsg)
+		return
+	}
+
 	channel := NewChannel(msg.Channel, c, c.channels)
 	if errors := c.channels.AddChannel(channel); len(errors) > 0 {
 		c.logSendErrors(msg, errors)
