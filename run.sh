@@ -13,6 +13,7 @@ usage() {
     go-deps-get           Downloads Go dependencies
 		go-deps-update        Update Go dependencies
     dart                  Downloads Dart dependencies and rebuilds Dart files
+		dart-test             Runs Dart tests
 
 EOF
 	exit 1
@@ -49,6 +50,12 @@ run-infra() {
 dart() {
 	set -e
 		cd src/static && pub get && pub build
+	set +e
+}
+
+dart-test() {
+	set -e
+		cd src/static && pub run test web/*test.dart
 	set +e
 }
 
@@ -96,6 +103,9 @@ case "$CMD" in
 	;;
 	dart)
 		dart
+	;;
+	dart-test)
+		dart-test
 	;;
 	*)
 		usage
