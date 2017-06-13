@@ -1,4 +1,5 @@
 import 'dart:html';
+import 'dart:convert';
 
 import 'ws_client.dart';
 import 'channel_tabs.dart';
@@ -26,7 +27,7 @@ main() {
   var host = window.location.hostname + (window.location.port != null ? ':' + window.location.port : '');
   var wssocket = new WebSocket("ws://$host/talk");
 
-  var messageParser = new MessageParser();
+  var messageParser = new MessageParser(new JsonEncoder(), new JsonDecoder());
   var client = new WSClient(sessionId, wssocket, messageParser);
   var channelManager = new ChannelsManager(sessionId);
   var channelList = new ChannelList();

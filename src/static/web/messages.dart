@@ -31,17 +31,19 @@ class MessageFactory {
 class MessageParser {
   final Logger logger = new Logger('ChannelList');
 
-  final JsonEncoder encoder = new JsonEncoder();
-  final JsonDecoder decoder = new JsonDecoder();
+  final JsonEncoder _encoder;
+  final JsonDecoder _decoder;
 
+  MessageParser(this._encoder, this._decoder);
+  
   String encode(Message msg) {
-    return encoder.convert(msg);
+    return _encoder.convert(msg);
   }
 
   Message decode(String jsonStr) {
     logger.info("Parsing message: $jsonStr");
 
-    Map json = decoder.convert(jsonStr);
+    Map json = _decoder.convert(jsonStr);
 
     var msgType = json["msgType"];
     var senderId = json["senderId"];
