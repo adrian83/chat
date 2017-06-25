@@ -73,5 +73,6 @@ func (c wsConnection) Send(msg Message) error {
 
 // Close closes the connection
 func (c wsConnection) Close() error {
+	close(c.incomming)
 	return c.connnection.Close()
 }

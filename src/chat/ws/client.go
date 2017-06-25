@@ -125,6 +125,7 @@ func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 // Stop stops client.
 func (c *DefaultClient) Stop() error {
 	c.interrupt <- true
+	close(c.interrupt)
 	return c.connection.Close()
 }
 

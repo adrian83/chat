@@ -35,7 +35,7 @@ func main() {
 				Password: "Password-" + strID,
 			}
 
-			connection := NewMockConnection()
+			connection := newMockConnection()
 			go connection.Start()
 
 			client := ws.NewClient(strID, user, connection, channels)
@@ -59,7 +59,7 @@ func main() {
 			time.Sleep(time.Second * 1)
 
 			time.Sleep(time.Second * 1)
-			go func(connection *MockConnection, clientId string, channels ws.Channels) {
+			go func(connection *mockConnection, clientId string, channels ws.Channels) {
 				for ii := 0; ii < 500; ii++ {
 					msg := ws.Message{
 						MsgType:    "TEXT_MSG",
@@ -107,40 +107,41 @@ func main() {
 	time.Sleep(time.Second * 30)
 }
 
-func NewMockConnection() *MockConnection {
+func newMockConnection() *mockConnection {
 	c := make(chan ws.CommunicationResult, 10)
-	return &MockConnection{
+	return &mockConnection{
 		communication: c,
 	}
 }
 
-type MockConnection struct {
+type mockConnection struct {
 	communication chan ws.CommunicationResult
 	channels      ws.Channels
 }
 
-func (c *MockConnection) Receive(msg ws.Message) {
+func (c *mockConnection) Receive(msg ws.Message) {
 	c.communication <- ws.CommunicationResult{
 		Message: msg,
 		Error:   nil,
 	}
 }
 
-func (c *MockConnection) Send(msg ws.Message) error {
+func (c *mockConnection) Send(msg ws.Message) error {
 	//logger.Infof("MockConnection", "Send", "[Message] %v", msg)
 	return nil
 }
 
-func (c *MockConnection) Close() error {
+func (c *mockConnection) Close() error {
 	logger.Info("MockConnection", "Close", "Close")
+	close(c.communication)
 	return nil
 }
 
-func (c *MockConnection) Start() {
+func (c *mockConnection) Start() {
 
 }
 
-func (c *MockConnection) Incomming() chan ws.CommunicationResult {
+func (c *mockConnection) Incomming() chan ws.CommunicationResult {
 	//logger.Info("MockConnection", "Incomming", "incomming")
 	return c.communication
 }
