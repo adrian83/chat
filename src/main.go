@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	config "chatconfig"
-	"db"
-	"handler"
-	"logger"
-	chatsession "session"
-	"ws"
+	"chat/config"
+	"chat/db"
+	"chat/handler"
+	"chat/logger"
+	"chat/session"
+	"chat/ws"
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
@@ -96,7 +96,7 @@ func main() {
 	// ---------------------------------------
 	// useful structures
 	// ---------------------------------------
-	simpleSession := chatsession.New(sessionStore)
+	simpleSession := session.New(sessionStore)
 
 	userRepository := db.NewUserRepository(database)
 
@@ -144,18 +144,21 @@ func main() {
 
 	<-stopChan
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	server.Shutdown(ctx)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err = server.Shutdown(ctx); err != nil {
+		logger.Warnf("Main", "main", "Error while stopping server. Error: %v", err)
+	}
 
 	logger.Info("Main", "main", "Server stopped.")
-
 }
 
-func connect(simpleSession *chatsession.Session, channels ws.Channels) func(*websocket.Conn) {
+func connect(simpleSession *session.Session, channels ws.Channels) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 
-		sessionID := chatsession.FindSessionID(wsc.Request())
+		sessionID := session.FindSessionID(wsc.Request())
 		if sessionID == "" {
 			logger.Errorf("Main", "Connect", "Error while getting sessionID from WebSocket.")
 			return
