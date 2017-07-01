@@ -29,7 +29,6 @@ type Channels interface {
 	AddClientToChannel(channelName string, client Client)
 	RemoveClientFromChannel(channelName string, client Client) []SendError
 	AddClient(client Client) error
-	RemoveClient(client Client)
 }
 
 // DefaultChannels struct represents collections of all channels.
@@ -153,13 +152,4 @@ func (ch *DefaultChannels) AddClient(client Client) error {
 
 	channelNamesMsg := ChannelsNamesMessage(ch.Names())
 	return client.Send(channelNamesMsg)
-}
-
-// RemoveClient removes client.
-func (ch *DefaultChannels) RemoveClient(client Client) {
-	ch.lock.RLock()
-	for _, channel := range ch.channels {
-		channel.RemoveClientFromChannel(client)
-	}
-	ch.lock.RUnlock()
 }

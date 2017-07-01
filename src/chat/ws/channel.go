@@ -1,7 +1,7 @@
 package ws
 
 import (
-	//"logger"
+	"chat/logger"
 	"sync"
 )
 
@@ -27,7 +27,6 @@ type Channel interface {
 	FindClient(clientID string) (Client, bool)
 	SendToEveryone(msg Message) []SendError
 	RemoveClient(client Client) []SendError
-	RemoveClientFromChannel(client Client)
 	AddClient(client Client)
 }
 
@@ -67,11 +66,10 @@ func (ch *DefaultChannel) Clients() map[string]Client {
 
 // SendToEveryone sends message to everyone from that channel.
 func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
-	//logger.Infof("Channel", "SendToEveryone", "Sending msg to everyone from channel '%v'.", ch.name)
 	errors := make([]SendError, 0)
 	ch.lock.RLock()
 	for _, client := range ch.clients {
-		//logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
+		logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
 		if err := client.Send(msg); err != nil {
 			sendErr := SendError{
 				Client: client,
@@ -84,15 +82,6 @@ func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
 	return errors
 }
 
-// RemoveClientFromChannel removes client from the channel.
-func (ch *DefaultChannel) RemoveClientFromChannel(client Client) {
-	if ch.name != main {
-		ch.lock.Lock()
-		delete(ch.clients, client.ID())
-		ch.lock.Unlock()
-	}
-}
-
 // AddClient adds client to channel.
 func (ch *DefaultChannel) AddClient(client Client) {
 	ch.lock.Lock()
@@ -102,19 +91,20 @@ func (ch *DefaultChannel) AddClient(client Client) {
 
 // RemoveClient removes client from the channel.
 func (ch *DefaultChannel) RemoveClient(client Client) []SendError {
-	if ch.name != main {
+	if ch.name == main {
+		return make([]SendError, 0)
+	}
 
-		ch.lock.Lock()
-		delete(ch.clients, client.ID())
-		ch.lock.Unlock()
+	ch.lock.Lock()
+	delete(ch.clients, client.ID())
+	ch.lock.Unlock()
 
-		if ch.Empty() {
-			ch.channels.RemoveChannel(ch.Name())
+	if ch.Empty() {
+		ch.channels.RemoveChannel(ch.Name())
 
-			msg := NewRemoveChannelMessage(ch.name)
-			mainChannel := ch.channels.GetMainChannel()
-			return mainChannel.SendToEveryone(msg)
-		}
+		msg := NewRemoveChannelMessage(ch.name)
+		mainChannel := ch.channels.GetMainChannel()
+		return mainChannel.SendToEveryone(msg)
 	}
 	return make([]SendError, 0)
 }

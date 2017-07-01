@@ -11,9 +11,9 @@ usage() {
     run-infra             Starts Docker, RethinkDB and Redis
     run-go                Starts application (go run main.go)
     go-deps-get           Downloads Go dependencies
-		go-deps-update        Update Go dependencies
+    go-deps-update        Update Go dependencies
     dart                  Downloads Dart dependencies and rebuilds Dart files
-		dart-test             Runs Dart tests
+    dart-test             Runs Dart tests
 
 EOF
 	exit 1
