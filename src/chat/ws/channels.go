@@ -8,13 +8,9 @@ import (
 // NewChannels returns new Channels struct.
 func NewChannels() Channels {
 	ch := make(map[string]Channel)
-	ch[main] = &DefaultChannel{
-		name:    main,
-		clients: make(map[string]Client),
-	}
-	channels := DefaultChannels{
-		channels: ch,
-	}
+	channels := DefaultChannels{channels: ch}
+	mainChannel := NewMainChannel(&channels)
+	ch[main] = mainChannel
 	return &channels
 }
 
@@ -28,7 +24,6 @@ type Channels interface {
 	FindChannel(name string) (Channel, bool)
 	AddClientToChannel(channelName string, client Client)
 	RemoveClientFromChannel(channelName string, client Client) []SendError
-	AddClient(client Client) error
 }
 
 // DefaultChannels struct represents collections of all channels.
@@ -142,14 +137,4 @@ func (ch *DefaultChannels) RemoveClientFromChannel(channelName string, client Cl
 		}
 	}
 	return make([]SendError, 0)
-}
-
-// AddClient registers new client and sends him some information
-func (ch *DefaultChannels) AddClient(client Client) error {
-	ch.lock.RLock()
-	ch.channels[main].AddClient(client)
-	ch.lock.RUnlock()
-
-	channelNamesMsg := ChannelsNamesMessage(ch.Names())
-	return client.Send(channelNamesMsg)
 }

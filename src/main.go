@@ -171,8 +171,9 @@ func connect(simpleSession *session.Session, channels ws.Channels) func(*websock
 		}
 
 		client := ws.NewClient(sessionID, user, ws.NewConnection(wsc), channels)
+		mainChannel := channels.GetMainChannel()
 
-		if err := channels.AddClient(client); err != nil {
+		if err := mainChannel.AddClient(client); err != nil {
 			logger.Infof("Main", "Connect", "Error while sending message: %v", err)
 		}
 

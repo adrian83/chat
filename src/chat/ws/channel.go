@@ -27,7 +27,7 @@ type Channel interface {
 	FindClient(clientID string) (Client, bool)
 	SendToEveryone(msg Message) []SendError
 	RemoveClient(client Client) []SendError
-	AddClient(client Client)
+	AddClient(client Client) error
 }
 
 // DefaultChannel struct representing chat channel.
@@ -83,10 +83,11 @@ func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
 }
 
 // AddClient adds client to channel.
-func (ch *DefaultChannel) AddClient(client Client) {
+func (ch *DefaultChannel) AddClient(client Client) error {
 	ch.lock.Lock()
 	ch.clients[client.ID()] = client
 	ch.lock.Unlock()
+	return nil
 }
 
 // RemoveClient removes client from the channel.
@@ -116,4 +117,31 @@ func NewChannel(name string, client Client, channels Channels) Channel {
 		clients:  map[string]Client{client.ID(): client},
 		channels: channels,
 	}
+}
+
+// MainChannel struct representing main chat channel.
+type MainChannel struct {
+	DefaultChannel
+}
+
+// RemoveClient removes client from the channel.
+func (ch *MainChannel) RemoveClient(client Client) []SendError {
+	return make([]SendError, 0)
+}
+
+// NewMainChannel functions returns new Channel struct.
+func NewMainChannel(channels Channels) Channel {
+	return &MainChannel{DefaultChannel{
+		name:     main,
+		clients:  map[string]Client{},
+		channels: channels,
+	},
+	}
+}
+
+// AddClient adds client to channel.
+func (ch *MainChannel) AddClient(client Client) error {
+	ch.DefaultChannel.AddClient(client)
+	channelNamesMsg := ChannelsNamesMessage(ch.channels.Names())
+	return client.Send(channelNamesMsg)
 }
