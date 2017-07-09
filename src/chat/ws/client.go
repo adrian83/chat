@@ -78,7 +78,15 @@ outer:
 				if msgToClient.Error == io.EOF {
 					c.handleLogoutMessage(msg)
 					logger.Warnf("Client", "Start", "WAAAAAT! EOF! client %v. Error: %v", c, msgToClient.Error)
-					break outer
+					//logger.Infof("Client", "Start", "Logging out client: %v", c)
+					for _, channel := range c.channels.ClientsChannels(c) {
+						if errors := channel.RemoveClient(c); len(errors) > 0 {
+							c.logSendErrors(msg, errors)
+						}
+					}
+
+					// stop client
+					c.interrupt <- true
 				}
 
 				logger.Warnf("Client", "Start", "Error while getting message for client %v. Error: %v", c, msgToClient.Error)
