@@ -34,7 +34,7 @@ run-rethink() {
 
 run-redis() {
 	set -e
-		docker run -p 6380:6379 -v $PWD/infrastructure/redis:/data -d redis redis-server --appendonly yes
+		docker run -p 6380:6379 -v $PWD/infrastructure/redis:/data -d redis redis-server 
 		echo "Redis is listening on port 6380. Data is stored inside 'infrastructure/redis' directory"
 	set +e
 }
