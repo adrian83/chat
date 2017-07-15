@@ -32,7 +32,7 @@ func NewClient(ID string, user db.User, conn Connection, channels Channels) Clie
 type Client interface {
 	Send(msg Message) error
 	Start()
-	Stop() error
+	Stop()
 	ID() string
 }
 
@@ -67,8 +67,12 @@ outer:
 	for {
 		//logger.Infof("Client", "Start", "%v waithing for a msg", c)
 		select {
-		case msgToClient := <-c.connection.Incomming():
-			//logger.Infof("Client", "Start", "%v received incomming message: %v", c, msgToClient)
+		case msgToClient, ok := <-c.connection.Incomming():
+
+			if !ok {
+				c.Stop()
+				continue
+			}
 
 			msg := msgToClient.Message
 			msg.SenderName = c.user.Name
@@ -78,12 +82,6 @@ outer:
 				if msgToClient.Error == io.EOF {
 					c.handleLogoutMessage(msg)
 					logger.Warnf("Client", "Start", "WAAAAAT! EOF! client %v. Error: %v", c, msgToClient.Error)
-					//logger.Infof("Client", "Start", "Logging out client: %v", c)
-					for _, channel := range c.channels.ClientsChannels(c) {
-						if errors := channel.RemoveClient(c); len(errors) > 0 {
-							c.logSendErrors(msg, errors)
-						}
-					}
 
 					// stop client
 					c.interrupt <- true
@@ -97,13 +95,25 @@ outer:
 
 			//logger.Infof("Client", "Start", "%v handled incomming message: %v", c, msgToClient)
 		case <-c.interrupt:
-			logger.Infof("Client", "Start", "%v received interupt msg", c)
+			logger.Infof("Client", "Start", "%v received interupt signal", c)
 			//close(c.interrupt)
+
+			logger.Infof("Client", "Start", "Removing %v from channels", c)
+			for _, channel := range c.channels.ClientsChannels(c) {
+				if errors := channel.RemoveClient(c); len(errors) > 0 {
+					logger.Infof("Client", "Start", "Error(s) while removing %v from channels", c)
+				}
+			}
+
+			if err := c.connection.Close(); err != nil {
+				logger.Warnf("Client", "Start", "Error in %v while stopping connection. Error: %v", c, err)
+			}
 			break outer
 
 		}
 		//logger.Warnf("Client", "Start", "%v Outside of select", c)
 	}
+
 	logger.Infof("Client", "Start", "%v end", c)
 }
 
@@ -131,20 +141,13 @@ func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
 }
 
 // Stop stops client.
-func (c *DefaultClient) Stop() error {
+func (c *DefaultClient) Stop() {
 	c.interrupt <- true
-	close(c.interrupt)
-	return c.connection.Close()
 }
 
 func (c *DefaultClient) handleLogoutMessage(msg Message) {
 	// remove client from channels
 	logger.Infof("Client", "Start", "Logging out client: %v", c)
-	for _, channel := range c.channels.ClientsChannels(c) {
-		if errors := channel.RemoveClient(c); len(errors) > 0 {
-			c.logSendErrors(msg, errors)
-		}
-	}
 
 	// stop client
 	c.interrupt <- true

@@ -3,8 +3,6 @@ package ws
 import (
 	"chat/logger"
 
-	"io"
-
 	"golang.org/x/net/websocket"
 )
 
@@ -44,6 +42,7 @@ func NewConnection(connnection *websocket.Conn) Connection {
 // Start starts the connection.
 func (c wsConnection) Start() {
 	for {
+
 		logger.Info("wsConnection", "Start", "Waiting for message")
 
 		msg := Message{}
@@ -54,8 +53,8 @@ func (c wsConnection) Start() {
 			Error:   err,
 		}
 
-		if err == io.EOF {
-			logger.Info("wsConnection", "Start", "Received EOF. Exiting")
+		if err != nil {
+			logger.Infof("wsConnection", "Start", "Error while receiving msg. Error: %v", err)
 			break
 		}
 	}
@@ -73,6 +72,6 @@ func (c wsConnection) Send(msg Message) error {
 
 // Close closes the connection
 func (c wsConnection) Close() error {
-	close(c.incomming)
+	//close(c.incomming)
 	return c.connnection.Close()
 }

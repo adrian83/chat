@@ -82,7 +82,6 @@ class ChannelsManager implements MessageConsumer {
 
   void _handleChannelsListMsg(ChannelsListMsg msg) {
     _addAndShowChannel(MAIN);
-    //msg.channels.forEach((name) => addChannel(name));
   }
 
   void _handleTextMsg(TextMsg msg) {
