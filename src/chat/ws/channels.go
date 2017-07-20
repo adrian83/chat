@@ -1,7 +1,7 @@
 package ws
 
 import (
-	//"logger"
+	"chat/logger"
 	"sync"
 )
 
@@ -24,12 +24,18 @@ type Channels interface {
 	FindChannel(name string) (Channel, bool)
 	AddClientToChannel(channelName string, client Client)
 	RemoveClientFromChannel(channelName string, client Client) []SendError
+	RemoveClient(client Client)
 }
 
 // DefaultChannels struct represents collections of all channels.
 type DefaultChannels struct {
 	lock     sync.RWMutex
 	channels map[string]Channel
+}
+
+// RemoveClient removes client from all channels.
+func (ch *DefaultChannels) RemoveClient(client Client) {
+	logger.Infof("Channels", "RemoveClient", "Removing Client %v from all channels (NOT IMPLEMENTED)", client)
 }
 
 // GetMainChannel returns main channel.
@@ -85,13 +91,7 @@ func (ch *DefaultChannels) AddChannel(channel Channel) []SendError {
 		// if channel exists, add every client from given channel to existing one
 		sendErrors := make([]SendError, 0)
 		for name, client := range channel.Clients() {
-			if err := client.Send(msg); err != nil {
-				sendErrors = append(sendErrors, SendError{
-					Client: client,
-					Err:    err,
-				})
-				continue
-			}
+			client.Send(msg)
 			existingChannel.Clients()[name] = client
 		}
 		return sendErrors

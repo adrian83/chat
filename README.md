@@ -9,10 +9,9 @@ Simple chat application written in [Go](https://golang.org/) and [Dart](https://
 
 
 ### RUNNING
-Shortest path to run this application is:
 1. `./run.sh dart`
-2. `./run.sh run-infra`
-3. `./run.sh go-deps`
+2. `./run.sh go-deps-get`
+3. `./run.sh run-infra`
 4. `./run.sh run-go`
 
 

@@ -70,13 +70,7 @@ func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
 	ch.lock.RLock()
 	for _, client := range ch.clients {
 		logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
-		if err := client.Send(msg); err != nil {
-			sendErr := SendError{
-				Client: client,
-				Err:    err,
-			}
-			errors = append(errors, sendErr)
-		}
+		client.Send(msg)
 	}
 	ch.lock.RUnlock()
 	return errors
@@ -143,5 +137,6 @@ func NewMainChannel(channels Channels) Channel {
 func (ch *MainChannel) AddClient(client Client) error {
 	ch.DefaultChannel.AddClient(client)
 	channelNamesMsg := ChannelsNamesMessage(ch.channels.Names())
-	return client.Send(channelNamesMsg)
+	client.Send(channelNamesMsg)
+	return nil
 }
