@@ -8,9 +8,24 @@ import (
 // NewChannels returns new Channels struct.
 func NewChannels() Channels {
 	ch := make(map[string]Channel)
-	channels := DefaultChannels{channels: ch}
+
+	interrupt := make(chan bool, 5)
+	channelsListRequests := make(chan Client, 50)
+	addClientRequest := make(chan clientAndChannel, 50)
+	createChannelRequest := make(chan clientAndChannel, 50)
+
+	channels := DefaultChannels{
+		channels:             ch,
+		channelsListRequests: channelsListRequests,
+		interrupt:            interrupt,
+		addClientRequest:     addClientRequest,
+		createChannelRequest: createChannelRequest,
+	}
 	mainChannel := NewMainChannel(&channels)
 	ch[main] = mainChannel
+
+	go channels.start()
+
 	return &channels
 }
 
@@ -18,24 +33,94 @@ func NewChannels() Channels {
 type Channels interface {
 	Names() []string
 	GetMainChannel() Channel
-	ClientsChannels(client Client) map[string]Channel
+	ClientsChannels(client Client)
 	AddChannel(channel Channel) []SendError
 	RemoveChannel(name string)
 	FindChannel(name string) (Channel, bool)
 	AddClientToChannel(channelName string, client Client)
 	RemoveClientFromChannel(channelName string, client Client) []SendError
 	RemoveClient(client Client)
+
+	CreateChannel(channel string, client Client)
+}
+
+type clientAndChannel struct {
+	client  Client
+	channel string
 }
 
 // DefaultChannels struct represents collections of all channels.
 type DefaultChannels struct {
 	lock     sync.RWMutex
 	channels map[string]Channel
+
+	interrupt            chan bool
+	channelsListRequests chan Client
+	addClientRequest     chan clientAndChannel
+	createChannelRequest chan clientAndChannel
+}
+
+func (ch *DefaultChannels) start() {
+	logger.Info("DefaultChannels", "start", "Starting DefaultChannels")
+
+mainLoop:
+	for {
+		select {
+		case client := <-ch.channelsListRequests:
+
+			channels := make([]string, 0)
+
+			for _, channel := range ch.channels {
+				if _, exists := channel.FindClient(client.ID()); exists {
+					channels = append(channels, channel.Name())
+				}
+			}
+
+			msg := ChannelsNamesMessage(channels)
+			client.Send(msg)
+
+		case cac := <-ch.addClientRequest:
+			if channel, exists := ch.FindChannel(cac.channel); exists {
+				channel.AddClient(cac.client)
+				ujc := NewUserJoinedChannelMessage(cac.channel, cac.client.ID())
+				cac.client.Send(ujc)
+			} else {
+				logger.Infof("DefaultChannels", "start", "Channel %v does not exist. Client %v cannot join", cac.channel, cac.client)
+			}
+
+		case cac := <-ch.createChannelRequest:
+			logger.Infof("DefaultChannels", "start", "Create channel request from %v. Channel name: %v", cac.client, cac.channel)
+
+			if _, exists := ch.FindChannel(cac.channel); !exists {
+				cha := NewChannel(cac.channel, cac.client, ch)
+				ch.AddChannel(cha)
+				//ncm := NewAddChannelMessage(cac.channel)
+				//cac.client.Send(ncm)
+			} else {
+				logger.Infof("DefaultChannels", "start", "Channel %v already exists. Client %v cannot create it", cac.channel, cac.client)
+			}
+
+		case <-ch.interrupt:
+			break mainLoop
+
+		}
+	}
+
+	logger.Info("DefaultChannels", "start", "Stopping DefaultChannels")
+}
+
+// CreateChannel creates new request for creating new channel.
+func (ch *DefaultChannels) CreateChannel(channelName string, client Client) {
+	logger.Info("DefaultChannels", "CreateChannel", "CreateChannel")
+	ch.createChannelRequest <- clientAndChannel{
+		client:  client,
+		channel: channelName,
+	}
 }
 
 // RemoveClient removes client from all channels.
 func (ch *DefaultChannels) RemoveClient(client Client) {
-	logger.Infof("Channels", "RemoveClient", "Removing Client %v from all channels (NOT IMPLEMENTED)", client)
+	logger.Infof("DefaultChannels", "RemoveClient", "Removing Client %v from all channels (NOT IMPLEMENTED)", client)
 }
 
 // GetMainChannel returns main channel.
@@ -55,17 +140,9 @@ func (ch *DefaultChannels) RemoveChannel(name string) {
 	}
 }
 
-// ClientsChannels returns all clients channels.
-func (ch *DefaultChannels) ClientsChannels(client Client) map[string]Channel {
-	channels := make(map[string]Channel, 0)
-	ch.lock.RLock()
-	for _, channel := range ch.channels {
-		if _, exists := channel.FindClient(client.ID()); exists {
-			channels[channel.Name()] = channel
-		}
-	}
-	ch.lock.RUnlock()
-	return channels
+// ClientsChannels will return list of channels to given client.
+func (ch *DefaultChannels) ClientsChannels(client Client) {
+	ch.channelsListRequests <- client
 }
 
 // Names return names of all channels.
@@ -124,8 +201,9 @@ func (ch *DefaultChannels) FindChannel(channelName string) (Channel, bool) {
 
 // AddClientToChannel adds given client to channel with given name.
 func (ch *DefaultChannels) AddClientToChannel(channelName string, client Client) {
-	if channel, ok := ch.FindChannel(channelName); ok {
-		channel.AddClient(client)
+	ch.addClientRequest <- clientAndChannel{
+		client:  client,
+		channel: channelName,
 	}
 }
 

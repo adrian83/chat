@@ -170,15 +170,14 @@ func connect(simpleSession *session.Session, channels ws.Channels) func(*websock
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, ws.NewConnection(wsc), channels)
-		mainChannel := channels.GetMainChannel()
+		client := ws.NewClient(sessionID, user, channels, wsc)
 
-		if err := mainChannel.AddClient(client); err != nil {
-			logger.Infof("Main", "Connect", "Error while sending message: %v", err)
-		}
+		mainChannel := channels.GetMainChannel()
+		mainChannel.AddClient(client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 
-		client.Start()
+		go client.StartSending()
+		client.StartReceiving()
 	}
 }

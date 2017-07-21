@@ -60,8 +60,13 @@ func (c *DefaultClient) StartSending() {
 mainLoop:
 	for {
 		select {
-		case s := <-c.messagesToSend:
-			logger.Infof("Client", "StartSending", "Client %v, message %v", c, s)
+		case msg := <-c.messagesToSend:
+			logger.Infof("Client", "StartSending", "Client %v will send message %v", c, msg)
+
+			if err := websocket.JSON.Send(c.wsConnnection, msg); err != nil {
+				logger.Warnf("Client", "StartSending", "Client %v cannot send message.Error: %v", c, err)
+			}
+
 		case b := <-c.stopSending:
 			logger.Infof("Client", "StartSending", "Client %v, stop %v", c, b)
 			c.channels.RemoveClient(c)
@@ -94,6 +99,8 @@ mainLoop:
 		msg.SenderName = c.user.Name
 		msg.SenderID = c.id
 
+		logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
+
 		c.handleMessage(msg)
 
 	}
@@ -123,7 +130,7 @@ func (c *DefaultClient) handleMessage(msg Message) {
 		c.handleTextMessage(msg)
 	case "ADD_CH":
 		c.handleCreateChannelMessage(msg)
-	case "USER_JOINED_CH":
+	case UserJoinedChannelMsg:
 		c.handleJoinChannelMessage(msg)
 	case "USER_LEFT_CH":
 		c.handleLeaveChannelMessage(msg)
@@ -148,33 +155,30 @@ func (c *DefaultClient) handleLogoutMessage(msg Message) {
 }
 
 func (c *DefaultClient) handleTextMessage(msg Message) {
-	channel, ok := c.channels.ClientsChannels(c)[msg.Channel]
-	if ok {
-		if errors := channel.SendToEveryone(msg); len(errors) > 0 {
-			c.logSendErrors(msg, errors)
-		}
-	}
+	//channel, ok := c.channels.ClientsChannels(c)[msg.Channel]
+	//if ok {
+	//	if errors := channel.SendToEveryone(msg); len(errors) > 0 {
+	//		c.logSendErrors(msg, errors)
+	//	}
+	//}
 }
 
 func (c *DefaultClient) handleCreateChannelMessage(msg Message) {
-
+	logger.Infof("DefaultClient", "handleCreateChannelMessage", "handleCreateChannelMessage: %v", c)
 	if !validChannelName.MatchString(msg.Channel) {
 		errMsg := ErrorMessage(fmt.Sprintf("Invalid channel name. Name must match %v", channelNameRegexp))
 		c.Send(errMsg)
 		return
 	}
-
-	channel := NewChannel(msg.Channel, c, c.channels)
-	if errors := c.channels.AddChannel(channel); len(errors) > 0 {
-		c.logSendErrors(msg, errors)
-	}
+	logger.Infof("DefaultClient", "handleCreateChannelMessage", "handleCreateChannelMessage: %v", c)
+	c.channels.CreateChannel(msg.Channel, c)
 }
 
 func (c *DefaultClient) handleJoinChannelMessage(msg Message) {
-	if _, ok := c.channels.ClientsChannels(c)[msg.Channel]; !ok {
-		c.channels.AddClientToChannel(msg.Channel, c)
-		c.Send(msg)
-	}
+
+	c.channels.AddClientToChannel(msg.Channel, c)
+	//	c.Send(msg)
+	//}
 }
 
 func (c *DefaultClient) handleLeaveChannelMessage(msg Message) {

@@ -13,6 +13,8 @@ const (
 	ChannelsNamesMsg = "CHAN_LIST_MSG"
 	// ErrorMsg symbolizes error message.
 	ErrorMsg = "ERROR"
+	// UserJoinedChannelMsg symbolizes message send when user is joining channel.
+	UserJoinedChannelMsg = "USER_JOINED_CH"
 )
 
 const (
@@ -73,5 +75,15 @@ func ErrorMessage(content string) Message {
 		SenderID:   system,
 		SenderName: system,
 		Content:    content,
+	}
+}
+
+// NewUserJoinedChannelMessage returns  new UserJoinedChannelMessage message.
+func NewUserJoinedChannelMessage(channel, senderID string) Message {
+	return Message{
+		MsgType:    UserJoinedChannelMsg,
+		SenderID:   senderID,
+		SenderName: senderID,
+		Channel:    channel,
 	}
 }
