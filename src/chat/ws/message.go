@@ -15,6 +15,8 @@ const (
 	ErrorMsg = "ERROR"
 	// UserJoinedChannelMsg symbolizes message send when user is joining channel.
 	UserJoinedChannelMsg = "USER_JOINED_CH"
+	// UserLeftChannelMsg symbolizes message send when user is leaving channel.
+	UserLeftChannelMsg = "USER_LEFT_CH"
 )
 
 const (
@@ -82,6 +84,16 @@ func ErrorMessage(content string) Message {
 func NewUserJoinedChannelMessage(channel, senderID string) Message {
 	return Message{
 		MsgType:    UserJoinedChannelMsg,
+		SenderID:   senderID,
+		SenderName: senderID,
+		Channel:    channel,
+	}
+}
+
+// NewUserLeftChannelMessage returns new UserLeftChannelMessage message.
+func NewUserLeftChannelMessage(channel, senderID string) Message {
+	return Message{
+		MsgType:    UserLeftChannelMsg,
 		SenderID:   senderID,
 		SenderName: senderID,
 		Channel:    channel,

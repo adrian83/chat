@@ -11,15 +11,17 @@ func NewChannels() Channels {
 
 	interrupt := make(chan bool, 5)
 	channelsListRequests := make(chan Client, 50)
-	addClientRequest := make(chan clientAndChannel, 50)
+	addClientToChannelRequest := make(chan clientAndChannel, 50)
 	createChannelRequest := make(chan clientAndChannel, 50)
+	messageRequest := make(chan Message, 50)
 
 	channels := DefaultChannels{
-		channels:             ch,
-		channelsListRequests: channelsListRequests,
-		interrupt:            interrupt,
-		addClientRequest:     addClientRequest,
-		createChannelRequest: createChannelRequest,
+		channels:                  ch,
+		channelsListRequests:      channelsListRequests,
+		interrupt:                 interrupt,
+		addClientToChannelRequest: addClientToChannelRequest,
+		createChannelRequest:      createChannelRequest,
+		messageRequest:            messageRequest,
 	}
 	mainChannel := NewMainChannel(&channels)
 	ch[main] = mainChannel
@@ -37,15 +39,22 @@ type Channels interface {
 	AddChannel(channel Channel) []SendError
 	RemoveChannel(name string)
 	FindChannel(name string) (Channel, bool)
-	AddClientToChannel(channelName string, client Client)
-	RemoveClientFromChannel(channelName string, client Client) []SendError
+
 	RemoveClient(client Client)
 
 	CreateChannel(channel string, client Client)
+	AddClientToChannel(channelName string, client Client)
+	RemoveClientFromChannel(channelName string, client Client)
+	SendMessageOnChannel(message Message)
 }
 
 type clientAndChannel struct {
 	client  Client
+	channel string
+}
+
+type messageAndChannel struct {
+	message string
 	channel string
 }
 
@@ -54,10 +63,12 @@ type DefaultChannels struct {
 	lock     sync.RWMutex
 	channels map[string]Channel
 
-	interrupt            chan bool
-	channelsListRequests chan Client
-	addClientRequest     chan clientAndChannel
-	createChannelRequest chan clientAndChannel
+	interrupt                      chan bool
+	channelsListRequests           chan Client
+	addClientToChannelRequest      chan clientAndChannel
+	removeClientFromChannelRequest chan clientAndChannel
+	createChannelRequest           chan clientAndChannel
+	messageRequest                 chan Message
 }
 
 func (ch *DefaultChannels) start() {
@@ -79,13 +90,22 @@ mainLoop:
 			msg := ChannelsNamesMessage(channels)
 			client.Send(msg)
 
-		case cac := <-ch.addClientRequest:
+		case cac := <-ch.addClientToChannelRequest:
 			if channel, exists := ch.FindChannel(cac.channel); exists {
 				channel.AddClient(cac.client)
 				ujc := NewUserJoinedChannelMessage(cac.channel, cac.client.ID())
 				cac.client.Send(ujc)
 			} else {
 				logger.Infof("DefaultChannels", "start", "Channel %v does not exist. Client %v cannot join", cac.channel, cac.client)
+			}
+
+		case cac := <-ch.removeClientFromChannelRequest:
+			if channel, exists := ch.FindChannel(cac.channel); exists {
+				channel.RemoveClient(cac.client)
+				ujc := NewUserLeftChannelMessage(cac.channel, cac.client.ID())
+				cac.client.Send(ujc)
+			} else {
+				logger.Infof("DefaultChannels", "start", "Channel %v does not exist. Client %v cannot leave", cac.channel, cac.client)
 			}
 
 		case cac := <-ch.createChannelRequest:
@@ -98,6 +118,15 @@ mainLoop:
 				//cac.client.Send(ncm)
 			} else {
 				logger.Infof("DefaultChannels", "start", "Channel %v already exists. Client %v cannot create it", cac.channel, cac.client)
+			}
+
+		case msg := <-ch.messageRequest:
+			logger.Infof("DefaultChannels", "start", "Send message: %v", msg)
+
+			if cha, exists := ch.FindChannel(msg.Channel); exists {
+				cha.SendToEveryone(msg)
+			} else {
+				logger.Infof("DefaultChannels", "start", "Cannot send message because the channel %v doesn't exist", msg.Channel)
 			}
 
 		case <-ch.interrupt:
@@ -201,18 +230,21 @@ func (ch *DefaultChannels) FindChannel(channelName string) (Channel, bool) {
 
 // AddClientToChannel adds given client to channel with given name.
 func (ch *DefaultChannels) AddClientToChannel(channelName string, client Client) {
-	ch.addClientRequest <- clientAndChannel{
+	ch.addClientToChannelRequest <- clientAndChannel{
 		client:  client,
 		channel: channelName,
 	}
 }
 
 // RemoveClientFromChannel removes given client from channel with given name.
-func (ch *DefaultChannels) RemoveClientFromChannel(channelName string, client Client) []SendError {
-	if channelName != main {
-		if channel, ok := ch.FindChannel(channelName); ok {
-			return channel.RemoveClient(client)
-		}
+func (ch *DefaultChannels) RemoveClientFromChannel(channelName string, client Client) {
+	ch.removeClientFromChannelRequest <- clientAndChannel{
+		client:  client,
+		channel: channelName,
 	}
-	return make([]SendError, 0)
+}
+
+// SendMessageOnChannel sends given message to all clients of given channel.
+func (ch *DefaultChannels) SendMessageOnChannel(message Message) {
+	ch.messageRequest <- message
 }

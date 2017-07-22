@@ -19,15 +19,12 @@ var (
 // NewClient returns new Client instance
 func NewClient(ID string, user db.User, channels Channels, wsConnnection *websocket.Conn) Client {
 	client := DefaultClient{
-		user:     user,
-		id:       ID,
-		channels: channels,
-
+		user:           user,
+		id:             ID,
+		channels:       channels,
 		messagesToSend: make(chan Message, 50),
-
-		stopSending: make(chan bool, 5),
-
-		wsConnnection: wsConnnection,
+		stopSending:    make(chan bool, 5),
+		wsConnnection:  wsConnnection,
 	}
 
 	return &client
@@ -37,7 +34,6 @@ func NewClient(ID string, user db.User, channels Channels, wsConnnection *websoc
 type Client interface {
 	Send(msg Message)
 	ID() string
-
 	StartSending()
 	StartReceiving()
 }
@@ -131,17 +127,11 @@ func (c *DefaultClient) handleMessage(msg Message) {
 	case "ADD_CH":
 		c.handleCreateChannelMessage(msg)
 	case UserJoinedChannelMsg:
-		c.handleJoinChannelMessage(msg)
-	case "USER_LEFT_CH":
-		c.handleLeaveChannelMessage(msg)
+		c.channels.AddClientToChannel(msg.Channel, c)
+	case UserLeftChannelMsg:
+		c.channels.RemoveClientFromChannel(msg.Channel, c)
 	default:
 		logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
-	}
-}
-
-func (c *DefaultClient) logSendErrors(msg Message, errors []SendError) {
-	for _, sendErr := range errors {
-		logger.Warnf("Client", "logSendErrors", "Error while sending message %v to %v. Error: %v", msg, sendErr.Client, sendErr.Err)
 	}
 }
 
@@ -155,34 +145,15 @@ func (c *DefaultClient) handleLogoutMessage(msg Message) {
 }
 
 func (c *DefaultClient) handleTextMessage(msg Message) {
-	//channel, ok := c.channels.ClientsChannels(c)[msg.Channel]
-	//if ok {
-	//	if errors := channel.SendToEveryone(msg); len(errors) > 0 {
-	//		c.logSendErrors(msg, errors)
-	//	}
-	//}
+	c.channels.SendMessageOnChannel(msg)
 }
 
 func (c *DefaultClient) handleCreateChannelMessage(msg Message) {
-	logger.Infof("DefaultClient", "handleCreateChannelMessage", "handleCreateChannelMessage: %v", c)
 	if !validChannelName.MatchString(msg.Channel) {
 		errMsg := ErrorMessage(fmt.Sprintf("Invalid channel name. Name must match %v", channelNameRegexp))
 		c.Send(errMsg)
 		return
 	}
-	logger.Infof("DefaultClient", "handleCreateChannelMessage", "handleCreateChannelMessage: %v", c)
+
 	c.channels.CreateChannel(msg.Channel, c)
-}
-
-func (c *DefaultClient) handleJoinChannelMessage(msg Message) {
-
-	c.channels.AddClientToChannel(msg.Channel, c)
-	//	c.Send(msg)
-	//}
-}
-
-func (c *DefaultClient) handleLeaveChannelMessage(msg Message) {
-	if errors := c.channels.RemoveClientFromChannel(msg.Channel, c); len(errors) > 0 {
-		c.logSendErrors(msg, errors)
-	}
 }
