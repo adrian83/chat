@@ -1,19 +1,12 @@
 package ws
 
 import (
-	"regexp"
-
 	"chat/db"
 	"chat/logger"
 
 	"fmt"
 
 	"golang.org/x/net/websocket"
-)
-
-var (
-	channelNameRegexp = `^[a-zA-Z0-9_.-]*$`
-	validChannelName  = regexp.MustCompile(channelNameRegexp)
 )
 
 // NewClient returns new Client instance
@@ -32,22 +25,20 @@ func NewClient(ID string, user db.User, channels Channels, wsConnnection *websoc
 
 // Client interface definig client of the app.
 type Client interface {
-	Send(msg Message)
 	ID() string
+	Send(msg Message)
 	StartSending()
 	StartReceiving()
 }
 
 // DefaultClient default implementation of the Client interface.
 type DefaultClient struct {
-	id   string
-	user db.User
-
-	channels Channels
-
+	id             string
+	user           db.User
+	channels       Channels
 	messagesToSend chan Message
-	wsConnnection  *websocket.Conn
 	stopSending    chan bool
+	wsConnnection  *websocket.Conn
 }
 
 // StartSending starts infinite loop which is sending messages.
@@ -76,11 +67,7 @@ mainLoop:
 func (c *DefaultClient) StartReceiving() {
 	logger.Infof("Client", "StartReceiving", "Client %v is starting receiving messanges", c)
 
-	defer func() {
-		if err := c.wsConnnection.Close(); err != nil {
-			logger.Warnf("Client", "StartReceiving", "Error in %v while closing connection. Error: %v", c, err)
-		}
-	}()
+	defer c.closeConnection()
 
 mainLoop:
 	for {
@@ -97,7 +84,20 @@ mainLoop:
 
 		logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
 
-		c.handleMessage(msg)
+		switch msg.MsgType {
+		case "LOGOUT_USER":
+			c.Send(msg)
+		case "TEXT_MSG":
+			c.channels.SendMessageOnChannel(msg)
+		case "ADD_CH":
+			c.channels.CreateChannel(msg.Channel, c)
+		case UserJoinedChannelMsg:
+			c.channels.AddClientToChannel(msg.Channel, c)
+		case UserLeftChannelMsg:
+			c.channels.RemoveClientFromChannel(msg.Channel, c)
+		default:
+			logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
+		}
 
 	}
 	logger.Infof("Client", "StartReceiving", "Client %v is stopping receiving messanges", c)
@@ -118,42 +118,8 @@ func (c *DefaultClient) Send(msg Message) {
 	c.messagesToSend <- msg
 }
 
-func (c *DefaultClient) handleMessage(msg Message) {
-	switch msg.MsgType {
-	case "LOGOUT_USER":
-		c.handleLogoutMessage(msg)
-	case "TEXT_MSG":
-		c.handleTextMessage(msg)
-	case "ADD_CH":
-		c.handleCreateChannelMessage(msg)
-	case UserJoinedChannelMsg:
-		c.channels.AddClientToChannel(msg.Channel, c)
-	case UserLeftChannelMsg:
-		c.channels.RemoveClientFromChannel(msg.Channel, c)
-	default:
-		logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
+func (c *DefaultClient) closeConnection() {
+	if err := c.wsConnnection.Close(); err != nil {
+		logger.Warnf("Client", "closeConnection", "Error in %v while closing connection. Error: %v", c, err)
 	}
-}
-
-func (c *DefaultClient) handleLogoutMessage(msg Message) {
-	// remove client from channels
-	logger.Infof("Client", "Start", "Logging out client: %v", c)
-
-	// resend message
-	c.Send(msg)
-
-}
-
-func (c *DefaultClient) handleTextMessage(msg Message) {
-	c.channels.SendMessageOnChannel(msg)
-}
-
-func (c *DefaultClient) handleCreateChannelMessage(msg Message) {
-	if !validChannelName.MatchString(msg.Channel) {
-		errMsg := ErrorMessage(fmt.Sprintf("Invalid channel name. Name must match %v", channelNameRegexp))
-		c.Send(errMsg)
-		return
-	}
-
-	c.channels.CreateChannel(msg.Channel, c)
 }

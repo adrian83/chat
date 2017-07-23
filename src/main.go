@@ -172,8 +172,7 @@ func connect(simpleSession *session.Session, channels ws.Channels) func(*websock
 
 		client := ws.NewClient(sessionID, user, channels, wsc)
 
-		mainChannel := channels.GetMainChannel()
-		mainChannel.AddClient(client)
+		channels.AddClientToChannel(ws.Main, client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 
