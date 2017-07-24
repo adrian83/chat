@@ -2,56 +2,81 @@ package ws
 
 import (
 	"chat/logger"
-	"sync"
 )
 
 const (
-	main = "main"
+	// Main is the name of the main room.
+	Main = "main"
 )
-
-// SendError error representing error while sending msg to client.
-type SendError struct {
-	Client Client
-	Err    error
-}
-
-// Error implementation of error interface.
-func (e SendError) Error() string {
-	return e.Error()
-}
 
 // Channel is an interface for defining channels.
 type Channel interface {
 	Name() string
-	Clients() map[string]Client
-	FindClient(clientID string) (Client, bool)
-	SendToEveryone(msg Message) []SendError
-	RemoveClient(client Client) []SendError
-	AddClient(client Client) error
+	FindClient(clientID string) Client
+	SendToEveryone(msg Message)
+	RemoveClient(client Client)
+	AddClient(client Client)
 }
 
 // DefaultChannel struct representing chat channel.
 type DefaultChannel struct {
-	name     string
-	lock     sync.RWMutex
-	clients  map[string]Client
-	channels Channels
+	name             string
+	clients          map[string]Client
+	channels         Channels
+	removeClientChan chan Client
+	addClientChan    chan Client
+	existClient      chan clientExist
+	messageChan      chan Message
+	interrupt        chan bool
 }
 
-// Empty returns true if there is no clients in this channel, false otherwise
-func (ch *DefaultChannel) Empty() bool {
-	ch.lock.RLock()
-	result := 0 == len(ch.clients)
-	ch.lock.RUnlock()
-	return result
+func (ch *DefaultChannel) start() {
+	logger.Infof("DefaultChannel", "start", "Starting room: '%v'", ch.Name())
+mainLoop:
+	for {
+		select {
+		case <-ch.interrupt:
+			break mainLoop
+
+		case client := <-ch.removeClientChan:
+			delete(ch.clients, client.ID())
+			if len(ch.clients) == 0 {
+				logger.Infof("DefaultChannel", "start", "Room: '%v' is empty. Should be removed.", ch.Name())
+				ch.channels.RemoveChannel(ch.Name())
+			}
+
+		case client := <-ch.addClientChan:
+			ch.clients[client.ID()] = client
+
+		case msg := <-ch.messageChan:
+			for _, client := range ch.clients {
+				logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
+				client.Send(msg)
+			}
+
+		case c := <-ch.existClient:
+			cli, _ := ch.clients[c.clientID]
+				c.existChan <- cli
+		}
+	}
+}
+
+type clientExist struct {
+	existChan chan Client
+	clientID  string
 }
 
 // FindClient returns client with given id if it exist in this channel.
-func (ch *DefaultChannel) FindClient(clientID string) (Client, bool) {
-	ch.lock.RLock()
-	c, ok := ch.clients[clientID]
-	ch.lock.RUnlock()
-	return c, ok
+func (ch *DefaultChannel) FindClient(clientID string) Client {
+
+	clientChan := make(chan Client, 1)
+
+	ch.existClient <- clientExist{
+		existChan: clientChan,
+		clientID:  clientID,
+	}
+
+	return <-clientChan
 }
 
 // Name returns chanel's name.
@@ -59,89 +84,31 @@ func (ch *DefaultChannel) Name() string {
 	return ch.name
 }
 
-// Clients returns chanel's clients.
-func (ch *DefaultChannel) Clients() map[string]Client {
-	return ch.clients
-}
-
 // SendToEveryone sends message to everyone from that channel.
-func (ch *DefaultChannel) SendToEveryone(msg Message) []SendError {
-	errors := make([]SendError, 0)
-	ch.lock.RLock()
-	for _, client := range ch.clients {
-		logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
-		if err := client.Send(msg); err != nil {
-			sendErr := SendError{
-				Client: client,
-				Err:    err,
-			}
-			errors = append(errors, sendErr)
-		}
-	}
-	ch.lock.RUnlock()
-	return errors
+func (ch *DefaultChannel) SendToEveryone(msg Message) {
+	ch.messageChan <- msg
 }
 
 // AddClient adds client to channel.
-func (ch *DefaultChannel) AddClient(client Client) error {
-	ch.lock.Lock()
-	ch.clients[client.ID()] = client
-	ch.lock.Unlock()
-	return nil
+func (ch *DefaultChannel) AddClient(client Client) {
+	ch.addClientChan <- client
 }
 
 // RemoveClient removes client from the channel.
-func (ch *DefaultChannel) RemoveClient(client Client) []SendError {
-	if ch.name == main {
-		return make([]SendError, 0)
-	}
-
-	ch.lock.Lock()
-	delete(ch.clients, client.ID())
-	ch.lock.Unlock()
-
-	if ch.Empty() {
-		ch.channels.RemoveChannel(ch.Name())
-
-		msg := NewRemoveChannelMessage(ch.name)
-		mainChannel := ch.channels.GetMainChannel()
-		return mainChannel.SendToEveryone(msg)
-	}
-	return make([]SendError, 0)
+func (ch *DefaultChannel) RemoveClient(client Client) {
+	ch.removeClientChan <- client
 }
 
 // NewChannel functions returns new Channel struct.
-func NewChannel(name string, client Client, channels Channels) Channel {
-	return &DefaultChannel{
-		name:     name,
-		clients:  map[string]Client{client.ID(): client},
-		channels: channels,
+func NewChannel(name string, channels Channels) Channel {
+	room := &DefaultChannel{
+		name:             name,
+		clients:          map[string]Client{},
+		channels:         channels,
+		removeClientChan: make(chan Client, 5),
+		addClientChan:    make(chan Client, 5),
+		messageChan:      make(chan Message, 50),
 	}
-}
-
-// MainChannel struct representing main chat channel.
-type MainChannel struct {
-	DefaultChannel
-}
-
-// RemoveClient removes client from the channel.
-func (ch *MainChannel) RemoveClient(client Client) []SendError {
-	return make([]SendError, 0)
-}
-
-// NewMainChannel functions returns new Channel struct.
-func NewMainChannel(channels Channels) Channel {
-	return &MainChannel{DefaultChannel{
-		name:     main,
-		clients:  map[string]Client{},
-		channels: channels,
-	},
-	}
-}
-
-// AddClient adds client to channel.
-func (ch *MainChannel) AddClient(client Client) error {
-	ch.DefaultChannel.AddClient(client)
-	channelNamesMsg := ChannelsNamesMessage(ch.channels.Names())
-	return client.Send(channelNamesMsg)
+	go room.start()
+	return room
 }
