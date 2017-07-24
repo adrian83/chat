@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	channels = ws.NewChannels()
+	rooms = ws.NewRooms()
 )
 
 func main() {
@@ -124,7 +124,7 @@ func main() {
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
-	mux.Handle("/talk", websocket.Handler(connect(simpleSession, channels)))
+	mux.Handle("/talk", websocket.Handler(connect(simpleSession, rooms)))
 
 	// ---------------------------------------
 	// http server
@@ -154,7 +154,7 @@ func main() {
 	logger.Info("Main", "main", "Server stopped.")
 }
 
-func connect(simpleSession *session.Session, channels ws.Channels) func(*websocket.Conn) {
+func connect(simpleSession *session.Session, rooms ws.Rooms) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 
@@ -170,9 +170,9 @@ func connect(simpleSession *session.Session, channels ws.Channels) func(*websock
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, channels, wsc)
+		client := ws.NewClient(sessionID, user, rooms, wsc)
 
-		channels.AddClientToChannel(ws.Main, client)
+		rooms.AddClientToRoom(ws.Main, client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 

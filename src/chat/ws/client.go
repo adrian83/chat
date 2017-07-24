@@ -10,11 +10,11 @@ import (
 )
 
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, channels Channels, wsConnnection *websocket.Conn) Client {
+func NewClient(ID string, user db.User, rooms Rooms, wsConnnection *websocket.Conn) Client {
 	client := DefaultClient{
 		user:           user,
 		id:             ID,
-		channels:       channels,
+		rooms:          rooms,
 		messagesToSend: make(chan Message, 50),
 		stopSending:    make(chan bool, 5),
 		wsConnnection:  wsConnnection,
@@ -35,7 +35,7 @@ type Client interface {
 type DefaultClient struct {
 	id             string
 	user           db.User
-	channels       Channels
+	rooms          Rooms
 	messagesToSend chan Message
 	stopSending    chan bool
 	wsConnnection  *websocket.Conn
@@ -56,7 +56,7 @@ mainLoop:
 
 		case b := <-c.stopSending:
 			logger.Infof("Client", "StartSending", "Client %v, stop %v", c, b)
-			c.channels.RemoveClient(c)
+			c.rooms.RemoveClient(c)
 			break mainLoop
 		}
 	}
@@ -85,16 +85,16 @@ mainLoop:
 		logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
 
 		switch msg.MsgType {
-		case "LOGOUT_USER":
+		case LogoutMT:
 			c.Send(msg)
-		case "TEXT_MSG":
-			c.channels.SendMessageOnChannel(msg)
-		case "ADD_CH":
-			c.channels.CreateChannel(msg.Channel, c)
-		case UserJoinedChannelMsg:
-			c.channels.AddClientToChannel(msg.Channel, c)
-		case UserLeftChannelMsg:
-			c.channels.RemoveClientFromChannel(msg.Channel, c)
+		case TextMsgMT:
+			c.rooms.SendMessageOnRoom(msg)
+		case CreateRoomMT:
+			c.rooms.CreateRoom(msg.Room, c)
+		case UserJoinedRoomMT:
+			c.rooms.AddClientToRoom(msg.Room, c)
+		case UserLeftRoomMT:
+			c.rooms.RemoveClientFromRoom(msg.Room, c)
 		default:
 			logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
 		}

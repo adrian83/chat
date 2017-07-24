@@ -5,18 +5,22 @@ import (
 )
 
 const (
-	// AddChannelMsg symbolizes message that creates new channel.
-	AddChannelMsg = "ADD_CH"
-	// RemoveChannelMsg symbolizes message that removes channel.
-	RemoveChannelMsg = "REM_CH"
-	// ChannelsNamesMsg symbolizes message that contains names of all channel.
-	ChannelsNamesMsg = "CHAN_LIST_MSG"
-	// ErrorMsg symbolizes error message.
-	ErrorMsg = "ERROR"
-	// UserJoinedChannelMsg symbolizes message send when user is joining channel.
-	UserJoinedChannelMsg = "USER_JOINED_CH"
-	// UserLeftChannelMsg symbolizes message send when user is leaving channel.
-	UserLeftChannelMsg = "USER_LEFT_CH"
+	// UserJoinedRoomMT is a marker for messages send when user is joining a room.
+	UserJoinedRoomMT = "USER_JOINED_ROOM"
+	// UserLeftRoomMT is a marker for messages send when user is leaving a room.
+	UserLeftRoomMT = "USER_LEFT_ROOM"
+	// LogoutMT is a marker for logout messages.
+	LogoutMT = "LOGOUT_USER"
+	// TextMsgMT is a marker for text messages.
+	TextMsgMT = "TEXT_MSG"
+	// CreateRoomMT is a marker for messages creating new room.
+	CreateRoomMT = "CREATE_ROOM"
+	// RemoveRoomMT is a marker for messages creating new room.
+	RemoveRoomMT = "REMOVE_ROOM"
+	// RoomsNamesMT is a marker for messages with list of all existing rooms.
+	RoomsNamesMT = "ROOMS_LIST"
+	// ErrorMsgMT is a marker for error messages.
+	ErrorMsgMT = "ERROR"
 )
 
 const (
@@ -29,73 +33,73 @@ type Message struct {
 	MsgType    string   `json:"msgType"`
 	SenderID   string   `json:"senderId"`
 	SenderName string   `json:"senderName"`
-	Channels   []string `json:"channels"`
-	Channel    string   `json:"channel"`
+	Rooms      []string `json:"rooms"`
+	Room       string   `json:"room"`
 	Content    string   `json:"content"`
 }
 
 // String returns string representation of Message struct.
 func (m Message) String() string {
-	return fmt.Sprintf("Message {	MsgType: %v, SenderID: %v, SenderName: %v, Channels: %v, Channel: %v, Content: %v }",
-		m.MsgType, m.SenderID, m.SenderName, m.Channels, m.Channel, m.Content)
+	return fmt.Sprintf("Message {	MsgType: %v, SenderID: %v, SenderName: %v, Rooms: %v, Room: %v, Content: %v }",
+		m.MsgType, m.SenderID, m.SenderName, m.Rooms, m.Room, m.Content)
 }
 
-// NewAddChannelMessage returns message which can be used for creating new channel.
-func NewAddChannelMessage(channelName string) Message {
+// NewAddRoomMessage returns message which can be used for creating new room.
+func NewAddRoomMessage(roomName string) Message {
 	return Message{
-		MsgType:    AddChannelMsg,
-		Channel:    channelName,
+		MsgType:    CreateRoomMT,
+		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
 	}
 }
 
-// NewRemoveChannelMessage returns message which can be used for removing channel.
-func NewRemoveChannelMessage(channelName string) Message {
+// NewRemoveRoomMessage returns message which can be used for removing room.
+func NewRemoveRoomMessage(roomName string) Message {
 	return Message{
-		MsgType:    RemoveChannelMsg,
-		Channel:    channelName,
+		MsgType:    RemoveRoomMT,
+		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
 	}
 }
 
-// ChannelsNamesMessage returns message which contains names of all channels.
-func ChannelsNamesMessage(channelNames []string) Message {
+// RoomsNamesMessage returns message which contains names of all rooms.
+func RoomsNamesMessage(roomNames []string) Message {
 	return Message{
-		MsgType:    ChannelsNamesMsg,
+		MsgType:    RoomsNamesMT,
 		SenderID:   system,
 		SenderName: system,
-		Channels:   channelNames,
+		Rooms:      roomNames,
 	}
 }
 
 // ErrorMessage returns error message.
 func ErrorMessage(content string) Message {
 	return Message{
-		MsgType:    ErrorMsg,
+		MsgType:    ErrorMsgMT,
 		SenderID:   system,
 		SenderName: system,
 		Content:    content,
 	}
 }
 
-// NewUserJoinedChannelMessage returns  new UserJoinedChannelMessage message.
-func NewUserJoinedChannelMessage(channel, senderID string) Message {
+// NewUserJoinedRoomMessage returns  new UserJoinedRoomMessage message.
+func NewUserJoinedRoomMessage(room, senderID string) Message {
 	return Message{
-		MsgType:    UserJoinedChannelMsg,
+		MsgType:    UserJoinedRoomMT,
 		SenderID:   senderID,
 		SenderName: senderID,
-		Channel:    channel,
+		Room:       room,
 	}
 }
 
-// NewUserLeftChannelMessage returns new UserLeftChannelMessage message.
-func NewUserLeftChannelMessage(channel, senderID string) Message {
+// NewUserLeftRoomMessage returns new UserLeftRoomMessage message.
+func NewUserLeftRoomMessage(room, senderID string) Message {
 	return Message{
-		MsgType:    UserLeftChannelMsg,
+		MsgType:    UserLeftRoomMT,
 		SenderID:   senderID,
 		SenderName: senderID,
-		Channel:    channel,
+		Room:       room,
 	}
 }
