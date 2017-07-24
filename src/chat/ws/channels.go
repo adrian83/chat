@@ -21,6 +21,7 @@ func NewChannels() Channels {
 	removeClientFromChannelRequest := make(chan clientAndChannel, 50)
 	createChannelRequest := make(chan clientAndChannel, 50)
 	messageRequest := make(chan Message, 50)
+	removeChannelRequests := make(chan string, 50)
 
 	channels := DefaultChannels{
 		channels:                       ch,
@@ -30,8 +31,9 @@ func NewChannels() Channels {
 		removeClientFromChannelRequest: removeClientFromChannelRequest,
 		createChannelRequest:           createChannelRequest,
 		messageRequest:                 messageRequest,
+		removeChannelRequests: 					removeChannelRequests,
 	}
-	mainChannel := NewMainChannel(&channels)
+	mainChannel := NewChannel(Main, &channels)
 	ch[Main] = mainChannel
 
 	go channels.start()
@@ -65,6 +67,7 @@ type DefaultChannels struct {
 	channels                       map[string]Channel
 	interrupt                      chan bool
 	channelsListRequests           chan Client
+	removeClient         chan Client
 	removeChannelRequests          chan string
 	addClientToChannelRequest      chan clientAndChannel
 	removeClientFromChannelRequest chan clientAndChannel
@@ -82,7 +85,7 @@ mainLoop:
 
 			channels := make([]string, 0)
 			for _, channel := range ch.channels {
-				if _, exists := channel.FindClient(client.ID()); exists {
+				if client := channel.FindClient(client.ID()); client != nil {
 					channels = append(channels, channel.Name())
 				}
 			}
@@ -136,6 +139,12 @@ mainLoop:
 		case cac := <-ch.createChannelRequest:
 			logger.Infof("DefaultChannels", "start", "Create channel request from %v. Channel name: %v", cac.client, cac.channel)
 
+			if cac.channel == "" {
+				errMsg := ErrorMessage("Invalid room name. Room name cannot be empty")
+				cac.client.Send(errMsg)
+				continue
+			}
+
 			if !validChannelName.MatchString(cac.channel) {
 				errMsg := ErrorMessage(fmt.Sprintf("Invalid channel name. Name must match %v", channelNameRegexp))
 				cac.client.Send(errMsg)
@@ -144,7 +153,8 @@ mainLoop:
 
 			if _, exists := ch.channels[cac.channel]; !exists {
 				// create new room with given name
-				newRoom := NewChannel(cac.channel, cac.client, ch)
+				newRoom := NewChannel(cac.channel, ch)
+				newRoom.AddClient(cac.client)
 				// add room to rooms' collection
 				ch.channels[cac.channel] = newRoom
 
@@ -157,6 +167,11 @@ mainLoop:
 				cac.client.Send(ujc)
 			} else {
 				logger.Infof("DefaultChannels", "start", "Channel %v already exists. Client %v cannot create it", cac.channel, cac.client)
+			}
+
+		case client := <- ch.removeClient:
+			for _, channel := range ch.channels {
+				channel.RemoveClient(client)
 			}
 
 		case msg := <-ch.messageRequest:
@@ -187,7 +202,8 @@ func (ch *DefaultChannels) CreateChannel(channelName string, client Client) {
 
 // RemoveClient removes client from all channels.
 func (ch *DefaultChannels) RemoveClient(client Client) {
-	logger.Infof("DefaultChannels", "RemoveClient", "Removing Client %v from all channels (NOT IMPLEMENTED)", client)
+	logger.Infof("DefaultChannels", "RemoveClient", "Removing Client %v from all channels", client)
+	ch.removeClient <- client
 }
 
 // RemoveChannel removes room with given name.

@@ -2,7 +2,6 @@ package ws
 
 import (
 	"chat/logger"
-	"sync"
 )
 
 const (
@@ -13,7 +12,7 @@ const (
 // Channel is an interface for defining channels.
 type Channel interface {
 	Name() string
-	FindClient(clientID string) (Client, bool)
+	FindClient(clientID string) Client
 	SendToEveryone(msg Message)
 	RemoveClient(client Client)
 	AddClient(client Client)
@@ -22,10 +21,11 @@ type Channel interface {
 // DefaultChannel struct representing chat channel.
 type DefaultChannel struct {
 	name             string
-	lock             sync.RWMutex
 	clients          map[string]Client
 	channels         Channels
 	removeClientChan chan Client
+	addClientChan    chan Client
+	existClient      chan clientExist
 	messageChan      chan Message
 	interrupt        chan bool
 }
@@ -44,23 +44,39 @@ mainLoop:
 				logger.Infof("DefaultChannel", "start", "Room: '%v' is empty. Should be removed.", ch.Name())
 				ch.channels.RemoveChannel(ch.Name())
 			}
+
+		case client := <-ch.addClientChan:
+			ch.clients[client.ID()] = client
+
 		case msg := <-ch.messageChan:
 			for _, client := range ch.clients {
 				logger.Infof("Channel", "SendToEveryone", "Sending msg to %v from channel '%v'.", client, ch.name)
 				client.Send(msg)
 			}
 
+		case c := <-ch.existClient:
+			cli, _ := ch.clients[c.clientID]
+				c.existChan <- cli
 		}
 	}
+}
 
+type clientExist struct {
+	existChan chan Client
+	clientID  string
 }
 
 // FindClient returns client with given id if it exist in this channel.
-func (ch *DefaultChannel) FindClient(clientID string) (Client, bool) {
-	ch.lock.RLock()
-	c, ok := ch.clients[clientID]
-	ch.lock.RUnlock()
-	return c, ok
+func (ch *DefaultChannel) FindClient(clientID string) Client {
+
+	clientChan := make(chan Client, 1)
+
+	ch.existClient <- clientExist{
+		existChan: clientChan,
+		clientID:  clientID,
+	}
+
+	return <-clientChan
 }
 
 // Name returns chanel's name.
@@ -75,9 +91,7 @@ func (ch *DefaultChannel) SendToEveryone(msg Message) {
 
 // AddClient adds client to channel.
 func (ch *DefaultChannel) AddClient(client Client) {
-	ch.lock.Lock()
-	ch.clients[client.ID()] = client
-	ch.lock.Unlock()
+	ch.addClientChan <- client
 }
 
 // RemoveClient removes client from the channel.
@@ -86,42 +100,15 @@ func (ch *DefaultChannel) RemoveClient(client Client) {
 }
 
 // NewChannel functions returns new Channel struct.
-func NewChannel(name string, client Client, channels Channels) Channel {
+func NewChannel(name string, channels Channels) Channel {
 	room := &DefaultChannel{
 		name:             name,
-		clients:          map[string]Client{client.ID(): client},
-		channels:         channels,
-		removeClientChan: make(chan Client, 5),
-		messageChan:      make(chan Message, 50),
-	}
-
-	go room.start()
-
-	return room
-}
-
-// MainChannel struct representing main chat channel.
-type MainChannel struct {
-	DefaultChannel
-}
-
-// NewMainChannel functions returns new Channel struct.
-func NewMainChannel(channels Channels) Channel {
-	room := &MainChannel{DefaultChannel{
-		name:             Main,
 		clients:          map[string]Client{},
 		channels:         channels,
 		removeClientChan: make(chan Client, 5),
+		addClientChan:    make(chan Client, 5),
 		messageChan:      make(chan Message, 50),
-	},
 	}
-
 	go room.start()
-
 	return room
-}
-
-// AddClient adds client to channel.
-func (ch *MainChannel) AddClient(client Client) {
-	ch.DefaultChannel.AddClient(client)
 }
