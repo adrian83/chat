@@ -2,8 +2,8 @@ import 'dart:html';
 import 'dart:convert';
 
 import 'ws_client.dart';
-import 'channel_tabs.dart';
-import 'channel_list.dart';
+import 'room_tabs.dart';
+import 'room_list.dart';
 import 'messages.dart';
 import 'errors.dart';
 import 'html_utils.dart';
@@ -29,8 +29,8 @@ main() {
 
   var messageParser = new MessageParser(new JsonEncoder(), new JsonDecoder());
   var client = new WSClient(sessionId, wssocket, messageParser);
-  var channelManager = new ChannelsManager(sessionId);
-  var channelList = new ChannelList();
+  var roomManager = new RoomsManager(sessionId);
+  var roomList = new RoomList();
   var errorsPanel = new ErrorsPanel();
   var messageFactory = new MessageFactory(sessionId);
 
@@ -38,19 +38,19 @@ main() {
   client.start();
 
 
-  void switchTab(String channelName) {
-    if (channelManager.channelExists(channelName)) {
-      channelManager.setVisible(channelName);
+  void switchTab(String roomName) {
+    if (roomManager.roomExists(roomName)) {
+      roomManager.setVisible(roomName);
     } else {
-      var msg = messageFactory.newJoinChannelMessage(channelName);
+      var msg = messageFactory.newJoinRoomMessage(roomName);
       client.send(msg);
     }
   }
 
-  channelList.selectedChannel.listen((name) => switchTab(name));
-  channelList.createdChannel.listen((name) => client.send(messageFactory.newCreateChannelMessage(name)));
+  roomList.selectedRoom.listen((name) => switchTab(name));
+  roomList.createdRoom.listen((name) => client.send(messageFactory.newCreateRoomMessage(name)));
 
-  var msgConsumers = [channelManager, channelList, errorsPanel, client];
+  var msgConsumers = [roomManager, roomList, errorsPanel, client];
 
   client.messages.listen((msg){
     msgConsumers.forEach((c){
@@ -72,7 +72,7 @@ main() {
   client.errors.listen((b) => onSocketClose());
 
 
-  channelManager.closedTabs.listen((name) => client.send(messageFactory.newUserLeftChannelMessage(name)));
-  channelManager.loggedOut.listen((b) => client.send(messageFactory.newLogoutMessage()));
-  channelManager.messages.listen((msg) => client.send(messageFactory.newTextMessage(msg.text, msg.channel)));
+  roomManager.closedTabs.listen((name) => client.send(messageFactory.newUserLeftRoomMessage(name)));
+  roomManager.loggedOut.listen((b) => client.send(messageFactory.newLogoutMessage()));
+  roomManager.messages.listen((msg) => client.send(messageFactory.newTextMessage(msg.text, msg.room)));
 }

@@ -8,7 +8,7 @@ import 'html_utils.dart';
 
 
 class WSClient implements MessageConsumer {
-  final Logger logger = new Logger('ChannelList');
+  final Logger logger = new Logger('WSClient');
 
   MessageParser _parser;
   String sessionId;

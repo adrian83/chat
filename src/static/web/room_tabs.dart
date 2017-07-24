@@ -12,23 +12,23 @@ const String EXIT = "exit";
 const String LOGOUT = "logout";
 
 class BaseMessage {
-  String _channel, _text;
-  BaseMessage(this._channel, this._text);
-  String get channel => _channel;
+  String _room, _text;
+  BaseMessage(this._room, this._text);
+  String get room => _room;
   String get text => _text;
 }
 
-class ChannelsManager implements MessageConsumer {
-  final Logger logger = new Logger('ChannelsManager');
+class RoomsManager implements MessageConsumer {
+  final Logger logger = new Logger('RoomsManager');
 
   String _clientId;
-  Map<String, ChannelTab> _channels = new Map<String, ChannelTab>();
+  Map<String, RoomTab> _rooms = new Map<String, RoomTab>();
 
   StreamController _onTabClosedCtrl = new StreamController.broadcast();
   StreamController _onLoggedOutCtrl = new StreamController.broadcast();
   StreamController _onMessageCtrl = new StreamController.broadcast();
 
-  ChannelsManager(this._clientId);
+  RoomsManager(this._clientId);
 
   Stream<String> get closedTabs => _onTabClosedCtrl.stream;
   Stream<bool> get loggedOut => _onLoggedOutCtrl.stream;
@@ -38,7 +38,7 @@ class ChannelsManager implements MessageConsumer {
   void userLoggedOut() => _onLoggedOutCtrl.add(true);
   void tabClosed(String name) {
     _onTabClosedCtrl.add(name);
-    _channels.remove(name);
+    _rooms.remove(name);
     logger.info("Tab with name '$name' should be closed");
   }
 
@@ -51,71 +51,71 @@ class ChannelsManager implements MessageConsumer {
     });
   }
 
-  void addChannel(String name) {
-    if (!channelExists(name)) {
-      var channel = new ChannelTab(name, this);
-      channel.show();
-      _channels[name] = channel;
+  void addRoom(String name) {
+    if (!roomExists(name)) {
+      var room = new RoomTab(name, this);
+      room.show();
+      _rooms[name] = room;
       logger.info("Tab with name '$name' should be added");
     }
   }
 
   void setVisible(String name) {
-    var n = _channels.containsKey(name) ? name : MAIN;
-    _channels[n].setVisible();
+    var n = _rooms.containsKey(name) ? name : MAIN;
+    _rooms[n].setVisible();
   }
 
-  bool channelExists(String name) => _channels.containsKey(name);
+  bool roomExists(String name) => _rooms.containsKey(name);
 
   void onMessage(Message msg) {
     logger.info("Received message: ${msg.toJson()}");
-    if (msg is ChannelsListMsg) {
-      _handleChannelsListMsg(msg);
-    } else if (msg is UserJoinedChannelMsg) {
-      _handleUserJoinedChannelMsg(msg);
+    if (msg is RoomsListMsg) {
+      _handleRoomsListMsg(msg);
+    } else if (msg is UserJoinedRoomMsg) {
+      _handleUserJoinedRoomMsg(msg);
     } else if (_shouldDisplayMessage(msg)) {
       _handleTextMsg(msg);
-    } else if (_shouldAddChannel(msg)) {
-      _handleChannelAddedMsg(msg);
+    } else if (_shouldAddRoom(msg)) {
+      _handleRoomAddedMsg(msg);
     }
   }
 
-  void _handleChannelsListMsg(ChannelsListMsg msg) {
-    _addAndShowChannel(MAIN);
+  void _handleRoomsListMsg(RoomsListMsg msg) {
+    _addAndShowRoom(MAIN);
   }
 
   void _handleTextMsg(TextMsg msg) {
-    _channels[msg.channel]._displayMessage(msg.senderName, msg.content);
+    _rooms[msg.room]._displayMessage(msg.senderName, msg.content);
   }
 
-  void _handleUserJoinedChannelMsg(UserJoinedChannelMsg msg) {
-    _addAndShowChannel(msg.channel);
+  void _handleUserJoinedRoomMsg(UserJoinedRoomMsg msg) {
+    _addAndShowRoom(msg.room);
   }
 
-  void _handleChannelAddedMsg(ChannelAddedMsg msg) {
-    _addAndShowChannel(msg.channel);
+  void _handleRoomAddedMsg(RoomAddedMsg msg) {
+    _addAndShowRoom(msg.room);
   }
 
-  void _addAndShowChannel(String name) {
-    addChannel(name);
+  void _addAndShowRoom(String name) {
+    addRoom(name);
     setVisible(name);
   }
 
   bool _shouldDisplayMessage(Message msg) =>
-      msg is TextMsg && channelExists(msg.channel);
+      msg is TextMsg && roomExists(msg.room);
 
-  bool _shouldAddChannel(Message msg) =>
-      msg is ChannelAddedMsg && msg.senderId == _clientId;
+  bool _shouldAddRoom(Message msg) =>
+      msg is RoomAddedMsg && msg.senderId == _clientId;
 }
 
-class ChannelTab {
-  final Logger logger = new Logger('ChannelTab');
+class RoomTab {
+  final Logger logger = new Logger('RoomTab');
 
-  ChannelsManager _manager;
+  RoomsManager _manager;
   String _name;
   String _escapedName;
 
-  ChannelTab(this._name, this._manager) {
+  RoomTab(this._name, this._manager) {
     this._escapedName = removeWhitespace(_name);
     logger.info("Created tab with name '$_name'");
   }

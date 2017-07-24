@@ -3,14 +3,15 @@ import 'dart:convert';
 import 'package:logging/logging.dart';
 
 const String UNKNOWN = "UNKNOWN";
-const String TEXT_MSG = "TEXT_MSG";
-const String DEL_CHANNEL = "REM_CH";
-const String ADD_CHANNEL = "ADD_CH";
-const String CHANNELS_LIST = "CHAN_LIST_MSG";
-const String USER_LEFT_CHANNEL = "USER_LEFT_CH";
-const String USER_JOINED_CHANNEL = "USER_JOINED_CH";
-const String ERROR_MSG = "ERROR";
-const String LOGOUT_MSG = "LOGOUT_USER";
+const String TEXT_MSG_MT = "TEXT_MSG";
+const String REMOVE_ROOM_MT = "REMOVE_ROOM";
+const String CREATE_ROOM_MT = "CREATE_ROOM";
+const String ROOMS_NAMES_MT = "ROOMS_LIST";
+const String USER_LEFT_ROOM_MT = "USER_LEFT_ROOM";
+const String USER_JOINED_ROOM_MT = "USER_JOINED_ROOM";
+const String ERROR_MSG_MT = "ERROR";
+const String LOGOUT_MT = "LOGOUT_USER";
+
 
 abstract class MessageConsumer {
   void onMessage(Message msg);
@@ -21,21 +22,21 @@ class MessageFactory {
 
   MessageFactory(this._senderId);
 
-  Message newTextMessage(String text, String channel) => new TextMsg(_senderId, channel, _senderId, text);
-  Message newCreateChannelMessage(String channelName) => new ChannelAddedMsg(_senderId, channelName);
-  Message newUserLeftChannelMessage(String channelName) => new UserLeftChannelMsg(_senderId, channelName);
-  Message newJoinChannelMessage(String channelName) => new UserJoinedChannelMsg(_senderId, channelName);
+  Message newTextMessage(String text, String roomName) => new TextMsg(_senderId, roomName, _senderId, text);
+  Message newCreateRoomMessage(String roomName) => new RoomAddedMsg(_senderId, roomName);
+  Message newUserLeftRoomMessage(String roomName) => new UserLeftRoomMsg(_senderId, roomName);
+  Message newJoinRoomMessage(String roomName) => new UserJoinedRoomMsg(_senderId, roomName);
   Message newLogoutMessage() => new LogoutMsg(_senderId);
 }
 
 class MessageParser {
-  final Logger logger = new Logger('ChannelList');
+  final Logger logger = new Logger('MessageParser');
 
   final JsonEncoder _encoder;
   final JsonDecoder _decoder;
 
   MessageParser(this._encoder, this._decoder);
-  
+
   String encode(Message msg) {
     return _encoder.convert(msg);
   }
@@ -48,24 +49,24 @@ class MessageParser {
     var msgType = json["msgType"];
     var senderId = json["senderId"];
     var senderName = json["senderName"];
-    var channel = json["channel"];
-    var channels = json["channels"];
+    var room = json["room"];
+    var rooms = json["rooms"];
     var content = json["content"];
 
     switch (msgType) {
-      case DEL_CHANNEL:
-        return new ChannelRemovedMsg(senderId, channel);
-      case ADD_CHANNEL:
-        return new ChannelAddedMsg(senderId, channel);
-      case TEXT_MSG:
-        return new TextMsg(senderId, channel, senderName, content);
-      case ERROR_MSG:
+      case REMOVE_ROOM_MT:
+        return new RoomRemovedMsg(senderId, room);
+      case CREATE_ROOM_MT:
+        return new RoomAddedMsg(senderId, room);
+      case TEXT_MSG_MT:
+        return new TextMsg(senderId, room, senderName, content);
+      case ERROR_MSG_MT:
         return new ErrorMsg(senderId, content);
-      case CHANNELS_LIST:
-        return new ChannelsListMsg(senderId, senderName, channels);
-      case USER_JOINED_CHANNEL:
-        return new UserJoinedChannelMsg(senderId, channel);
-      case LOGOUT_MSG:
+      case ROOMS_NAMES_MT:
+        return new RoomsListMsg(senderId, senderName, rooms);
+      case USER_JOINED_ROOM_MT:
+        return new UserJoinedRoomMsg(senderId, room);
+      case LOGOUT_MT:
         return new LogoutMsg(senderId);
       default:
         return new UnknownOpMsg();
@@ -89,29 +90,29 @@ class Message {
   }
 }
 
-class ChannelMessage extends Message {
-  String _channel;
+class RoomMessage extends Message {
+  String _room;
 
-  ChannelMessage(String senderId, String msgType, this._channel)
+  RoomMessage(String senderId, String msgType, this._room)
       : super(msgType, senderId);
 
-  String get channel => _channel;
+  String get room => _room;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
-    map["channel"] = _channel;
+    map["room"] = _room;
     return map;
   }
 }
 
-class TextMsg extends ChannelMessage {
+class TextMsg extends RoomMessage {
   String _senderName;
   String _content;
 
 
-  TextMsg(String senderId, String channel, this._senderName, this._content)
-      : super(senderId, TEXT_MSG, channel);
+  TextMsg(String senderId, String room, this._senderName, this._content)
+      : super(senderId, TEXT_MSG_MT, room);
 
   String get content => _content;
   String get senderName => _senderName;
@@ -126,42 +127,42 @@ class TextMsg extends ChannelMessage {
 }
 
 class LogoutMsg extends Message {
-  LogoutMsg(String senderId) : super(LOGOUT_MSG, senderId);
+  LogoutMsg(String senderId) : super(LOGOUT_MT, senderId);
 }
 
 class UnknownOpMsg extends Message {
   UnknownOpMsg() : super(UNKNOWN, UNKNOWN);
 }
 
-class UserLeftChannelMsg extends ChannelMessage {
+class UserLeftRoomMsg extends RoomMessage {
 
-  UserLeftChannelMsg(String senderId, String channel)
-      : super(senderId, USER_LEFT_CHANNEL, channel);
+  UserLeftRoomMsg(String senderId, String room)
+      : super(senderId, USER_LEFT_ROOM_MT, room);
 }
 
-class UserJoinedChannelMsg extends ChannelMessage {
+class UserJoinedRoomMsg extends RoomMessage {
 
-  UserJoinedChannelMsg(String senderId, String channel)
-      : super(senderId, USER_JOINED_CHANNEL, channel);
+  UserJoinedRoomMsg(String senderId, String room)
+      : super(senderId, USER_JOINED_ROOM_MT, room);
 }
 
-class ChannelRemovedMsg extends ChannelMessage {
+class RoomRemovedMsg extends RoomMessage {
 
-  ChannelRemovedMsg(String senderId, String channel)
-      : super(senderId, DEL_CHANNEL, channel);
+  RoomRemovedMsg(String senderId, String room)
+      : super(senderId, REMOVE_ROOM_MT, room);
 }
 
-class ChannelAddedMsg extends ChannelMessage {
+class RoomAddedMsg extends RoomMessage {
 
-  ChannelAddedMsg(String senderId, String channel)
-      : super(senderId, ADD_CHANNEL, channel);
+  RoomAddedMsg(String senderId, String room)
+      : super(senderId, CREATE_ROOM_MT, room);
 }
 
 class ErrorMsg extends Message {
   String _content;
 
   ErrorMsg(String senderId, this._content)
-      : super(ERROR_MSG, senderId);
+      : super(ERROR_MSG_MT, senderId);
 
   String get content => _content;
 
@@ -173,20 +174,20 @@ class ErrorMsg extends Message {
   }
 }
 
-class ChannelsListMsg extends Message {
+class RoomsListMsg extends Message {
   String _senderName;
-  List<String> _channels;
+  List<String> _rooms;
 
-  ChannelsListMsg(String senderId, this._senderName, this._channels)
-      : super(CHANNELS_LIST, senderId);
+  RoomsListMsg(String senderId, this._senderName, this._rooms)
+      : super(ROOMS_NAMES_MT, senderId);
 
-  List<String> get channels => _channels;
+  List<String> get rooms => _rooms;
 
   Map<String, Object> toJson() {
     var map = new Map<String, Object>();
     map.addAll(super.toJson());
     map["senderName"] = _senderName;
-    map["channels"] = _channels;
+    map["rooms"] = _rooms;
     return map;
   }
 }
