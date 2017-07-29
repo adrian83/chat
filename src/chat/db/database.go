@@ -1,28 +1,21 @@
 package db
 
 import (
+	"chat/config"
+
 	"strconv"
 
 	r "github.com/dancannon/gorethink"
 )
 
-// Config contains database configuration properties.
-type Config struct {
-	Host             string
-	Port             int
-	DBName           string
-	UsersTableName   string
-	UsersTablePKName string
-}
-
 // Database struct used for working with RethinkDB
 type Database struct {
-	Config  *Config
+	Config  *config.DatabaseConfig
 	Session *r.Session
 }
 
 // New returns pointer to new instance of Database and error
-func New(config *Config) (*Database, error) {
+func New(config *config.DatabaseConfig) (*Database, error) {
 	session, err := r.Connect(r.ConnectOpts{
 		Address:  config.Host + ":" + strconv.Itoa(config.Port),
 		Database: config.DBName,

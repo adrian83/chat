@@ -42,23 +42,23 @@ func (repo *UserRepository) SaveUser(user User) error {
 // FindUser returns user with given name, 'true' and nil if user exists, empty
 // user struct, 'false' and nil if it doesn't exist and error if something
 // bad has happened.
-func (repo *UserRepository) FindUser(name string) (User, bool, error) {
+func (repo *UserRepository) FindUser(name string) (User, error) {
 	user := new(User)
 
 	c, err := repo.collection().Filter(r.Row.Field("name").Eq(name)).Run(repo.database.Session)
 	if err != nil {
-		return *user, false, err
+		return *user, err
 	}
 
 	if c.IsNil() {
-		return *user, false, nil
+		return *user, nil
 	}
 
 	if err = c.One(user); err != nil {
-		return *user, false, err
+		return *user, err
 	}
 
-	return *user, true, nil
+	return *user, nil
 }
 
 func (repo *UserRepository) collection() r.Term {

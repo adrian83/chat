@@ -71,13 +71,13 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	logger.Info("RegisterHandler", "RegisterUser", "Basic validation passed")
 
-	_, exists, err := h.userRepo.FindUser(username)
+	user, err := h.userRepo.FindUser(username)
 	if err != nil {
 		RenderError500(w, err)
 		return
 	}
 
-	if exists {
+	if !user.Empty() {
 		model.AddError("User with this username already exists")
 		RenderTemplateWithModel(w, registerTmpl, model)
 		return
@@ -96,7 +96,7 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	user := db.User{Name: username, Password: string(passBytes)}
+	user = db.User{Name: username, Password: string(passBytes)}
 	if err = h.userRepo.SaveUser(user); err != nil {
 		RenderError500(w, err)
 		return

@@ -40,15 +40,8 @@ func main() {
 	// ---------------------------------------
 	// database
 	// ---------------------------------------
-	databaseConfig := &db.Config{
-		Host:             appConfig.Database.Host,
-		Port:             appConfig.Database.Port,
-		DBName:           appConfig.Database.DBName,
-		UsersTableName:   appConfig.Database.UsersTableName,
-		UsersTablePKName: appConfig.Database.UsersTablePKName,
-	}
 
-	database, err := db.New(databaseConfig)
+	database, err := db.New(&appConfig.Database)
 	if err != nil {
 		logger.Errorf("Main", "main", "Error while creating RethinkDB session! Error: %v", err)
 		panic(err)

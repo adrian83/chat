@@ -57,13 +57,13 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, ok, err := h.userRepo.FindUser(username)
+	user, err := h.userRepo.FindUser(username)
 	if err != nil {
 		RenderError500(w, err)
 		return
 	}
 
-	if !ok {
+	if user.Empty() {
 		model.AddError("User with this username doesn't exist")
 		RenderTemplateWithModel(w, loginTmpl, model)
 		return
