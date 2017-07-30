@@ -23,27 +23,25 @@ func NewIndexHandler(session *session.Session) *IndexHandler {
 // ShowIndexPage renders Index page.
 func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 	model := NewModel()
+	model["loggedIn"] = false
 
 	if reason := req.URL.Query().Get("reason"); reason == "logout" {
 		model.AddInfo("You have been logged out.")
 	}
 
-	loggedIn := false
-
 	sessionID := session.FindSessionID(req)
-	if sessionID != "" {
-		user, err := h.session.FindUserData(sessionID)
-		if err != nil {
-			RenderError500(w, err)
-			return
-		}
-
-		if !user.Empty() {
-			loggedIn = true
-		}
+	if sessionID == "" {
+		RenderTemplateWithModel(w, indexTmpl, model)
+		return
 	}
 
-	model["loggedIn"] = loggedIn
+	user, err := h.session.FindUserData(sessionID)
+	if err != nil {
+		RenderError500(w, err)
+		return
+	}
+
+	model["loggedIn"] = !user.Empty()
 
 	RenderTemplateWithModel(w, indexTmpl, model)
 }

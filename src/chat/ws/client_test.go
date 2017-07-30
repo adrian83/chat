@@ -2,6 +2,7 @@ package ws
 
 import (
 	"chat/db"
+	"testing"
 )
 
 var (
@@ -11,17 +12,14 @@ var (
 		Password: "secret",
 	}
 
-	channels = NewChannels()
+	channels = NewRooms()
 )
 
-/*
 func TestReturnID(t *testing.T) {
-	connection := NewMockConnection()
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, userData, connection, channels)
+	client := NewClient(clientID, userData, channels, nil)
 
-	if client.ID() != "abcdef-ghijkl" {
+	if client.ID() != clientID {
 		t.Errorf("Incorrect client ID. Should be %s, but is %s", clientID, client.ID())
 	}
 }
-*/

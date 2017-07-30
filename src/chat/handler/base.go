@@ -11,11 +11,9 @@ type Model map[string]interface{}
 
 // NewModel function returns new instance of Model struct.
 func NewModel() Model {
-	e := make([]string, 0)
-	i := make([]string, 0)
 	m := Model(make(map[string]interface{}))
-	m["errors"] = e
-	m["info"] = i
+	m["errors"] = make([]string, 0)
+	m["info"] = make([]string, 0)
 	return m
 }
 

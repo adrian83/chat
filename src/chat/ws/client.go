@@ -12,12 +12,12 @@ import (
 // NewClient returns new Client instance
 func NewClient(ID string, user db.User, rooms Rooms, wsConnnection *websocket.Conn) Client {
 	client := DefaultClient{
-		user:           user,
-		id:             ID,
-		rooms:          rooms,
-		messagesToSend: make(chan Message, 50),
-		stopSending:    make(chan bool, 5),
-		wsConnnection:  wsConnnection,
+		user:               user,
+		id:                 ID,
+		rooms:              rooms,
+		messagesChannel:    make(chan Message, 50),
+		stopSendingChannel: make(chan bool, 5),
+		wsConnnection:      wsConnnection,
 	}
 
 	return &client
@@ -33,12 +33,12 @@ type Client interface {
 
 // DefaultClient default implementation of the Client interface.
 type DefaultClient struct {
-	id             string
-	user           db.User
-	rooms          Rooms
-	messagesToSend chan Message
-	stopSending    chan bool
-	wsConnnection  *websocket.Conn
+	id                 string
+	user               db.User
+	rooms              Rooms
+	messagesChannel    chan Message
+	stopSendingChannel chan bool
+	wsConnnection      *websocket.Conn
 }
 
 // StartSending starts infinite loop which is sending messages.
@@ -47,14 +47,14 @@ func (c *DefaultClient) StartSending() {
 mainLoop:
 	for {
 		select {
-		case msg := <-c.messagesToSend:
+		case msg := <-c.messagesChannel:
 			logger.Infof("Client", "StartSending", "Client %v will send message %v", c, msg)
 
 			if err := websocket.JSON.Send(c.wsConnnection, msg); err != nil {
 				logger.Warnf("Client", "StartSending", "Client %v cannot send message.Error: %v", c, err)
 			}
 
-		case b := <-c.stopSending:
+		case b := <-c.stopSendingChannel:
 			logger.Infof("Client", "StartSending", "Client %v, stop %v", c, b)
 			c.rooms.RemoveClient(c)
 			break mainLoop
@@ -75,7 +75,7 @@ mainLoop:
 		msg := Message{}
 		if err := websocket.JSON.Receive(c.wsConnnection, &msg); err != nil {
 			logger.Infof("Client", "StartReceiving", "Error in Client %v while reading from websocket. Error: %v", c, err)
-			c.stopSending <- true
+			c.stopSendingChannel <- true
 			break mainLoop
 		}
 
@@ -115,7 +115,7 @@ func (c *DefaultClient) String() string {
 
 // Send sends message through connection.
 func (c *DefaultClient) Send(msg Message) {
-	c.messagesToSend <- msg
+	c.messagesChannel <- msg
 }
 
 func (c *DefaultClient) closeConnection() {
