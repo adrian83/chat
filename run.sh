@@ -34,7 +34,7 @@ run-rethink() {
 
 run-redis() {
 	set -e
-		docker run -p 6380:6379 -v $PWD/infrastructure/redis:/data -d redis redis-server 
+		docker run -p 6380:6379 -v $PWD/infrastructure/redis:/data -d redis redis-server
 		echo "Redis is listening on port 6380. Data is stored inside 'infrastructure/redis' directory"
 	set +e
 }
@@ -49,31 +49,31 @@ run-infra() {
 
 dart() {
 	set -e
-		cd src/static && pub get && pub build
+		cd static && pub get && pub build
 	set +e
 }
 
 dart-test() {
 	set -e
-		cd src/static && pub run test web/*test.dart
+		cd static && pub run test web/*test.dart
 	set +e
 }
 
 run-go() {
 	set -e
-		cd src/ && go run main.go $PWD/config.json
+		go run main.go $PWD/config.json
 	set +e
 }
 
 go-deps-update() {
 	set -e
-		cd src/ && go get -u ./...
+		go get -u ./...
 	set +e
 }
 
 go-deps-get() {
 	set -e
-		cd src/ && go get ./...
+		go get ./...
 	set +e
 }
 
