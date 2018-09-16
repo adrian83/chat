@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/adrian83/go-chat/chat/db"
-	"github.com/adrian83/go-chat/chat/logger"
-	"github.com/adrian83/go-chat/chat/ws"
+	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/chat/logger"
+	"github.com/adrian83/chat/chat/ws"
 )
 
 func main() {

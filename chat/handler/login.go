@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/adrian83/go-chat/chat/db"
-	"github.com/adrian83/go-chat/chat/session"
+	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/chat/session"
 
 	"net/http"
 

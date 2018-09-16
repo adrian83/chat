@@ -3,7 +3,7 @@ package db
 import (
 	"strconv"
 
-	"github.com/adrian83/go-chat/chat/config"
+	"github.com/adrian83/chat/chat/config"
 	r "github.com/dancannon/gorethink"
 )
 

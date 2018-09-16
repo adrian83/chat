@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/adrian83/go-chat/chat/session"
+	"github.com/adrian83/chat/chat/session"
 )
 
 var (

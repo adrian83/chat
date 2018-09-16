@@ -1,8 +1,8 @@
 package ws
 
 import (
-	"github.com/adrian83/go-chat/chat/db"
-	"github.com/adrian83/go-chat/chat/logger"
+	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/chat/logger"
 
 	"fmt"
 
