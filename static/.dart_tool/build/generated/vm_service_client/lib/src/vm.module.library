@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["json_rpc_2|lib/json_rpc_2.dart","pub_semver|lib/pub_semver.dart","vm_service_client|lib/src/isolate.dart","vm_service_client|lib/src/stream_manager.dart","vm_service_client|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

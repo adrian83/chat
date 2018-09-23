@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["test|lib/src/backend/group.dart","test|lib/src/backend/metadata.dart","test|lib/src/backend/suite_platform.dart","test|lib/src/backend/test.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["async|lib/async.dart","stream_channel|lib/stream_channel.dart","test|lib/src/util/dart.dart","test|lib/src/util/remote_exception.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","isolate"]}

@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["vm_service_client|lib/src/class.dart","vm_service_client|lib/src/field.dart","vm_service_client|lib/src/function.dart","vm_service_client|lib/src/instance.dart","vm_service_client|lib/src/object.dart","vm_service_client|lib/src/scope.dart","vm_service_client|lib/src/script.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","collection"]}

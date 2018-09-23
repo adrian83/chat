@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["yaml|lib/yaml.dart","front_end|lib/src/base/jenkins_smi_hash.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","collection","developer"]}

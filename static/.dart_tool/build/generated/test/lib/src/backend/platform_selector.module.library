@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["boolean_selector|lib/boolean_selector.dart","source_span|lib/source_span.dart","test|lib/src/backend/operating_system.dart","test|lib/src/backend/runtime.dart","test|lib/src/backend/suite_platform.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

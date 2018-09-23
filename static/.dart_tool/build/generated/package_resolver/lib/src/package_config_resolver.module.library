@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["collection|lib/collection.dart","package_config|lib/packages_file.dart","path|lib/path.dart","package_resolver|lib/src/async_package_resolver.dart","package_resolver|lib/src/package_resolver.dart","package_resolver|lib/src/sync_package_resolver.dart","package_resolver|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["collection"]}

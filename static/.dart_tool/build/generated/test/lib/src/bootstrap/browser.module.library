@@ -1,1 +1,0 @@
-{"isEntrypoint":false,"deps":["test|lib/src/runner/browser/post_message_channel.dart","test|lib/src/runner/plugin/remote_platform_helpers.dart","test|lib/src/util/stack_trace_mapper.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

@@ -1,1 +1,0 @@
-{"isEntrypoint":true,"deps":["chat|web/ws_client.dart","chat|web/room_tabs.dart","chat|web/room_list.dart","chat|web/messages.dart","chat|web/errors.dart","chat|web/html_utils.dart","logging|lib/logging.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["html","convert"]}
