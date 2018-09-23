@@ -10,8 +10,8 @@ import 'utils.dart';
 class RoomList implements MessageConsumer {
   final Logger logger = new Logger('RoomList');
 
-  StreamController _onCreatedController = new StreamController.broadcast();
-  StreamController _onSelectedController = new StreamController.broadcast();
+  StreamController _onCreatedController = new StreamController<String>();
+  StreamController _onSelectedController = new StreamController<String>();
 
   Stream<String> get selectedRoom => _onSelectedController.stream;
   Stream<String> get createdRoom => _onCreatedController.stream;
@@ -37,7 +37,7 @@ class RoomList implements MessageConsumer {
   }
 
   void _handleRoomsListMsg(RoomsListMsg msg) {
-    findOne("#ch-list").withChildren(msg.rooms.map((ch) => _createLinkElement(ch)));
+    findOne("#ch-list").withChildren(msg.rooms.map((ch) => _createLinkElement(ch)).toList());
   }
 
   void _handleRoomRemovedMsg(RoomRemovedMsg msg) {

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["matcher|lib/matcher.dart","test|lib/src/frontend/throws_matcher.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["utf|lib/src/constants.dart","utf|lib/src/list_range.dart","utf|lib/src/utf_16_code_unit_decoder.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

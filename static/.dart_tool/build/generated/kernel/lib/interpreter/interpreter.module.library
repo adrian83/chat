@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["kernel|lib/ast.dart","kernel|lib/log.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["http|lib/http.dart","package_config|lib/packages_file.dart"],"parts":[],"conditionalDeps":[{"$default":"package_resolver|lib/src/utils_stub.dart","dart.library.io":"package_resolver|lib/src/utils_io.dart"}],"sdkDeps":["async","convert","isolate"]}

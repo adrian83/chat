@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["plugin|lib/manager.dart","plugin|lib/plugin.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["collection"]}

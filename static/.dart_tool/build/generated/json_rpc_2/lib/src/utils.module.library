@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["stream_channel|lib/stream_channel.dart","json_rpc_2|lib/error_code.dart","json_rpc_2|lib/src/exception.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["meta|lib/meta.dart","path|lib/path.dart","front_end|lib/src/byte_store/byte_store.dart","front_end|lib/src/byte_store/cache.dart","front_end|lib/src/byte_store/file_byte_store.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["convert","io"]}

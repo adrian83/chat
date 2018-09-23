@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["analyzer|lib/analyzer.dart","analyzer|lib/dart/ast/token.dart","analyzer|lib/src/dart/error/syntactic_errors.dart","analyzer|lib/src/generated/resolver.dart","front_end|lib/src/api_prototype/compilation_message.dart","front_end|lib/src/fasta/messages.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

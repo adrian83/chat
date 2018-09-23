@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["async|lib/async.dart","matcher|lib/matcher.dart","test|lib/src/utils.dart","test|lib/src/frontend/async_matcher.dart","test|lib/src/frontend/format_stack_trace.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["shelf|lib/shelf.dart","shelf_static|lib/shelf_static.dart","package_resolver|lib/package_resolver.dart","path|lib/path.dart","shelf_packages_handler|lib/src/async_handler.dart","shelf_packages_handler|lib/src/dir_handler.dart","shelf_packages_handler|lib/src/package_config_handler.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

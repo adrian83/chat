@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["logging|lib/logging.dart","chat|web/messages.dart","chat|web/html_utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

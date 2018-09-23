@@ -34,9 +34,7 @@ main() {
   var errorsPanel = new ErrorsPanel();
   var messageFactory = new MessageFactory(sessionId);
 
-
   client.start();
-
 
   void switchTab(String roomName) {
     if (roomManager.roomExists(roomName)) {

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["async|lib/async.dart","path|lib/path.dart","pub_semver|lib/pub_semver.dart","test|lib/src/backend/operating_system.dart","test|lib/src/backend/runtime.dart","test|lib/src/backend/suite_platform.dart","test|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","core","convert","io"]}

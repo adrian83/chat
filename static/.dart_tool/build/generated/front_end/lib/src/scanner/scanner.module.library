@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["charcode|lib/ascii.dart","front_end|lib/src/scanner/errors.dart","front_end|lib/src/scanner/reader.dart","front_end|lib/src/scanner/string_utilities.dart","front_end|lib/src/scanner/token.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

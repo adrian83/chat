@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["json_rpc_2|lib/src/exception.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["convert"]}

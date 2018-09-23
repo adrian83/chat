@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["front_end|lib/src/fasta/command_line_reporting.dart","front_end|lib/src/fasta/crash.dart","front_end|lib/src/fasta/messages.dart","front_end|lib/src/fasta/severity.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

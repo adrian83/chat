@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["stream_channel|lib/stream_channel.dart","json_rpc_2|lib/src/channel_manager.dart","json_rpc_2|lib/src/client.dart","json_rpc_2|lib/src/parameters.dart","json_rpc_2|lib/src/server.dart","json_rpc_2|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

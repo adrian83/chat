@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["analyzer|lib/src/generated/source.dart","analyzer|lib/src/summary/format.dart","analyzer|lib/src/summary/idl.dart","convert|lib/convert.dart","crypto|lib/crypto.dart","front_end|lib/src/base/api_signature.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["convert"]}

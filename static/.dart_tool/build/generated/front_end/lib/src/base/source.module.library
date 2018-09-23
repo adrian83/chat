@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["path|lib/path.dart","front_end|lib/src/base/analysis_target.dart","front_end|lib/src/base/timestamped_data.dart","front_end|lib/src/base/uri_kind.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

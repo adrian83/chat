@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["front_end|lib/src/fasta/builder/qualified_name.dart","front_end|lib/src/fasta/kernel/metadata_collector.dart","front_end|lib/src/incremental/kernel_driver.dart","kernel|lib/kernel.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["convert"]}

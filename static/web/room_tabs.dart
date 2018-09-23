@@ -24,9 +24,9 @@ class RoomsManager implements MessageConsumer {
   String _clientId;
   Map<String, RoomTab> _rooms = new Map<String, RoomTab>();
 
-  StreamController _onTabClosedCtrl = new StreamController.broadcast();
-  StreamController _onLoggedOutCtrl = new StreamController.broadcast();
-  StreamController _onMessageCtrl = new StreamController.broadcast();
+  StreamController _onTabClosedCtrl = new StreamController<String>();
+  StreamController _onLoggedOutCtrl = new StreamController<bool>();
+  StreamController _onMessageCtrl = new StreamController<BaseMessage>();
 
   RoomsManager(this._clientId);
 

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["analyzer|lib/analyzer.dart","analyzer|lib/dart/ast/ast.dart","path|lib/path.dart","source_span|lib/source_span.dart","test|lib/src/backend/metadata.dart","test|lib/src/backend/platform_selector.dart","test|lib/src/frontend/timeout.dart","test|lib/src/util/dart.dart","test|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["io"]}

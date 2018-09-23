@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["json_rpc_2|lib/json_rpc_2.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

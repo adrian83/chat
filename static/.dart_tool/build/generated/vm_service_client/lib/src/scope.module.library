@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["json_rpc_2|lib/json_rpc_2.dart","vm_service_client|lib/src/error.dart","vm_service_client|lib/src/exceptions.dart","vm_service_client|lib/src/instance.dart","vm_service_client|lib/src/sentinel.dart","vm_service_client|lib/src/stream_manager.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

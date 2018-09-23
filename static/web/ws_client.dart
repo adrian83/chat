@@ -15,10 +15,10 @@ class WSClient implements MessageConsumer {
   var _socket;
   bool _closedByMe;
 
-  StreamController _onMsgCtrl = new StreamController.broadcast();
-  StreamController _onOpenCtrl = new StreamController.broadcast();
-  StreamController _onCloseCtrl = new StreamController.broadcast();
-  StreamController _onErrorCtrl = new StreamController.broadcast();
+  StreamController _onMsgCtrl = new StreamController<Message>();
+  StreamController _onOpenCtrl = new StreamController<bool>();
+  StreamController _onCloseCtrl = new StreamController<bool>();
+  StreamController _onErrorCtrl = new StreamController<bool>();
 
   WSClient(this.sessionId, this._socket, this._parser);
 

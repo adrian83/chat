@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["vm_service_client|lib/src/error.dart","vm_service_client|lib/src/sentinel.dart","vm_service_client|lib/src/service_version.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

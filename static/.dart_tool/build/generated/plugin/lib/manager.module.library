@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["plugin|lib/src/plugin_impl.dart","plugin|lib/plugin.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

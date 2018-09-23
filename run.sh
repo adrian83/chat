@@ -49,7 +49,7 @@ run-infra() {
 
 dart() {
 	set -e
-		cd static && pub get && pub build
+		cd static && pub get && webdev build
 	set +e
 }
 

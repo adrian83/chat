@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["path|lib/path.dart","front_end|lib/src/byte_store/byte_store.dart","front_end|lib/src/byte_store/fletcher16.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","io","isolate","typed_data"]}

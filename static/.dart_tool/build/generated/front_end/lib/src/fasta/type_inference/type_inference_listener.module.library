@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["kernel|lib/ast.dart","kernel|lib/type_algebra.dart","front_end|lib/src/scanner/token.dart","front_end|lib/src/fasta/kernel/kernel_shadow_ast.dart","front_end|lib/src/fasta/kernel/kernel_type_variable_builder.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

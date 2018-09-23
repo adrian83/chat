@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["stack_trace|lib/stack_trace.dart","test|lib/src/backend/group.dart","test|lib/src/backend/live_test.dart","test|lib/src/backend/message.dart","test|lib/src/backend/state.dart","test|lib/src/backend/suite.dart","test|lib/src/backend/test.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async","collection"]}

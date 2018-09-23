@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["test|lib/src/util/io.dart","test|lib/src/runner/configuration.dart","test|lib/src/runner/engine.dart","test|lib/src/runner/reporter.dart","test|lib/src/runner/reporter/compact.dart","test|lib/src/runner/reporter/expanded.dart","test|lib/src/runner/reporter/json.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["collection","io"]}

@@ -12,7 +12,6 @@ const String USER_JOINED_ROOM_MT = "USER_JOINED_ROOM";
 const String ERROR_MSG_MT = "ERROR";
 const String LOGOUT_MT = "LOGOUT_USER";
 
-
 abstract class MessageConsumer {
   void onMessage(Message msg);
 }
@@ -22,10 +21,14 @@ class MessageFactory {
 
   MessageFactory(this._senderId);
 
-  Message newTextMessage(String text, String roomName) => new TextMsg(_senderId, roomName, _senderId, text);
-  Message newCreateRoomMessage(String roomName) => new RoomAddedMsg(_senderId, roomName);
-  Message newUserLeftRoomMessage(String roomName) => new UserLeftRoomMsg(_senderId, roomName);
-  Message newJoinRoomMessage(String roomName) => new UserJoinedRoomMsg(_senderId, roomName);
+  Message newTextMessage(String text, String roomName) =>
+      new TextMsg(_senderId, roomName, _senderId, text);
+  Message newCreateRoomMessage(String roomName) =>
+      new RoomAddedMsg(_senderId, roomName);
+  Message newUserLeftRoomMessage(String roomName) =>
+      new UserLeftRoomMsg(_senderId, roomName);
+  Message newJoinRoomMessage(String roomName) =>
+      new UserJoinedRoomMsg(_senderId, roomName);
   Message newLogoutMessage() => new LogoutMsg(_senderId);
 }
 
@@ -50,8 +53,10 @@ class MessageParser {
     var senderId = json["senderId"];
     var senderName = json["senderName"];
     var room = json["room"];
-    var rooms = json["rooms"];
     var content = json["content"];
+    var rooms = json["rooms"] == null
+        ? List<String>()
+        : (json["rooms"] as List).map((e) => e.toString()).toList();
 
     switch (msgType) {
       case REMOVE_ROOM_MT:
@@ -110,7 +115,6 @@ class TextMsg extends RoomMessage {
   String _senderName;
   String _content;
 
-
   TextMsg(String senderId, String room, this._senderName, this._content)
       : super(senderId, TEXT_MSG_MT, room);
 
@@ -135,25 +139,21 @@ class UnknownOpMsg extends Message {
 }
 
 class UserLeftRoomMsg extends RoomMessage {
-
   UserLeftRoomMsg(String senderId, String room)
       : super(senderId, USER_LEFT_ROOM_MT, room);
 }
 
 class UserJoinedRoomMsg extends RoomMessage {
-
   UserJoinedRoomMsg(String senderId, String room)
       : super(senderId, USER_JOINED_ROOM_MT, room);
 }
 
 class RoomRemovedMsg extends RoomMessage {
-
   RoomRemovedMsg(String senderId, String room)
       : super(senderId, REMOVE_ROOM_MT, room);
 }
 
 class RoomAddedMsg extends RoomMessage {
-
   RoomAddedMsg(String senderId, String room)
       : super(senderId, CREATE_ROOM_MT, room);
 }
@@ -161,8 +161,7 @@ class RoomAddedMsg extends RoomMessage {
 class ErrorMsg extends Message {
   String _content;
 
-  ErrorMsg(String senderId, this._content)
-      : super(ERROR_MSG_MT, senderId);
+  ErrorMsg(String senderId, this._content) : super(ERROR_MSG_MT, senderId);
 
   String get content => _content;
 

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["analyzer|lib/src/codegen/tools.dart","html|lib/dom.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

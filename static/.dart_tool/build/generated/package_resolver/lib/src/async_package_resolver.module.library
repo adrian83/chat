@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["package_resolver|lib/src/package_resolver.dart","package_resolver|lib/src/sync_package_resolver.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

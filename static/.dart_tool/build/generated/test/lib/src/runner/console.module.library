@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["async|lib/async.dart","test|lib/src/util/io.dart","test|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["io","math"]}

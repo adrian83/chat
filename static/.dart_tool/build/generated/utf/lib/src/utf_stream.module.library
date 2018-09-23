@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["utf|lib/src/constants.dart","utf|lib/src/util.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

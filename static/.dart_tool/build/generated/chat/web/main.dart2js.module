@@ -1,0 +1,1 @@
+{"p":["chat","web/main.dart"],"s":[["chat","web/main.dart"],["chat","web/utils.dart"],["chat","web/html_utils.dart"],["chat","web/messages.dart"],["chat","web/ws_client.dart"],["chat","web/room_tabs.dart"],["chat","web/room_list.dart"],["chat","web/errors.dart"]],"d":[["logging","lib/logging.dart"]],"m":false,"pf":"dart2js"}

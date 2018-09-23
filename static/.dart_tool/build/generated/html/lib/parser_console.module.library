@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["html|lib/parser.dart","html|lib/src/inputstream.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["io"]}

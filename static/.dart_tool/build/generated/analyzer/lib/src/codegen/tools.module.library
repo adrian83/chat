@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["analyzer|lib/src/codegen/html.dart","analyzer|lib/src/codegen/text_formatter.dart","html|lib/dom.dart","front_end|lib/src/codegen/tools.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}

@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["async|lib/async.dart","test|lib/src/runner/environment.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"]}

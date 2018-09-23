@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["json_rpc_2|lib/src/client.dart","json_rpc_2|lib/src/exception.dart","json_rpc_2|lib/src/parameters.dart","json_rpc_2|lib/src/peer.dart","json_rpc_2|lib/src/server.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[]}
