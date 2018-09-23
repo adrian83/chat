@@ -19,7 +19,7 @@ class RoomList implements MessageConsumer {
   RoomList() {
     findOne("#ch-create").withOnClickListener((event) => _createRoom());
     findOne("#ch-name")..withOnKeyPressListener(handleEnter((event) => _createRoom()));
-    logger.info("Created");
+    logger.info("RoomList created");
   }
 
   void onMessage(Message msg) {

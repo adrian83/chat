@@ -26,7 +26,8 @@ class ErrorsPanel implements MessageConsumer {
 
     var spanClose = span()
         .withText("x")
-        .withAttributes([strPair("aria-hidden", "true")]).get();
+        .withAttributes([strPair("aria-hidden", "true")])
+        .get();
 
     var buttonClose = button()
         .withClass("close")

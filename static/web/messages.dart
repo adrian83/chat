@@ -40,9 +40,7 @@ class MessageParser {
 
   MessageParser(this._encoder, this._decoder);
 
-  String encode(Message msg) {
-    return _encoder.convert(msg);
-  }
+  String encode(Message msg) =>_encoder.convert(msg);
 
   Message decode(String jsonStr) {
     logger.info("Parsing message: $jsonStr");
