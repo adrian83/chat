@@ -9,7 +9,7 @@ import (
 var (
 	userData = db.User{
 		ID:       "abc-def",
-		Name:     "John",
+		Login:    "John",
 		Password: "secret",
 	}
 
@@ -18,7 +18,7 @@ var (
 
 func TestReturnID(t *testing.T) {
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, userData, channels, nil)
+	client := NewClient(clientID, &userData, channels, nil)
 
 	if client.ID() != clientID {
 		t.Errorf("Incorrect client ID. Should be %s, but is %s", clientID, client.ID())

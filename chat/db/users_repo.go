@@ -7,13 +7,17 @@ import (
 // User is a struct containing user data.
 type User struct {
 	ID       string `json:"id" gorethink:"id,omitempty"`
-	Name     string `json:"name" gorethink:"name,omitempty"`
+	Login    string `json:"name" gorethink:"name,omitempty"`
 	Password string `json:"password" gorethink:"password,omitempty"`
 }
 
 // Empty returns 'true' it the User struct is empty, false otherwise.
 func (u *User) Empty() bool {
-	return u.ID == "" && u.Name == "" && u.Password == ""
+	return u.ID == "" && u.Login == "" && u.Password == ""
+}
+
+func (u *User) Name() string {
+	return u.Login
 }
 
 // UserRepository struct representing repository for user data.

@@ -50,8 +50,8 @@ func (s *Session) FindUserData(sessionID string) (db.User, error) {
 	}
 
 	return db.User{
-		ID:   id,
-		Name: name,
+		ID:    id,
+		Login: name,
 	}, nil
 }
 
@@ -62,7 +62,7 @@ func (s *Session) StoreUserData(w http.ResponseWriter, user db.User) (string, er
 	if err1 != nil {
 		return "", err1
 	}
-	session.Add("user.name", user.Name)
+	session.Add("user.name", user.Login)
 	session.Add("user.id", user.ID)
 	if err2 := s.sessionStore.SaveSession(session); err2 != nil {
 		return "", err2

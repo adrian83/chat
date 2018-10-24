@@ -96,7 +96,7 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	user = db.User{Name: username, Password: string(passBytes)}
+	user = db.User{Login: username, Password: string(passBytes)}
 	if err = h.userRepo.SaveUser(user); err != nil {
 		RenderError500(w, err)
 		return

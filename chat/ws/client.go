@@ -1,23 +1,24 @@
 package ws
 
 import (
-	"github.com/adrian83/chat/chat/db"
 	"github.com/adrian83/chat/chat/logger"
 
 	"fmt"
-
-	"golang.org/x/net/websocket"
 )
 
+type User interface {
+	Name() string
+}
+
 // NewClient returns new Client instance
-func NewClient(ID string, user db.User, rooms Rooms, wsConnnection *websocket.Conn) Client {
+func NewClient(ID string, user User, rooms Rooms, conn Connection) Client {
 	client := DefaultClient{
 		user:               user,
 		id:                 ID,
 		rooms:              rooms,
 		messagesChannel:    make(chan Message, 50),
 		stopSendingChannel: make(chan bool, 5),
-		wsConnnection:      wsConnnection,
+		connnection:        conn,
 	}
 
 	return &client
@@ -34,11 +35,11 @@ type Client interface {
 // DefaultClient default implementation of the Client interface.
 type DefaultClient struct {
 	id                 string
-	user               db.User
+	user               User
 	rooms              Rooms
 	messagesChannel    chan Message
 	stopSendingChannel chan bool
-	wsConnnection      *websocket.Conn
+	connnection        Connection
 }
 
 // StartSending starts infinite loop which is sending messages.
@@ -50,7 +51,7 @@ mainLoop:
 		case msg := <-c.messagesChannel:
 			logger.Infof("Client", "StartSending", "Client %v will send message %v", c, msg)
 
-			if err := websocket.JSON.Send(c.wsConnnection, msg); err != nil {
+			if err := c.connnection.Send(msg); err != nil {
 				logger.Warnf("Client", "StartSending", "Client %v cannot send message.Error: %v", c, err)
 			}
 
@@ -72,32 +73,19 @@ func (c *DefaultClient) StartReceiving() {
 mainLoop:
 	for {
 
-		msg := Message{}
-		if err := websocket.JSON.Receive(c.wsConnnection, &msg); err != nil {
+		msg := new(Message)
+		if err := c.connnection.Receive(msg); err != nil {
 			logger.Infof("Client", "StartReceiving", "Error in Client %v while reading from websocket. Error: %v", c, err)
 			c.stopSendingChannel <- true
 			break mainLoop
 		}
 
-		msg.SenderName = c.user.Name
+		msg.SenderName = c.user.Name()
 		msg.SenderID = c.id
 
 		logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
 
-		switch msg.MsgType {
-		case LogoutMT:
-			c.Send(msg)
-		case TextMsgMT:
-			c.rooms.SendMessageOnRoom(msg)
-		case CreateRoomMT:
-			c.rooms.CreateRoom(msg.Room, c)
-		case UserJoinedRoomMT:
-			c.rooms.AddClientToRoom(msg.Room, c)
-		case UserLeftRoomMT:
-			c.rooms.RemoveClientFromRoom(msg.Room, c)
-		default:
-			logger.Infof("Client", "Start", "Unknown message: %v", msg.MsgType)
-		}
+		msg.Do(c, c.rooms)
 
 	}
 	logger.Infof("Client", "StartReceiving", "Client %v is stopping receiving messanges", c)
@@ -110,7 +98,7 @@ func (c *DefaultClient) ID() string {
 
 // String returns string representation of DefaultClient struct.
 func (c *DefaultClient) String() string {
-	return fmt.Sprintf("Client { name: %v }", c.user.Name)
+	return fmt.Sprintf("Client { name: %v }", c.user.Name())
 }
 
 // Send sends message through connection.
@@ -119,7 +107,7 @@ func (c *DefaultClient) Send(msg Message) {
 }
 
 func (c *DefaultClient) closeConnection() {
-	if err := c.wsConnnection.Close(); err != nil {
+	if err := c.connnection.Close(); err != nil {
 		logger.Warnf("Client", "closeConnection", "Error in %v while closing connection. Error: %v", c, err)
 	}
 }

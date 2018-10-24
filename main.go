@@ -163,7 +163,8 @@ func connect(simpleSession *session.Session, rooms ws.Rooms) func(*websocket.Con
 			return
 		}
 
-		client := ws.NewClient(sessionID, user, rooms, wsc)
+		wsConn := ws.NewWebSocketConn(wsc)
+		client := ws.NewClient(sessionID, &user, rooms, wsConn)
 
 		rooms.AddClientToRoom(ws.Main, client)
 

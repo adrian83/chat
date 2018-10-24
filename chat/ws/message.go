@@ -27,6 +27,11 @@ const (
 	system = "system"
 )
 
+// Doer does something.
+type Doer interface {
+	Do(client Client, rooms Rooms)
+}
+
 // Message represents ALL messages exchanged in the app. This may not be the
 // best idea, but in such small app maybe it won't be catastrophic. We will see.
 type Message struct {
@@ -39,9 +44,78 @@ type Message struct {
 }
 
 // String returns string representation of Message struct.
-func (m Message) String() string {
+func (m *Message) String() string {
 	return fmt.Sprintf("Message {	MsgType: %v, SenderID: %v, SenderName: %v, Rooms: %v, Room: %v, Content: %v }",
 		m.MsgType, m.SenderID, m.SenderName, m.Rooms, m.Room, m.Content)
+}
+
+// Do handles message.
+func (m *Message) Do(client Client, rooms Rooms) {
+	var doer Doer
+	switch m.MsgType {
+	case TextMsgMT:
+		doer = &TextMessage{Message: m}
+	case CreateRoomMT:
+		doer = &NewRoomMessage{Message: m}
+	case LogoutMT:
+		doer = &LogoutMessage{Message: m}
+	case UserJoinedRoomMT:
+		doer = &JoinRoomMessage{Message: m}
+	case UserLeftRoomMT:
+		doer = &LeaveRoomMessage{Message: m}
+	default:
+		doer = &UnknownMessage{Message: m}
+	}
+	doer.Do(client, rooms)
+
+}
+
+type UnknownMessage struct {
+	*Message
+}
+
+func (m *UnknownMessage) Do(client Client, rooms Rooms) {
+	//rooms.SendMessageOnRoom(*m.Message)
+}
+
+type JoinRoomMessage struct {
+	*Message
+}
+
+func (m *JoinRoomMessage) Do(client Client, rooms Rooms) {
+	rooms.AddClientToRoom(m.Room, client)
+}
+
+type LeaveRoomMessage struct {
+	*Message
+}
+
+func (m *LeaveRoomMessage) Do(client Client, rooms Rooms) {
+	rooms.RemoveClientFromRoom(m.Room, client)
+}
+
+type TextMessage struct {
+	*Message
+}
+
+func (m *TextMessage) Do(client Client, rooms Rooms) {
+	rooms.SendMessageOnRoom(*m.Message)
+}
+
+type NewRoomMessage struct {
+	*Message
+}
+
+func (m *NewRoomMessage) Do(client Client, rooms Rooms) {
+	rooms.CreateRoom(m.Room, client)
+}
+
+type LogoutMessage struct {
+	*Message
+}
+
+func (m *LogoutMessage) Do(client Client, rooms Rooms) {
+	client.Send(*m.Message)
 }
 
 // NewAddRoomMessage returns message which can be used for creating new room.
