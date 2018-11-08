@@ -147,7 +147,7 @@ func main() {
 	logger.Info("Main", "main", "Server stopped.")
 }
 
-func connect(simpleSession *session.Session, rooms ws.Rooms) func(*websocket.Conn) {
+func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*websocket.Conn) {
 	logger.Infof("Main", "Connect", "New connection")
 	return func(wsc *websocket.Conn) {
 

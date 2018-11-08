@@ -4,6 +4,8 @@ import (
 	"github.com/adrian83/chat/chat/logger"
 
 	"fmt"
+
+	"github.com/adrian83/chat/chat/ws/message"
 )
 
 type User interface {
@@ -11,12 +13,12 @@ type User interface {
 }
 
 // NewClient returns new Client instance
-func NewClient(ID string, user User, rooms Rooms, conn Connection) Client {
+func NewClient(ID string, user User, rooms *DefaultRooms, conn Connection) *DefaultClient {
 	client := DefaultClient{
 		user:               user,
 		id:                 ID,
 		rooms:              rooms,
-		messagesChannel:    make(chan Message, 50),
+		messagesChannel:    make(chan message.Message, 50),
 		stopSendingChannel: make(chan bool, 5),
 		connnection:        conn,
 	}
@@ -24,22 +26,17 @@ func NewClient(ID string, user User, rooms Rooms, conn Connection) Client {
 	return &client
 }
 
-// Client interface definig client of the app.
-type Client interface {
-	ID() string
-	Send(msg Message)
-	StartSending()
-	StartReceiving()
-}
-
 // DefaultClient default implementation of the Client interface.
 type DefaultClient struct {
 	id                 string
 	user               User
-	rooms              Rooms
-	messagesChannel    chan Message
+	rooms              *DefaultRooms
+	messagesChannel    chan message.Message
 	stopSendingChannel chan bool
 	connnection        Connection
+}
+
+func (c *DefaultClient) Rooms() {
 }
 
 // StartSending starts infinite loop which is sending messages.
@@ -73,7 +70,7 @@ func (c *DefaultClient) StartReceiving() {
 mainLoop:
 	for {
 
-		msg := new(Message)
+		msg := new(message.Message)
 		if err := c.connnection.Receive(msg); err != nil {
 			logger.Infof("Client", "StartReceiving", "Error in Client %v while reading from websocket. Error: %v", c, err)
 			c.stopSendingChannel <- true
@@ -85,7 +82,7 @@ mainLoop:
 
 		logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
 
-		msg.Do(c, c.rooms)
+		msg.DoWith(c, c.rooms)
 
 	}
 	logger.Infof("Client", "StartReceiving", "Client %v is stopping receiving messanges", c)
@@ -102,7 +99,7 @@ func (c *DefaultClient) String() string {
 }
 
 // Send sends message through connection.
-func (c *DefaultClient) Send(msg Message) {
+func (c *DefaultClient) Send(msg message.Message) {
 	c.messagesChannel <- msg
 }
 

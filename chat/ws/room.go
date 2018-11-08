@@ -2,6 +2,7 @@ package ws
 
 import (
 	"github.com/adrian83/chat/chat/logger"
+	"github.com/adrian83/chat/chat/ws/message"
 )
 
 const (
@@ -9,24 +10,15 @@ const (
 	Main = "main"
 )
 
-// Room is an interface for defining rooms.
-type Room interface {
-	Name() string
-	FindClient(clientID string) Client
-	SendToEveryone(msg Message)
-	RemoveClient(client Client)
-	AddClient(client Client)
-}
-
 // DefaultRoom struct representing chat room.
 type DefaultRoom struct {
 	name             string
-	clients          map[string]Client
-	rooms            Rooms
-	removeClientChan chan Client
-	addClientChan    chan Client
+	clients          map[string]message.Sender
+	rooms            *DefaultRooms
+	removeClientChan chan message.Sender
+	addClientChan    chan message.Sender
 	existClient      chan clientExist
-	messageChan      chan Message
+	messageChan      chan message.Message
 	interrupt        chan bool
 }
 
@@ -62,14 +54,14 @@ mainLoop:
 }
 
 type clientExist struct {
-	existChan chan Client
+	existChan chan message.Sender
 	clientID  string
 }
 
 // FindClient returns client with given id if it exist in this room.
-func (ch *DefaultRoom) FindClient(clientID string) Client {
+func (ch *DefaultRoom) FindClient(clientID string) message.Sender {
 
-	clientChan := make(chan Client, 1)
+	clientChan := make(chan message.Sender, 1)
 
 	ch.existClient <- clientExist{
 		existChan: clientChan,
@@ -85,29 +77,29 @@ func (ch *DefaultRoom) Name() string {
 }
 
 // SendToEveryone sends message to everyone from that room.
-func (ch *DefaultRoom) SendToEveryone(msg Message) {
+func (ch *DefaultRoom) SendToEveryone(msg message.Message) {
 	ch.messageChan <- msg
 }
 
 // AddClient adds client to room.
-func (ch *DefaultRoom) AddClient(client Client) {
+func (ch *DefaultRoom) AddClient(client message.Sender) {
 	ch.addClientChan <- client
 }
 
 // RemoveClient removes client from the room.
-func (ch *DefaultRoom) RemoveClient(client Client) {
+func (ch *DefaultRoom) RemoveClient(client message.Sender) {
 	ch.removeClientChan <- client
 }
 
 // NewRoom functions returns new Room struct.
-func NewRoom(name string, rooms Rooms) Room {
+func NewRoom(name string, rooms *DefaultRooms) *DefaultRoom {
 	room := &DefaultRoom{
 		name:             name,
-		clients:          map[string]Client{},
+		clients:          map[string]message.Sender{},
 		rooms:            rooms,
-		removeClientChan: make(chan Client, 5),
-		addClientChan:    make(chan Client, 5),
-		messageChan:      make(chan Message, 50),
+		removeClientChan: make(chan message.Sender, 5),
+		addClientChan:    make(chan message.Sender, 5),
+		messageChan:      make(chan message.Message, 50),
 	}
 	go room.start()
 	return room
