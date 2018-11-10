@@ -37,6 +37,7 @@ func NewRooms() *DefaultRooms {
 		removeClient:                removeClient,
 	}
 	mainRoom := room.NewMainRoom(&rooms)
+	mainRoom.Start()
 	ch[mainRoom.Name()] = mainRoom
 
 	go rooms.start()
@@ -149,6 +150,7 @@ func (ch *DefaultRooms) start() {
 
 			// create new room with given name
 			newRoom := room.NewRoom(cac.room, ch)
+			newRoom.Start()
 			newRoom.AddClient(cac.client)
 			// add room to rooms' collection
 			ch.rooms[cac.room] = newRoom
@@ -182,7 +184,8 @@ func (ch *DefaultRooms) sendToEveryone(roomName string, msg message.Message) {
 func (ch *DefaultRooms) clientRooms(id string) []string {
 	rooms := make([]string, 0)
 	for _, room := range ch.rooms {
-		if cli := room.FindClient(id); cli != nil {
+		_, err := room.FindClient(id)
+		if err == nil {
 			rooms = append(rooms, room.Name())
 		}
 	}

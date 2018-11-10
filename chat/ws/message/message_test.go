@@ -27,6 +27,27 @@ var (
 		SenderName: "Jane",
 		Room:       "java",
 	}}
+
+	textMessage = TextMessage{&Message{
+		MsgType:    textMsgMT,
+		SenderID:   "ghi",
+		SenderName: "Steve",
+		Room:       "haskell",
+		Content:    "Haskell is the best",
+	}}
+
+	createRoomMessage = NewRoomMessage{&Message{
+		MsgType:    createRoomMT,
+		Room:       "dart",
+		SenderID:   "jkl",
+		SenderName: "Jessica",
+	}}
+
+	logoutMessage = LogoutMessage{&Message{
+		MsgType:    logoutMT,
+		SenderID:   "mno",
+		SenderName: "Kurt",
+	}}
 )
 
 func TestUnknownMessageImplementsHandler(t *testing.T) {
@@ -39,6 +60,18 @@ func TestJoinRoomMessageImplementsHandler(t *testing.T) {
 
 func TestLeaveRoomMessageImplementsHandler(t *testing.T) {
 	var _ Handler = &LeaveRoomMessage{}
+}
+
+func TestTextMessageImplementsHandler(t *testing.T) {
+	var _ Handler = &TextMessage{}
+}
+
+func TestLogoutMessageImplementsHandler(t *testing.T) {
+	var _ Handler = &LogoutMessage{}
+}
+
+func TestMessageHasStringRepresentation(t *testing.T) {
+	assert.NotEmpty(t, textMessage.Message.String())
 }
 
 func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
@@ -55,6 +88,9 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 		{&unknownMessage, 0, 0, 0, 0, 0, 0},
 		{&joinRoomMessage, 0, 0, 1, 0, 0, 0},
 		{&leaveRoomMessage, 0, 0, 0, 0, 1, 0},
+		{&textMessage, 0, 0, 0, 0, 0, 1},
+		{&createRoomMessage, 0, 0, 0, 1, 0, 0},
+		{&logoutMessage, 0, 1, 0, 0, 0, 0},
 	}
 
 	for _, data := range testData {
@@ -68,9 +104,9 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 		assert.Equal(t, sender.sendExecuted, data.sendExecuted, "Invalid number of sender.Send(Message) calls")
 
 		assert.Equal(t, rooms.addClientToRoomExecuted, data.addClientToRoomExecuted, "Invalid number of rooms.AddClientToRoom(string, Sender) calls")
-		assert.Equal(t, rooms.createRoomExecuted, data.createRoomExecuted, "Invalid number of rooms.RemoveClientFromRoom(string, Sender) calls")
-		assert.Equal(t, rooms.removeClientFromRoomExecuted, data.removeClientFromRoomExecuted, "Invalid number of rooms.SendMessageOnRoom(Message) calls")
-		assert.Equal(t, rooms.sendMessageOnRoomExecuted, data.sendMessageOnRoomExecuted, "Invalid number of rooms.CreateRoom(string, Sender) calls")
+		assert.Equal(t, rooms.createRoomExecuted, data.createRoomExecuted, "Invalid number of rooms.CreateRoom(string, Sender) calls")
+		assert.Equal(t, rooms.removeClientFromRoomExecuted, data.removeClientFromRoomExecuted, "Invalid number of rooms.RemoveClientFromRoom(string, Sender) calls")
+		assert.Equal(t, rooms.sendMessageOnRoomExecuted, data.sendMessageOnRoomExecuted, "Invalid number of rooms.SendMessageOnRoom(Message) calls")
 	}
 }
 
