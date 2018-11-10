@@ -6,6 +6,7 @@ import (
 
 	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/ws/message"
+	"github.com/adrian83/chat/chat/ws/room"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 
 // NewRooms returns new Rooms struct.
 func NewRooms() *DefaultRooms {
-	ch := make(map[string]*DefaultRoom)
+	ch := make(map[string]*room.Room)
 
 	roomsListRequests := make(chan message.Sender, 50)
 	removeClient := make(chan message.Sender, 50)
@@ -35,8 +36,8 @@ func NewRooms() *DefaultRooms {
 		removeRoomRequests:          removeRoomRequests,
 		removeClient:                removeClient,
 	}
-	mainRoom := NewRoom(Main, &rooms)
-	ch[Main] = mainRoom
+	mainRoom := room.NewMainRoom(&rooms)
+	ch[mainRoom.Name()] = mainRoom
 
 	go rooms.start()
 
@@ -53,7 +54,7 @@ type messageAndRoom struct {
 	room    string
 }
 
-type RoomsMap map[string]*DefaultRoom
+type RoomsMap map[string]*room.Room
 
 func (r RoomsMap) names() []string {
 	names := make([]string, 0)
@@ -86,10 +87,10 @@ func (ch *DefaultRooms) start() {
 			client.Send(msg)
 
 		case cac := <-ch.addClientToRoomRequest:
-			if room, exists := ch.rooms[cac.room]; exists {
-				room.AddClient(cac.client)
+			if roomS, exists := ch.rooms[cac.room]; exists {
+				roomS.AddClient(cac.client)
 
-				if cac.room == Main {
+				if cac.room == room.MainRoomName() {
 					names := ch.rooms.names()
 					roomNamesMsg := message.RoomsNamesMessage(names)
 					cac.client.Send(roomNamesMsg)
@@ -105,19 +106,19 @@ func (ch *DefaultRooms) start() {
 
 		case roomName := <-ch.removeRoomRequests:
 
-			if roomName == Main {
+			if roomName == room.MainRoomName() {
 				logger.Info("DefaultRooms", "start", "Cannot remove 'main' room")
 				continue
 			}
 
 			delete(ch.rooms, roomName)
 			msg := message.NewRemoveRoomMessage(roomName)
-			ch.sendToEveryone(Main, msg)
+			ch.sendToEveryone(room.MainRoomName(), msg)
 
 		case cac := <-ch.removeClientFromRoomRequest:
 			logger.Infof("DefaultRooms", "start", "Remove client '%v' from room '%v'", cac.client, cac.room)
 			if room, exists := ch.rooms[cac.room]; exists {
-				room.RemoveClient(cac.client)
+				room.RemoveClient(cac.client.ID())
 				ujc := message.NewUserLeftRoomMessage(cac.room, cac.client.ID())
 				cac.client.Send(ujc)
 			} else {
@@ -147,20 +148,20 @@ func (ch *DefaultRooms) start() {
 			}
 
 			// create new room with given name
-			newRoom := NewRoom(cac.room, ch)
+			newRoom := room.NewRoom(cac.room, ch)
 			newRoom.AddClient(cac.client)
 			// add room to rooms' collection
 			ch.rooms[cac.room] = newRoom
 
 			ncm := message.NewAddRoomMessage(cac.room)
-			ch.sendToEveryone(Main, ncm)
+			ch.sendToEveryone(room.MainRoomName(), ncm)
 
 			ujc := message.NewUserJoinedRoomMessage(cac.room, cac.client.ID())
 			cac.client.Send(ujc)
 
 		case client := <-ch.removeClient:
 			for _, room := range ch.rooms {
-				room.RemoveClient(client)
+				room.RemoveClient(client.ID())
 			}
 
 		case msg := <-ch.messageRequest:

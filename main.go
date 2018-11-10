@@ -14,6 +14,7 @@ import (
 	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/session"
 	"github.com/adrian83/chat/chat/ws"
+	"github.com/adrian83/chat/chat/ws/room"
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
@@ -166,7 +167,7 @@ func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*webso
 		wsConn := ws.NewWebSocketConn(wsc)
 		client := ws.NewClient(sessionID, &user, rooms, wsConn)
 
-		rooms.AddClientToRoom(ws.Main, client)
+		rooms.AddClientToRoom(room.MainRoomName() , client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 
