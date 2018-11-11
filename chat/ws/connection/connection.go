@@ -1,13 +1,6 @@
-package ws
+package connection
 
 import "golang.org/x/net/websocket"
-
-// Connection defines interface for connections.
-type Connection interface {
-	Send(msg interface{}) error
-	Receive(msg interface{}) error
-	Close() error
-}
 
 // NewWebSocketConn returns new instance of wsConnection,
 func NewWebSocketConn(webSocketConn *websocket.Conn) *wsConnection {

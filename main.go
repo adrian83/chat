@@ -14,6 +14,7 @@ import (
 	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/session"
 	"github.com/adrian83/chat/chat/ws"
+	"github.com/adrian83/chat/chat/ws/connection"
 	"github.com/adrian83/chat/chat/ws/room"
 
 	redisSession "github.com/adrian83/go-redis-session"
@@ -158,20 +159,19 @@ func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*webso
 			return
 		}
 
-		user, err2 := simpleSession.FindUserData(sessionID)
-		if err2 != nil {
-			logger.Errorf("Main", "Connect", "Error while getting user data from session. Error: %v", err2)
+		user, err := simpleSession.FindUserData(sessionID)
+		if err != nil {
+			logger.Errorf("Main", "Connect", "Error while getting user data from session. Error: %v", err)
 			return
 		}
 
-		wsConn := ws.NewWebSocketConn(wsc)
+		wsConn := connection.NewWebSocketConn(wsc)
 		client := ws.NewClient(sessionID, &user, rooms, wsConn)
 
-		rooms.AddClientToRoom(room.MainRoomName() , client)
+		rooms.AddClientToRoom(room.MainRoomName(), client)
 
 		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
 
-		go client.StartSending()
-		client.StartReceiving()
+		client.Start()
 	}
 }
