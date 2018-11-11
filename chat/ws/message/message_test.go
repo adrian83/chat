@@ -110,6 +110,42 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 	}
 }
 
+func TestGenericMessageHandlerShouldCallSpecificMessageHandler(t *testing.T) {
+
+	var testData = []struct {
+		handler                      Handler
+		idExecuted                   int
+		sendExecuted                 int
+		addClientToRoomExecuted      int
+		createRoomExecuted           int
+		removeClientFromRoomExecuted int
+		sendMessageOnRoomExecuted    int
+	}{
+		{unknownMessage.Message, 0, 0, 0, 0, 0, 0},
+		{joinRoomMessage.Message, 0, 0, 1, 0, 0, 0},
+		{leaveRoomMessage.Message, 0, 0, 0, 0, 1, 0},
+		{textMessage.Message, 0, 0, 0, 0, 0, 1},
+		{createRoomMessage.Message, 0, 0, 0, 1, 0, 0},
+		{logoutMessage.Message, 0, 1, 0, 0, 0, 0},
+	}
+
+	for _, data := range testData {
+
+		sender := &SenderStub{id: "abc"}
+		rooms := &RoomsStub{}
+
+		data.handler.DoWith(sender, rooms)
+
+		assert.Equal(t, sender.idExecuted, data.idExecuted, "Invalid number of sender.ID() calls")
+		assert.Equal(t, sender.sendExecuted, data.sendExecuted, "Invalid number of sender.Send(Message) calls")
+
+		assert.Equal(t, rooms.addClientToRoomExecuted, data.addClientToRoomExecuted, "Invalid number of rooms.AddClientToRoom(string, Sender) calls")
+		assert.Equal(t, rooms.createRoomExecuted, data.createRoomExecuted, "Invalid number of rooms.CreateRoom(string, Sender) calls")
+		assert.Equal(t, rooms.removeClientFromRoomExecuted, data.removeClientFromRoomExecuted, "Invalid number of rooms.RemoveClientFromRoom(string, Sender) calls")
+		assert.Equal(t, rooms.sendMessageOnRoomExecuted, data.sendMessageOnRoomExecuted, "Invalid number of rooms.SendMessageOnRoom(Message) calls")
+	}
+}
+
 type SenderStub struct {
 	id           string
 	sendExecuted int

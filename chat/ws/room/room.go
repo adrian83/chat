@@ -32,7 +32,6 @@ func NewRoom(name string, rooms Rooms) *Room {
 		addClientChan:    make(chan message.Sender, 5),
 		incomingMessages: make(chan message.Message, 50),
 	}
-	room.Start()
 	return room
 }
 
