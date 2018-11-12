@@ -46,13 +46,31 @@ type DefaultClient struct {
 	connnection        Connection
 }
 
-func (c *DefaultClient) Rooms() {
-}
-
 func (c *DefaultClient) Start() {
 	c.startSending()
 	c.startReceiving()
 	<-c.stop
+}
+
+// ID returns id of the client.
+func (c *DefaultClient) ID() string {
+	return c.id
+}
+
+// String returns string representation of DefaultClient struct.
+func (c *DefaultClient) String() string {
+	return fmt.Sprintf("Client { name: %v }", c.user.Name())
+}
+
+// Send sends message through connection.
+func (c *DefaultClient) Send(msg message.Message) {
+	c.messagesChannel <- msg
+}
+
+func (c *DefaultClient) closeConnection() {
+	if err := c.connnection.Close(); err != nil {
+		logger.Warnf("Client", "closeConnection", "Error in %v while closing connection. Error: %v", c, err)
+	}
 }
 
 // StartSending starts infinite loop which is sending messages.
@@ -101,25 +119,4 @@ func (c *DefaultClient) startReceiving() {
 
 		}
 	}()
-}
-
-// ID returns id of the client.
-func (c *DefaultClient) ID() string {
-	return c.id
-}
-
-// String returns string representation of DefaultClient struct.
-func (c *DefaultClient) String() string {
-	return fmt.Sprintf("Client { name: %v }", c.user.Name())
-}
-
-// Send sends message through connection.
-func (c *DefaultClient) Send(msg message.Message) {
-	c.messagesChannel <- msg
-}
-
-func (c *DefaultClient) closeConnection() {
-	if err := c.connnection.Close(); err != nil {
-		logger.Warnf("Client", "closeConnection", "Error in %v while closing connection. Error: %v", c, err)
-	}
 }
