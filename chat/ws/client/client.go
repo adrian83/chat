@@ -1,12 +1,12 @@
 package client
 
 import (
-	"github.com/adrian83/chat/chat/logger"
-
 	"fmt"
 
 	"github.com/adrian83/chat/chat/ws"
 	"github.com/adrian83/chat/chat/ws/message"
+
+	logger "github.com/sirupsen/logrus"
 )
 
 // Connection defines interface for connections.
@@ -69,7 +69,7 @@ func (c *Client) Send(msg message.Message) {
 
 func (c *Client) closeConnection() {
 	if err := c.connnection.Close(); err != nil {
-		logger.Warnf("Client", "closeConnection", "Error in %v while closing connection. Error: %v", c, err)
+		logger.Warnf("Error in %v while closing connection. Error: %v", c, err)
 	}
 }
 
@@ -79,14 +79,14 @@ func (c *Client) startSending() {
 		for {
 			select {
 			case msg := <-c.messagesChannel:
-				logger.Infof("Client", "StartSending", "Client %v will send message %v", c, msg)
+				logger.Infof("Client %v will send message %v", c, msg)
 
 				if err := c.connnection.Send(msg); err != nil {
-					logger.Warnf("Client", "StartSending", "Client %v cannot send message.Error: %v", c, err)
+					logger.Warnf("Client %v cannot send message.Error: %v", c, err)
 				}
 
 			case b := <-c.stopSendingChannel:
-				logger.Infof("Client", "StartSending", "Client %v, stop %v", c, b)
+				logger.Infof("Client %v, stop %v", c, b)
 				c.rooms.RemoveClient(c)
 				c.stop <- true
 				return
@@ -105,7 +105,7 @@ func (c *Client) startReceiving() {
 
 			msg := new(message.Message)
 			if err := c.connnection.Receive(msg); err != nil {
-				logger.Infof("Client", "StartReceiving", "Error in Client %v while reading from websocket. Error: %v", c, err)
+				logger.Infof("Error in Client %v while reading from websocket. Error: %v", c, err)
 				c.stopSendingChannel <- true
 				return
 			}
@@ -113,7 +113,7 @@ func (c *Client) startReceiving() {
 			msg.SenderName = c.user.Name()
 			msg.SenderID = c.id
 
-			logger.Infof("Client", "StartReceiving", "Client %v received a messanges: %v", c, msg)
+			logger.Infof("Client %v received a messanges: %v", c, msg)
 
 			msg.DoWith(c, c.rooms)
 

@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/adrian83/chat/chat/db"
-	"github.com/adrian83/chat/chat/logger"
 
+	logger "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -89,7 +89,7 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	logger.Infof("RegisterHandler", "RegisterUser", "Registering user with username: %s", username)
+	logger.Infof("Registering user with username: %s", username)
 
 	if model.HasErrors() {
 		RenderTemplateWithModel(w, registerTmpl, model)

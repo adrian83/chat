@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/ws/message"
 	"github.com/adrian83/chat/chat/ws/room"
+
+	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -78,7 +79,7 @@ type DefaultRooms struct {
 }
 
 func (ch *DefaultRooms) start() {
-	logger.Info("DefaultRooms", "start", "Starting DefaultRooms")
+	logger.Info("Starting DefaultRooms")
 
 	for {
 		select {
@@ -100,7 +101,7 @@ func (ch *DefaultRooms) start() {
 				ujc := message.NewUserJoinedRoomMessage(cac.room, cac.client.ID())
 				cac.client.Send(ujc)
 			} else {
-				logger.Infof("DefaultRooms", "start", "Room %v does not exist. Client %v cannot join", cac.room, cac.client)
+				logger.Infof("Room %v does not exist. Client %v cannot join", cac.room, cac.client)
 				errMsg := message.ErrorMessage(fmt.Sprintf("Room '%v' does not exist. Cannot join", cac.room))
 				cac.client.Send(errMsg)
 			}
@@ -108,7 +109,7 @@ func (ch *DefaultRooms) start() {
 		case roomName := <-ch.removeRoomRequests:
 
 			if roomName == room.MainRoomName() {
-				logger.Info("DefaultRooms", "start", "Cannot remove 'main' room")
+				logger.Info("Cannot remove 'main' room")
 				continue
 			}
 
@@ -117,19 +118,19 @@ func (ch *DefaultRooms) start() {
 			ch.sendToEveryone(room.MainRoomName(), msg)
 
 		case cac := <-ch.removeClientFromRoomRequest:
-			logger.Infof("DefaultRooms", "start", "Remove client '%v' from room '%v'", cac.client, cac.room)
+			logger.Infof("Remove client '%v' from room '%v'", cac.client, cac.room)
 			if room, exists := ch.rooms[cac.room]; exists {
 				room.RemoveClient(cac.client.ID())
 				ujc := message.NewUserLeftRoomMessage(cac.room, cac.client.ID())
 				cac.client.Send(ujc)
 			} else {
-				logger.Infof("DefaultRooms", "start", "Room %v does not exist. Client %v cannot leave", cac.room, cac.client)
+				logger.Infof("Room %v does not exist. Client %v cannot leave", cac.room, cac.client)
 				errMsg := message.ErrorMessage(fmt.Sprintf("Room '%v' does not exist. Cannot leave", cac.room))
 				cac.client.Send(errMsg)
 			}
 
 		case cac := <-ch.createRoomRequest:
-			logger.Infof("DefaultRooms", "start", "Create room request from %v. Room name: %v", cac.client, cac.room)
+			logger.Infof( "Create room request from %v. Room name: %v", cac.client, cac.room)
 
 			if cac.room == "" {
 				errMsg := message.ErrorMessage("Invalid room name. Room name cannot be empty")
@@ -144,7 +145,7 @@ func (ch *DefaultRooms) start() {
 			}
 
 			if _, exists := ch.rooms[cac.room]; exists {
-				logger.Infof("DefaultRooms", "start", "Room %v already exists. Client %v cannot create it", cac.room, cac.client)
+				logger.Infof("Room %v already exists. Client %v cannot create it", cac.room, cac.client)
 				continue
 			}
 
@@ -167,7 +168,7 @@ func (ch *DefaultRooms) start() {
 			}
 
 		case msg := <-ch.messageRequest:
-			logger.Infof("DefaultRooms", "start", "Send message: %v", msg)
+			logger.Infof("Send message: %v", msg)
 			ch.sendToEveryone(msg.Room, msg)
 		}
 	}
@@ -177,7 +178,7 @@ func (ch *DefaultRooms) sendToEveryone(roomName string, msg message.Message) {
 	if room, ok := ch.rooms[msg.Room]; ok {
 		room.SendToEveryone(msg)
 	} else {
-		logger.Infof("DefaultRooms", "start", "Cannot send message because the room %v doesn't exist", msg.Room)
+		logger.Infof("Cannot send message because the room %v doesn't exist", msg.Room)
 	}
 }
 
@@ -202,7 +203,7 @@ func (ch *DefaultRooms) CreateRoom(roomName string, client message.Sender) {
 
 // RemoveClient removes client from all rooms.
 func (ch *DefaultRooms) RemoveClient(client message.Sender) {
-	logger.Infof("DefaultRooms", "RemoveClient", "Removing Client %v from all rooms", client)
+	logger.Infof("Removing Client %v from all rooms", client)
 	ch.removeClient <- client
 }
 

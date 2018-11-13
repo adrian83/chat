@@ -3,8 +3,9 @@ package room
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/ws/message"
+
+	logger "github.com/sirupsen/logrus"
 )
 
 const (
@@ -105,7 +106,7 @@ func (ch *Room) Start() {
 			case clientID := <-ch.removeClientChan:
 				delete(ch.clients, clientID)
 				if len(ch.clients) == 0 {
-					logger.Infof("DefaultRoom", "start", "Room: '%v' is empty. Should be removed.", ch.Name())
+					logger.Infof("Room: '%v' is empty. Should be removed.", ch.Name())
 					ch.rooms.RemoveRoom(ch.Name())
 				}
 
@@ -114,7 +115,7 @@ func (ch *Room) Start() {
 
 			case msg := <-ch.incomingMessages:
 				for _, client := range ch.clients {
-					logger.Infof("DefaultRoom", "SendToEveryone", "Sending msg to %v from room '%v'.", client, ch.name)
+					logger.Infof("Sending msg to %v from room '%v'.", client, ch.name)
 					client.Send(msg)
 				}
 

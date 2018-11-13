@@ -11,7 +11,6 @@ import (
 	"github.com/adrian83/chat/chat/config"
 	"github.com/adrian83/chat/chat/db"
 	"github.com/adrian83/chat/chat/handler"
-	"github.com/adrian83/chat/chat/logger"
 	"github.com/adrian83/chat/chat/session"
 	"github.com/adrian83/chat/chat/ws"
 	"github.com/adrian83/chat/chat/ws/connection"
@@ -21,6 +20,7 @@ import (
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
+	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -29,14 +29,21 @@ var (
 
 func main() {
 
+
+	logger.SetFormatter(&logger.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	logger.SetOutput(os.Stdout)
+
 	// ---------------------------------------
 	// application config
 	// ---------------------------------------
 	configPath := os.Args[1]
-	logger.Infof("Main", "main", "Reading configuration from: %v", configPath)
+	logger.Infof("Reading configuration from: %v", configPath)
 	appConfig, err := config.ReadConfig(configPath)
 	if err != nil {
-		logger.Errorf("Main", "main", "Error while reading configuration! Error: %v", err)
+		logger.Errorf("Error while reading configuration! Error: %v", err)
 		panic(err)
 	}
 
@@ -46,25 +53,25 @@ func main() {
 
 	database, err := db.New(&appConfig.Database)
 	if err != nil {
-		logger.Errorf("Main", "main", "Error while creating RethinkDB session! Error: %v", err)
+		logger.Errorf("Error while creating RethinkDB session! Error: %v", err)
 		panic(err)
 	}
 	defer func() {
 		if err1 := database.Close(); err1 != nil {
-			logger.Errorf("Main", "main", "Error while closing RethinkDB session! Error: %v", err1)
+			logger.Errorf("Error while closing RethinkDB session! Error: %v", err1)
 		}
 	}()
 
-	logger.Info("Main", "main", "RethinkDB session created")
+	logger.Info("RethinkDB session created")
 
 	// ---------------------------------------
 	// database setup
 	// ---------------------------------------
 	if err = database.Setup(); err != nil {
-		logger.Errorf("Main", "main", "Error during RethinkDB database setup! Error: %v", err)
+		logger.Errorf("Error during RethinkDB database setup! Error: %v", err)
 		panic(err)
 	}
-	logger.Info("Main", "main", "RethinkDB database initialized")
+	logger.Info("RethinkDB database initialized")
 
 	// ---------------------------------------
 	// session
@@ -79,15 +86,15 @@ func main() {
 
 	sessionStore, err := redisSession.NewStore(sessionStoreConfig)
 	if err != nil {
-		logger.Errorf("Main", "main", "Error while creating SessionStore. Error: %v", err)
+		logger.Errorf("Error while creating SessionStore. Error: %v", err)
 		return
 	}
 	defer func() {
 		if err1 := sessionStore.Close(); err1 != nil {
-			logger.Errorf("Main", "main", "Error while closing SessionStore session! Error: %v", err1)
+			logger.Errorf("Error while closing SessionStore session! Error: %v", err1)
 		}
 	}()
-	logger.Info("Main", "main", "SessionStore created.")
+	logger.Info("SessionStore created.")
 
 	// ---------------------------------------
 	// useful structures
@@ -130,11 +137,11 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt, os.Kill)
 
 	serverAddress := appConfig.Server.Host + ":" + strconv.Itoa(appConfig.Server.Port)
-	logger.Infof("Main", "main", "Starting server on: %v", serverAddress)
+	logger.Infof("Starting server on: %v", serverAddress)
 	server := &http.Server{Addr: serverAddress, Handler: mux}
 	go func() {
-		if err2 := server.ListenAndServe(); err2 != nil {
-			logger.Errorf("Main", "main", "Server error! Error: %v", err2)
+		if err := server.ListenAndServe(); err != nil {
+			logger.Errorf("Server error! Error: %v", err)
 		}
 	}()
 
@@ -144,25 +151,25 @@ func main() {
 	defer cancel()
 
 	if err = server.Shutdown(ctx); err != nil {
-		logger.Warnf("Main", "main", "Error while stopping server. Error: %v", err)
+		logger.Warnf("Error while stopping server. Error: %v", err)
 	}
 
-	logger.Info("Main", "main", "Server stopped.")
+	logger.Info("Server stopped.")
 }
 
 func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*websocket.Conn) {
-	logger.Infof("Main", "Connect", "New connection")
+	logger.Infof("New connection")
 	return func(wsc *websocket.Conn) {
 
 		sessionID := session.FindSessionID(wsc.Request())
 		if sessionID == "" {
-			logger.Errorf("Main", "Connect", "Error while getting sessionID from WebSocket.")
+			logger.Errorf("Error while getting sessionID from WebSocket.")
 			return
 		}
 
 		user, err := simpleSession.FindUserData(sessionID)
 		if err != nil {
-			logger.Errorf("Main", "Connect", "Error while getting user data from session. Error: %v", err)
+			logger.Errorf("Error while getting user data from session. Error: %v", err)
 			return
 		}
 
@@ -171,7 +178,7 @@ func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*webso
 
 		rooms.AddClientToRoom(room.MainRoomName(), client)
 
-		logger.Infof("Main", "Connect", "New connection received from %v, %v", client, user)
+		logger.Infof("New connection received from %v, %v", client, user)
 
 		client.Start()
 	}
