@@ -59,7 +59,7 @@ func TestSendingMultioleMessagesOnNotStartedClientShouldStopSender(t *testing.T)
 	client := NewClient(clientID, &userData, rooms, connection)
 
 	finished := make(chan bool, 5)
-	go func(client *DefaultClient, finished chan bool) {
+	go func(client *Client, finished chan bool) {
 		for i := 0; i < 60; i++ {
 			client.Send(createRoomMessage)
 		}
