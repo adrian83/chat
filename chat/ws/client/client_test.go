@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -69,6 +70,39 @@ func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T)
 	successAfterMs(t, 200, finished)
 }
 
+func TestStartingClientShouldSuspendExecution(t *testing.T) {
+	connection := &ConnectionStub{
+		sent:     make([]interface{}, 0),
+		received: make([]interface{}, 0),
+	}
+	clientID := "abcdef-ghijkl"
+	client := NewClient(clientID, &userData, rooms, connection)
+
+	finished := make(chan bool, 5)
+	go func(client *Client, finished chan bool) {
+		client.Start()
+		finished <- true
+	}(client, finished)
+
+	successAfterMs(t, 200, finished)
+}
+
+func TestErrorWhileReceivingMessageShouldStopTheClient(t *testing.T) {
+	connection := &ConnectionStub{
+		sent:       make([]interface{}, 0),
+		received:   make([]interface{}, 0),
+		receiveErr: fmt.Errorf("test error"),
+	}
+	clientID := "abcdef-ghijkl"
+	client := NewClient(clientID, &userData, rooms, connection)
+
+	finished := make(chan bool, 5)
+	go failAfterMs(t, 200, finished)
+
+	client.Start()
+	finished <- true
+}
+
 type ConnectionStub struct {
 	sendErr    error
 	receiveErr error
@@ -102,5 +136,14 @@ func successAfterMs(t *testing.T, ms int64, finished chan bool) {
 		t.Error("Invalid state")
 	case <-time.After(time.Duration(ms) * time.Millisecond):
 		t.Log("success")
+	}
+}
+
+func failAfterMs(t *testing.T, ms int64, finished chan bool) {
+	select {
+	case <-finished:
+		t.Log("success")
+	case <-time.After(time.Duration(ms) * time.Millisecond):
+		t.Error("Invalid state")
 	}
 }
