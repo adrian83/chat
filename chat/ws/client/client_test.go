@@ -50,7 +50,7 @@ func TestSendingMessageOnNotStartedClientShouldDoNothing(t *testing.T) {
 	assert.Equal(t, len(connection.sent), 0, "Invalid number of sent messages")
 }
 
-func TestSendingMultioleMessagesOnNotStartedClientShouldStopSender(t *testing.T) {
+func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T) {
 	connection := &ConnectionStub{
 		sent:     make([]interface{}, 0),
 		received: make([]interface{}, 0),

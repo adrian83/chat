@@ -24,32 +24,39 @@ type User interface {
 // NewClient returns new Client instance
 func NewClient(ID string, user User, rooms *ws.DefaultRooms, conn Connection) *Client {
 	return &Client{
-		user:               user,
-		id:                 ID,
-		rooms:              rooms,
-		messagesChannel:    make(chan message.Message, 50),
-		stopSendingChannel: make(chan bool, 5),
-		stop:               make(chan bool, 5),
-		connnection:        conn,
+		user:        user,
+		id:          ID,
+		rooms:       rooms,
+		messages:    make(chan message.Message, 50),
+		stopSending: make(chan interface{}, 1),
+		stop:        make(chan interface{}, 1),
+		connnection: conn,
 	}
 }
 
 // Client represents user of this application.
 type Client struct {
-	id                 string
-	user               User
-	rooms              *ws.DefaultRooms
-	messagesChannel    chan message.Message
-	stopSendingChannel chan bool
-	stop               chan bool
-	connnection        Connection
+	id          string
+	user        User
+	rooms       *ws.DefaultRooms
+	messages    chan message.Message
+	stopSending chan interface{}
+	stop        chan interface{}
+	connnection Connection
 }
 
 // Start starts two goroutines: one for sending and one for receiving messages.
 func (c *Client) Start() {
+	logger.Infof("Client: %v. Starting", c.user.Name())
+
+	defer c.closeConnection()
+
 	c.startSending()
 	c.startReceiving()
+
 	<-c.stop
+
+	logger.Infof("Client: %v. Stoping", c.user.Name())
 }
 
 // ID returns id of the client.
@@ -64,59 +71,62 @@ func (c *Client) String() string {
 
 // Send sends message through connection.
 func (c *Client) Send(msg message.Message) {
-	c.messagesChannel <- msg
+	logger.Infof("Client: %v. Adding message to send channel. Message: %v", c.user.Name(), msg.MsgType)
+	c.messages <- msg
 }
 
 func (c *Client) closeConnection() {
+	logger.Infof("Client: %v. Closing connection", c.user.Name())
 	if err := c.connnection.Close(); err != nil {
-		logger.Warnf("Error in %v while closing connection. Error: %v", c, err)
+		logger.Warnf("Client: %v. Error while closing connection. Error: %v", c.user.Name(), err)
 	}
 }
 
 // StartSending starts infinite loop which is sending messages.
 func (c *Client) startSending() {
+	logger.Infof("Client: %v. Starting sending messages", c.user.Name())
 	go func() {
 		for {
 			select {
-			case msg := <-c.messagesChannel:
-				logger.Infof("Client %v will send message %v", c, msg)
+			case msg := <-c.messages:
+				logger.Infof("Client: %v. Sending message. Message: %v", c.user.Name(), msg.MsgType)
 
 				if err := c.connnection.Send(msg); err != nil {
-					logger.Warnf("Client %v cannot send message.Error: %v", c, err)
+					logger.Warnf("Client: %v. Error while sending message.Error: %v", c.user.Name(), err)
 				}
 
-			case b := <-c.stopSendingChannel:
-				logger.Infof("Client %v, stop %v", c, b)
+			case <-c.stopSending:
+				logger.Infof("Client: %v. Stopping sending messages", c.user.Name())
 				c.rooms.RemoveClient(c)
 				c.stop <- true
 				return
 			}
 		}
 	}()
+	logger.Infof("Client: %v. Stopping sending messages", c.user.Name())
 }
 
 // startReceiving starts infinite loop which is processing received messages.
 func (c *Client) startReceiving() {
-
+	logger.Infof("Client: %v. Starting receiving messages", c.user.Name())
 	go func() {
-		defer c.closeConnection()
 
 		for {
 
 			msg := new(message.Message)
 			if err := c.connnection.Receive(msg); err != nil {
-				logger.Infof("Error in Client %v while reading from websocket. Error: %v", c, err)
-				c.stopSendingChannel <- true
+				logger.Warnf("Client: %v. Error while receiving message. Error: %v", c.user.Name(), err)
+				c.stopSending <- true
 				return
 			}
 
 			msg.SenderName = c.user.Name()
 			msg.SenderID = c.id
 
-			logger.Infof("Client %v received a messanges: %v", c, msg)
+			logger.Infof("Client: %v. Received message. Message: %v", c.user.Name(), msg.MsgType)
 
 			msg.DoWith(c, c.rooms)
-
 		}
 	}()
+	logger.Infof("Client: %v. Stopping receiving messages", c.user.Name())
 }
