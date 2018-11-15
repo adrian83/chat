@@ -1,11 +1,11 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/chat/db"
 	"github.com/adrian83/chat/chat/ws"
 	"github.com/adrian83/chat/chat/ws/message"
 
@@ -13,12 +13,6 @@ import (
 )
 
 var (
-	userData = db.User{
-		ID:       "abc-def",
-		Login:    "John",
-		Password: "secret",
-	}
-
 	createRoomMessage = message.NewAddRoomMessage("golang")
 
 	rooms = ws.NewRooms()
@@ -26,38 +20,41 @@ var (
 
 func TestCreateClientWithGivenId(t *testing.T) {
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, nil)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, nil)
 
 	assert.Equal(t, clientID, client.ID(), "Invalid client id")
 }
 
 func TestMessageHasStringRepresentation(t *testing.T) {
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, nil)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, nil)
 
 	assert.NotEmpty(t, client.String())
 }
 
 func TestSendingMessageOnNotStartedClientShouldDoNothing(t *testing.T) {
-	connection := &ConnectionStub{
-		sent:     make([]interface{}, 0),
-		received: make([]interface{}, 0),
-	}
+	connection := &ConnectionStub{}
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, connection)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
 
 	client.Send(createRoomMessage)
 
 	assert.Equal(t, len(connection.sent), 0, "Invalid number of sent messages")
+	assert.Equal(t, 1, user.executed, "User should be asked for name once (during client creation)")
 }
 
 func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T) {
-	connection := &ConnectionStub{
-		sent:     make([]interface{}, 0),
-		received: make([]interface{}, 0),
-	}
+	connection := &ConnectionStub{}
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, connection)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
 
 	finished := make(chan bool, 5)
 	go func(client *Client, finished chan bool) {
@@ -71,12 +68,11 @@ func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T)
 }
 
 func TestStartingClientShouldSuspendExecution(t *testing.T) {
-	connection := &ConnectionStub{
-		sent:     make([]interface{}, 0),
-		received: make([]interface{}, 0),
-	}
+	connection := &ConnectionStub{}
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, connection)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
 
 	finished := make(chan bool, 5)
 	go func(client *Client, finished chan bool) {
@@ -88,13 +84,21 @@ func TestStartingClientShouldSuspendExecution(t *testing.T) {
 }
 
 func TestErrorWhileReceivingMessageShouldStopTheClient(t *testing.T) {
+	receivedMsg := msgOrErr{
+		msg: createRoomMessage,
+	}
+
+	receivedErr := msgOrErr{
+		err: fmt.Errorf("test error"),
+	}
+
 	connection := &ConnectionStub{
-		sent:       make([]interface{}, 0),
-		received:   make([]interface{}, 0),
-		receiveErr: fmt.Errorf("test error"),
+		received: []msgOrErr{receivedMsg, receivedErr},
 	}
 	clientID := "abcdef-ghijkl"
-	client := NewClient(clientID, &userData, rooms, connection)
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
 
 	finished := make(chan bool, 5)
 	go failAfterMs(t, 200, finished)
@@ -103,27 +107,127 @@ func TestErrorWhileReceivingMessageShouldStopTheClient(t *testing.T) {
 	finished <- true
 }
 
+func TestClientShouldBeStoppedAfterCallingStopMethod(t *testing.T) {
+
+	connection := &ConnectionStub{}
+	clientID := "abcdef-ghijkl"
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
+
+	finished := make(chan bool, 5)
+	go failAfterMs(t, 200, finished)
+
+	client.stop()
+	client.Start()
+	finished <- true
+}
+
+func TestHandleErrorWhileClosingConnection(t *testing.T) {
+	connection := &ConnectionStub{
+		closeErr: fmt.Errorf("test"),
+	}
+	clientID := "abcdef-ghijkl"
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
+
+	finished := make(chan bool, 5)
+
+	client.stop()
+	client.Start()
+	finished <- true
+}
+
+func TestErrorWhileSendingMessageShouldStopTheClient(t *testing.T) {
+	connection := &ConnectionStub{
+		sendErr: &sendErr{
+			no:  1,
+			err: fmt.Errorf("test"),
+		},
+	}
+	clientID := "abcdef-ghijkl"
+	user := &UserStub{name: "John"}
+
+	client := NewClient(clientID, user, rooms, connection)
+
+	finished := make(chan bool, 5)
+
+	go func(client *Client, finished chan bool) {
+		client.Send(createRoomMessage)
+		client.Send(createRoomMessage)
+		client.stop()
+		finished <- true
+	}(client, finished)
+
+	go failAfterMs(t, 200, finished)
+
+	client.Start()
+}
+
+type UserStub struct {
+	name     string
+	executed int
+}
+
+func (u *UserStub) Name() string {
+	u.executed++
+	return u.name
+}
+
+type msgOrErr struct {
+	msg message.Message
+	err error
+}
+
+type sendErr struct {
+	no  int
+	err error
+}
+
 type ConnectionStub struct {
-	sendErr    error
-	receiveErr error
-	closeErr   error
-	sent       []interface{}
-	received   []interface{}
+	t        *testing.T
+	sendErr  *sendErr
+	closeErr error
+	sent     []interface{}
+	received []msgOrErr
+	wait     chan interface{}
 }
 
 func (c *ConnectionStub) Send(msg interface{}) error {
-	if c.sendErr != nil {
-		return c.sendErr
-	}
 	c.sent = append(c.sent, msg)
+
+	if c.sendErr != nil {
+		if c.sendErr.no == 0 && c.sendErr.err != nil {
+			return c.sendErr.err
+		}
+		c.sendErr.no--
+	}
+
 	return nil
 }
 
 func (c *ConnectionStub) Receive(msg interface{}) error {
-	if c.receiveErr != nil {
-		return c.receiveErr
+	if len(c.received) == 0 {
+		<-c.wait
 	}
-	c.received = append(c.received, msg)
+
+	msgOrErr := c.received[0]
+	c.received = c.received[1:]
+
+	if msgOrErr.err != nil {
+		return msgOrErr.err
+	}
+
+	bts, err := json.Marshal(msgOrErr.msg)
+	if err != nil {
+		c.t.Errorf("unexpected error while marshaling message to json")
+	}
+
+	if err = json.Unmarshal(bts, msg); err != nil {
+		c.t.Errorf("unexpected error while unmarshaling message from json")
+	}
+
 	return nil
 }
 func (c *ConnectionStub) Close() error {
