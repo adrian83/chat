@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/chat/ws"
 	"github.com/adrian83/chat/chat/ws/message"
+	"github.com/adrian83/chat/chat/ws/rooms"
 
 	logger "github.com/sirupsen/logrus"
 )
@@ -22,7 +22,7 @@ type User interface {
 }
 
 // NewClient returns new Client instance
-func NewClient(ID string, user User, rooms *ws.DefaultRooms, conn Connection) *Client {
+func NewClient(ID string, user User, rooms *rooms.DefaultRooms, conn Connection) *Client {
 	return &Client{
 		user:        user,
 		id:          ID,
@@ -40,7 +40,7 @@ type Client struct {
 	id          string
 	name        string
 	user        User
-	rooms       *ws.DefaultRooms
+	rooms       *rooms.DefaultRooms
 	messages    chan message.Message
 	connnection Connection
 	stopSending chan interface{}

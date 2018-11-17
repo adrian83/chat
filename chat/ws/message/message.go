@@ -61,7 +61,7 @@ func (m *Message) DoWith(client Sender, rooms Rooms) {
 	case textMsgMT:
 		handler = &TextMessage{Message: m}
 	case createRoomMT:
-		handler = &NewRoomMessage{Message: m}
+		handler = &CreateRoomMessage{Message: m}
 	case logoutMT:
 		handler = &LogoutMessage{Message: m}
 	case userJoinedRoomMT:
@@ -115,13 +115,13 @@ func (m *TextMessage) DoWith(client Sender, rooms Rooms) {
 	rooms.SendMessageOnRoom(*m.Message)
 }
 
-// NewRoomMessage represents messages which should result in creating new room (room name is inside of the message).
-type NewRoomMessage struct {
+// CreateRoomMessage represents messages which should result in creating new room (room name is inside of the message).
+type CreateRoomMessage struct {
 	*Message
 }
 
 // DoWith defines behaviour of message. Creates new room.
-func (m *NewRoomMessage) DoWith(client Sender, rooms Rooms) {
+func (m *CreateRoomMessage) DoWith(client Sender, rooms Rooms) {
 	rooms.CreateRoom(m.Room, client)
 }
 
@@ -137,14 +137,14 @@ func (m *LogoutMessage) DoWith(client Sender, rooms Rooms) {
 
 // --------------------------------
 
-// NewAddRoomMessage returns message which can be used for creating new room.
-func NewAddRoomMessage(roomName string) Message {
-	return Message{
+// NewCreateRoomMessage returns message which can be used for creating new room.
+func NewCreateRoomMessage(roomName string) *CreateRoomMessage {
+	return &CreateRoomMessage{&Message{
 		MsgType:    createRoomMT,
 		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
-	}
+	}}
 }
 
 // NewRemoveRoomMessage returns message which can be used for removing room.

@@ -12,23 +12,22 @@ import (
 	"github.com/adrian83/chat/chat/db"
 	"github.com/adrian83/chat/chat/handler"
 	"github.com/adrian83/chat/chat/session"
-	"github.com/adrian83/chat/chat/ws"
+	"github.com/adrian83/chat/chat/ws/client"
 	"github.com/adrian83/chat/chat/ws/connection"
 	"github.com/adrian83/chat/chat/ws/room"
-	"github.com/adrian83/chat/chat/ws/client"
+	 "github.com/adrian83/chat/chat/ws/rooms"
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
-	"golang.org/x/net/websocket"
 	logger "github.com/sirupsen/logrus"
+	"golang.org/x/net/websocket"
 )
 
 var (
-	rooms = ws.NewRooms()
+	chatRooms = rooms.NewRooms()
 )
 
 func main() {
-
 
 	logger.SetFormatter(&logger.JSONFormatter{})
 
@@ -127,7 +126,7 @@ func main() {
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
-	mux.Handle("/talk", websocket.Handler(connect(simpleSession, rooms)))
+	mux.Handle("/talk", websocket.Handler(connect(simpleSession, chatRooms)))
 
 	// ---------------------------------------
 	// http server
@@ -157,7 +156,7 @@ func main() {
 	logger.Info("Server stopped.")
 }
 
-func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*websocket.Conn) {
+func connect(simpleSession *session.Session, chatRooms *rooms.DefaultRooms) func(*websocket.Conn) {
 	logger.Infof("New connection")
 	return func(wsc *websocket.Conn) {
 
@@ -174,9 +173,9 @@ func connect(simpleSession *session.Session, rooms *ws.DefaultRooms) func(*webso
 		}
 
 		wsConn := connection.NewWebSocketConn(wsc)
-		client := client.NewClient(sessionID, &user, rooms, wsConn)
+		client := client.NewClient(sessionID, &user, chatRooms, wsConn)
 
-		rooms.AddClientToRoom(room.MainRoomName(), client)
+		chatRooms.AddClientToRoom(room.MainRoomName(), client)
 
 		logger.Infof("New connection received from %v, %v", client, user)
 

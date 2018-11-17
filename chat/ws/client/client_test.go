@@ -6,23 +6,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/chat/ws"
 	"github.com/adrian83/chat/chat/ws/message"
+	"github.com/adrian83/chat/chat/ws/rooms"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	createRoomMessage = message.NewAddRoomMessage("golang")
+	createRoomMessage = *message.NewCreateRoomMessage("golang").Message
 
-	rooms = ws.NewRooms()
+	chatRooms = rooms.NewRooms()
 )
 
 func TestCreateClientWithGivenId(t *testing.T) {
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, nil)
+	client := NewClient(clientID, user, chatRooms, nil)
 
 	assert.Equal(t, clientID, client.ID(), "Invalid client id")
 }
@@ -31,17 +31,17 @@ func TestMessageHasStringRepresentation(t *testing.T) {
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, nil)
+	client := NewClient(clientID, user, chatRooms, nil)
 
 	assert.NotEmpty(t, client.String())
 }
 
 func TestSendingMessageOnNotStartedClientShouldDoNothing(t *testing.T) {
-	connection := &ConnectionStub{}
+	connection := &ConnectionStub{t: t}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	client.Send(createRoomMessage)
 
@@ -50,11 +50,11 @@ func TestSendingMessageOnNotStartedClientShouldDoNothing(t *testing.T) {
 }
 
 func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T) {
-	connection := &ConnectionStub{}
+	connection := &ConnectionStub{t: t}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	finished := make(chan bool, 5)
 	go func(client *Client, finished chan bool) {
@@ -68,11 +68,11 @@ func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T)
 }
 
 func TestStartingClientShouldSuspendExecution(t *testing.T) {
-	connection := &ConnectionStub{}
+	connection := &ConnectionStub{t: t}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	finished := make(chan bool, 5)
 	go func(client *Client, finished chan bool) {
@@ -93,12 +93,13 @@ func TestErrorWhileReceivingMessageShouldStopTheClient(t *testing.T) {
 	}
 
 	connection := &ConnectionStub{
+		t:        t,
 		received: []msgOrErr{receivedMsg, receivedErr},
 	}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	finished := make(chan bool, 5)
 	go failAfterMs(t, 200, finished)
@@ -109,11 +110,11 @@ func TestErrorWhileReceivingMessageShouldStopTheClient(t *testing.T) {
 
 func TestClientShouldBeStoppedAfterCallingStopMethod(t *testing.T) {
 
-	connection := &ConnectionStub{}
+	connection := &ConnectionStub{t: t}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	finished := make(chan bool, 5)
 	go failAfterMs(t, 200, finished)
@@ -125,12 +126,13 @@ func TestClientShouldBeStoppedAfterCallingStopMethod(t *testing.T) {
 
 func TestHandleErrorWhileClosingConnection(t *testing.T) {
 	connection := &ConnectionStub{
+		t:        t,
 		closeErr: fmt.Errorf("test"),
 	}
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
 
 	finished := make(chan bool, 5)
 
@@ -141,6 +143,7 @@ func TestHandleErrorWhileClosingConnection(t *testing.T) {
 
 func TestErrorWhileSendingMessageShouldStopTheClient(t *testing.T) {
 	connection := &ConnectionStub{
+		t: t,
 		sendErr: &sendErr{
 			no:  1,
 			err: fmt.Errorf("test"),
@@ -149,13 +152,15 @@ func TestErrorWhileSendingMessageShouldStopTheClient(t *testing.T) {
 	clientID := "abcdef-ghijkl"
 	user := &UserStub{name: "John"}
 
-	client := NewClient(clientID, user, rooms, connection)
+	client := NewClient(clientID, user, chatRooms, connection)
+
+	client.Send(createRoomMessage)
+	client.Send(createRoomMessage)
 
 	finished := make(chan bool, 5)
 
 	go func(client *Client, finished chan bool) {
-		client.Send(createRoomMessage)
-		client.Send(createRoomMessage)
+		time.Sleep(time.Duration(100) * time.Millisecond)
 		client.stop()
 		finished <- true
 	}(client, finished)

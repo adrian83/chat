@@ -1,4 +1,4 @@
-package ws
+package rooms
 
 import (
 	"fmt"
@@ -130,7 +130,7 @@ func (ch *DefaultRooms) start() {
 			}
 
 		case cac := <-ch.createRoomRequest:
-			logger.Infof( "Create room request from %v. Room name: %v", cac.client, cac.room)
+			logger.Infof("Create room request from %v. Room name: %v", cac.client, cac.room)
 
 			if cac.room == "" {
 				errMsg := message.ErrorMessage("Invalid room name. Room name cannot be empty")
@@ -156,8 +156,8 @@ func (ch *DefaultRooms) start() {
 			// add room to rooms' collection
 			ch.rooms[cac.room] = newRoom
 
-			ncm := message.NewAddRoomMessage(cac.room)
-			ch.sendToEveryone(room.MainRoomName(), ncm)
+			ncm := message.NewCreateRoomMessage(cac.room)
+			ch.sendToEveryone(room.MainRoomName(), *ncm.Message)
 
 			ujc := message.NewUserJoinedRoomMessage(cac.room, cac.client.ID())
 			cac.client.Send(ujc)

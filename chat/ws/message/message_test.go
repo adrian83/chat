@@ -36,7 +36,7 @@ var (
 		Content:    "Haskell is the best",
 	}}
 
-	createRoomMessage = NewRoomMessage{&Message{
+	createRoomMessage = CreateRoomMessage{&Message{
 		MsgType:    createRoomMT,
 		Room:       "dart",
 		SenderID:   "jkl",
