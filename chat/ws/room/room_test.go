@@ -79,6 +79,56 @@ func TestShouldAddAndFindClient(t *testing.T) {
 	assert.Empty(t, err, "Error should be nil")
 }
 
+func TestShouldRemoveClientAndRoom(t *testing.T) {
+	rooms := &RoomsStub{removedRooms: make([]string, 0)}
+	sender := &SenderStub{id: "abc-def"}
+	name := "golang"
+
+	room := NewRoom(name, rooms)
+
+	room.Start()
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	room.AddClient(sender)
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	room.RemoveClient(sender.ID())
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	assert.Equal(t, 1, len(rooms.removedRooms), "One room should be removed")
+}
+
+func TestShouldRemoveClientButNotCloseRoom(t *testing.T) {
+	rooms := &RoomsStub{removedRooms: make([]string, 0)}
+	sender1 := &SenderStub{id: "abc-def"}
+	sender2 := &SenderStub{id: "ghi-jkl"}
+	name := "golang"
+
+	room := NewRoom(name, rooms)
+
+	room.Start()
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	room.AddClient(sender1)
+	room.AddClient(sender2)
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	room.RemoveClient(sender2.ID())
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	client1, err := room.FindClient(sender1.id)
+
+	assert.Equal(t, sender1.ID(), client1.ID(), "Invalid client id")
+	assert.Empty(t, err, "Error should be nil")
+
+	client2, err := room.FindClient(sender2.id)
+
+	assert.Empty(t, client2, "Client should be nil")
+	assert.Error(t, err, "Error should not be nil")
+
+	assert.Equal(t, 0, len(rooms.removedRooms), "No rooms should be removed")
+}
+
 type RoomsStub struct {
 	removedRooms []string
 }

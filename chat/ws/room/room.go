@@ -33,6 +33,7 @@ func NewRoom(name string, rooms Rooms) *Room {
 		removeClientChan: make(chan string, 5),
 		addClientChan:    make(chan message.Sender, 5),
 		incomingMessages: make(chan message.Message, 50),
+		interrupt:        make(chan bool, 5),
 	}
 	return room
 }
@@ -109,6 +110,7 @@ func (ch *Room) Start() {
 				if len(ch.clients) == 0 {
 					logger.Infof("Room: '%v' is empty. Should be removed.", ch.Name())
 					ch.rooms.RemoveRoom(ch.Name())
+					ch.interrupt <- true
 				}
 
 			case client := <-ch.addClientChan:
