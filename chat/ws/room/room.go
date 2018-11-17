@@ -29,6 +29,7 @@ func NewRoom(name string, rooms Rooms) *Room {
 		name:             name,
 		clients:          map[string]message.Sender{},
 		rooms:            rooms,
+		clientExists:     make(chan clientExist, 5),
 		removeClientChan: make(chan string, 5),
 		addClientChan:    make(chan message.Sender, 5),
 		incomingMessages: make(chan message.Message, 50),
