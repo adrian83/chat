@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	createRoomMessage = *message.NewCreateRoomMessage("golang").Message
+	createRoomMessage = message.NewCreateRoomMessage("golang")
 
 	chatRooms = rooms.NewRooms()
 )

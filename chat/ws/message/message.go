@@ -2,6 +2,8 @@ package message
 
 import (
 	"encoding/json"
+
+	logger "github.com/sirupsen/logrus"
 )
 
 const (
@@ -56,95 +58,32 @@ func (m *Message) String() string {
 // DoWith is an implemetation of Handler interface and defines behaviour of message.
 // Different types of messages can use differently given sender and rooms.
 func (m *Message) DoWith(client Sender, rooms Rooms) {
-	var handler Handler
+
 	switch m.MsgType {
-	case textMsgMT:
-		handler = &TextMessage{Message: m}
-	case createRoomMT:
-		handler = &CreateRoomMessage{Message: m}
-	case logoutMT:
-		handler = &LogoutMessage{Message: m}
 	case userJoinedRoomMT:
-		handler = &JoinRoomMessage{Message: m}
+		rooms.AddClientToRoom(m.Room, client)
+	case textMsgMT:
+		rooms.SendMessageOnRoom(*m)
+	case createRoomMT:
+		rooms.CreateRoom(m.Room, client)
+	case logoutMT:
+		client.Send(*m)
 	case userLeftRoomMT:
-		handler = &LeaveRoomMessage{Message: m}
+		rooms.RemoveClientFromRoom(m.Room, client)
 	default:
-		handler = &UnknownMessage{Message: m}
+		logger.Warnf("Message. Unknown message: '%v'", m.MsgType)
 	}
-	handler.DoWith(client, rooms)
 
 }
-
-// UnknownMessage represents message with unknown MsgType.
-type UnknownMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. Since this message is unknown to system it will be only logged.
-func (m *UnknownMessage) DoWith(client Sender, rooms Rooms) {
-	// TODO add log here
-}
-
-// JoinRoomMessage represents messages which should result in adding client to room (client and room data are inside of the message).
-type JoinRoomMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. Adds client to room.
-func (m *JoinRoomMessage) DoWith(client Sender, rooms Rooms) {
-	rooms.AddClientToRoom(m.Room, client)
-}
-
-// LeaveRoomMessage represents messages which should result in removing client from room (client and room data are inside of the message).
-type LeaveRoomMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. Removes client from room.
-func (m *LeaveRoomMessage) DoWith(client Sender, rooms Rooms) {
-	rooms.RemoveClientFromRoom(m.Room, client)
-}
-
-// TextMessage represents messages which should result in sending text to all clients from given room (room name is inside of the message).
-type TextMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. Sends text to all clients from room with name in message.
-func (m *TextMessage) DoWith(client Sender, rooms Rooms) {
-	rooms.SendMessageOnRoom(*m.Message)
-}
-
-// CreateRoomMessage represents messages which should result in creating new room (room name is inside of the message).
-type CreateRoomMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. Creates new room.
-func (m *CreateRoomMessage) DoWith(client Sender, rooms Rooms) {
-	rooms.CreateRoom(m.Room, client)
-}
-
-// LogoutMessage represents messages which should result in removing user from all rooms.
-type LogoutMessage struct {
-	*Message
-}
-
-// DoWith defines behaviour of message. User loggout.
-func (m *LogoutMessage) DoWith(client Sender, rooms Rooms) {
-	client.Send(*m.Message)
-}
-
-// --------------------------------
 
 // NewCreateRoomMessage returns message which can be used for creating new room.
-func NewCreateRoomMessage(roomName string) *CreateRoomMessage {
-	return &CreateRoomMessage{&Message{
+func NewCreateRoomMessage(roomName string) Message {
+	return Message{
 		MsgType:    createRoomMT,
 		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
-	}}
+	}
 }
 
 // NewRemoveRoomMessage returns message which can be used for removing room.

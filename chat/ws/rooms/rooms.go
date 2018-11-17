@@ -157,7 +157,7 @@ func (ch *DefaultRooms) start() {
 			ch.rooms[cac.room] = newRoom
 
 			ncm := message.NewCreateRoomMessage(cac.room)
-			ch.sendToEveryone(room.MainRoomName(), *ncm.Message)
+			ch.sendToEveryone(room.MainRoomName(), ncm)
 
 			ujc := message.NewUserJoinedRoomMessage(cac.room, cac.client.ID())
 			cac.client.Send(ujc)

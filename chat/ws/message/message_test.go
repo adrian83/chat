@@ -1,83 +1,64 @@
 package message
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	unknownMessage = UnknownMessage{&Message{
+	unknownMessage = Message{
 		MsgType:    "blabla",
 		SenderID:   "abc",
 		SenderName: "John",
 		Room:       "golang",
-	}}
+	}
 
-	joinRoomMessage = JoinRoomMessage{&Message{
+	joinRoomMessage = Message{
 		MsgType:    userJoinedRoomMT,
 		SenderID:   "abc",
 		SenderName: "John",
 		Room:       "golang",
-	}}
+	}
 
-	leaveRoomMessage = LeaveRoomMessage{&Message{
+	leaveRoomMessage = Message{
 		MsgType:    userLeftRoomMT,
 		SenderID:   "def",
 		SenderName: "Jane",
 		Room:       "java",
-	}}
+	}
 
-	textMessage = TextMessage{&Message{
+	textMessage = Message{
 		MsgType:    textMsgMT,
 		SenderID:   "ghi",
 		SenderName: "Steve",
 		Room:       "haskell",
 		Content:    "Haskell is the best",
-	}}
+	}
 
-	createRoomMessage = CreateRoomMessage{&Message{
+	createRoomMessage = Message{
 		MsgType:    createRoomMT,
 		Room:       "dart",
 		SenderID:   "jkl",
 		SenderName: "Jessica",
-	}}
+	}
 
-	logoutMessage = LogoutMessage{&Message{
+	logoutMessage = Message{
 		MsgType:    logoutMT,
 		SenderID:   "mno",
 		SenderName: "Kurt",
-	}}
+	}
 )
 
-func TestUnknownMessageImplementsHandler(t *testing.T) {
-	var _ Handler = &UnknownMessage{}
-}
-
-func TestJoinRoomMessageImplementsHandler(t *testing.T) {
-	var _ Handler = &JoinRoomMessage{}
-}
-
-func TestLeaveRoomMessageImplementsHandler(t *testing.T) {
-	var _ Handler = &LeaveRoomMessage{}
-}
-
-func TestTextMessageImplementsHandler(t *testing.T) {
-	var _ Handler = &TextMessage{}
-}
-
-func TestLogoutMessageImplementsHandler(t *testing.T) {
-	var _ Handler = &LogoutMessage{}
-}
-
 func TestMessageHasStringRepresentation(t *testing.T) {
-	assert.NotEmpty(t, textMessage.Message.String())
+	assert.NotEmpty(t, textMessage.String())
 }
 
-func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
+func TestMessageDoWithMethod(t *testing.T) {
 
 	var testData = []struct {
-		handler                      Handler
+		message                      Message
 		idExecuted                   int
 		sendExecuted                 int
 		addClientToRoomExecuted      int
@@ -85,12 +66,12 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 		removeClientFromRoomExecuted int
 		sendMessageOnRoomExecuted    int
 	}{
-		{&unknownMessage, 0, 0, 0, 0, 0, 0},
-		{&joinRoomMessage, 0, 0, 1, 0, 0, 0},
-		{&leaveRoomMessage, 0, 0, 0, 0, 1, 0},
-		{&textMessage, 0, 0, 0, 0, 0, 1},
-		{&createRoomMessage, 0, 0, 0, 1, 0, 0},
-		{&logoutMessage, 0, 1, 0, 0, 0, 0},
+		{unknownMessage, 0, 0, 0, 0, 0, 0},
+		{joinRoomMessage, 0, 0, 1, 0, 0, 0},
+		{leaveRoomMessage, 0, 0, 0, 0, 1, 0},
+		{textMessage, 0, 0, 0, 0, 0, 1},
+		{createRoomMessage, 0, 0, 0, 1, 0, 0},
+		{logoutMessage, 0, 1, 0, 0, 0, 0},
 	}
 
 	for _, data := range testData {
@@ -98,7 +79,7 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 		sender := &SenderStub{id: "abc"}
 		rooms := &RoomsStub{}
 
-		data.handler.DoWith(sender, rooms)
+		data.message.DoWith(sender, rooms)
 
 		assert.Equal(t, sender.idExecuted, data.idExecuted, "Invalid number of sender.ID() calls")
 		assert.Equal(t, sender.sendExecuted, data.sendExecuted, "Invalid number of sender.Send(Message) calls")
@@ -110,39 +91,40 @@ func TestHandlerShouldInteractWithGivenRoomsAndSender(t *testing.T) {
 	}
 }
 
-func TestGenericMessageHandlerShouldCallSpecificMessageHandler(t *testing.T) {
+func TestMessagesConstructors(t *testing.T) {
+
+	roomName := "golang"
+	roomNames := []string{"java", "haskell"}
+	content := "this is content"
+	senderID := "abc-def"
 
 	var testData = []struct {
-		handler                      Handler
-		idExecuted                   int
-		sendExecuted                 int
-		addClientToRoomExecuted      int
-		createRoomExecuted           int
-		removeClientFromRoomExecuted int
-		sendMessageOnRoomExecuted    int
+		message            Message
+		expectedType       string
+		expectedSenderID   string
+		expectedSenderName string
+		expectedRooms      []string
+		expectedRoom       string
+		expectedContent    string
 	}{
-		{unknownMessage.Message, 0, 0, 0, 0, 0, 0},
-		{joinRoomMessage.Message, 0, 0, 1, 0, 0, 0},
-		{leaveRoomMessage.Message, 0, 0, 0, 0, 1, 0},
-		{textMessage.Message, 0, 0, 0, 0, 0, 1},
-		{createRoomMessage.Message, 0, 0, 0, 1, 0, 0},
-		{logoutMessage.Message, 0, 1, 0, 0, 0, 0},
+		{NewCreateRoomMessage(roomName), createRoomMT, system, system, nil, roomName, ""},
+		{NewRemoveRoomMessage(roomName), removeRoomMT, system, system, nil, roomName, ""},
+		{RoomsNamesMessage(roomNames), roomsNamesMT, system, system, roomNames, "", ""},
+		{ErrorMessage(content), errorMsgMT, system, system, nil, "", content},
+		{NewUserJoinedRoomMessage(roomName, senderID), userJoinedRoomMT, senderID, senderID, nil, roomName, ""},
+		{NewUserLeftRoomMessage(roomName, senderID), userLeftRoomMT, senderID, senderID, nil, roomName, ""},
 	}
 
 	for _, data := range testData {
 
-		sender := &SenderStub{id: "abc"}
-		rooms := &RoomsStub{}
+		msg := data.message
 
-		data.handler.DoWith(sender, rooms)
-
-		assert.Equal(t, sender.idExecuted, data.idExecuted, "Invalid number of sender.ID() calls")
-		assert.Equal(t, sender.sendExecuted, data.sendExecuted, "Invalid number of sender.Send(Message) calls")
-
-		assert.Equal(t, rooms.addClientToRoomExecuted, data.addClientToRoomExecuted, "Invalid number of rooms.AddClientToRoom(string, Sender) calls")
-		assert.Equal(t, rooms.createRoomExecuted, data.createRoomExecuted, "Invalid number of rooms.CreateRoom(string, Sender) calls")
-		assert.Equal(t, rooms.removeClientFromRoomExecuted, data.removeClientFromRoomExecuted, "Invalid number of rooms.RemoveClientFromRoom(string, Sender) calls")
-		assert.Equal(t, rooms.sendMessageOnRoomExecuted, data.sendMessageOnRoomExecuted, "Invalid number of rooms.SendMessageOnRoom(Message) calls")
+		assert.Equal(t, data.expectedType, msg.MsgType, fmt.Sprintf("Invalid MsgType. Expected: %v, actual: %v", data.expectedType, msg.MsgType))
+		assert.Equal(t, data.expectedSenderID, msg.SenderID, fmt.Sprintf("Invalid SenderID. Expected: %v, actual: %v", data.expectedSenderID, msg.SenderID))
+		assert.Equal(t, data.expectedSenderName, msg.SenderName, fmt.Sprintf("Invalid SenderName. Expected: %v, actual: %v", data.expectedSenderName, msg.SenderName))
+		assert.Equal(t, data.expectedRooms, msg.Rooms, fmt.Sprintf("Invalid Rooms. Expected: %v, actual: %v", data.expectedRooms, msg.Rooms))
+		assert.Equal(t, data.expectedRoom, msg.Room, fmt.Sprintf("Invalid Room. Expected: %v, actual: %v", data.expectedRoom, msg.Room))
+		assert.Equal(t, data.expectedContent, msg.Content, fmt.Sprintf("Invalid Content. Expected: %v, actual: %v", data.expectedContent, msg.Content))
 	}
 }
 
