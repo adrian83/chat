@@ -32,6 +32,39 @@ func TestShouldCreateNewMainRoom(t *testing.T) {
 	assert.True(t, room.Main(), "Room should be main")
 }
 
+func TestSendingFewMessagesOnNonStartedRoom(t *testing.T) {
+	rooms := &RoomsStub{removedRooms: make([]string, 0)}
+
+	room := NewMainRoom(rooms)
+
+	finished := make(chan bool, 5)
+	go func(room *Room, finished chan bool) {
+		for i := 0; i < 20; i++ {
+			room.SendToEveryone(message.NewCreateRoomMessage("java"))
+		}
+		finished <- true
+	}(room, finished)
+
+	failAfterMs(t, 200, finished)
+}
+
+func TestSendingMultipleMessagesOnNonStartedRoomShouldSuspendExecution(t *testing.T) {
+	rooms := &RoomsStub{removedRooms: make([]string, 0)}
+	msg := message.NewCreateRoomMessage("java")
+
+	room := NewMainRoom(rooms)
+
+	finished := make(chan bool, 5)
+	go func(room *Room, finished chan bool) {
+		for i := 0; i < 60; i++ {
+			room.SendToEveryone(msg)
+		}
+		finished <- true
+	}(room, finished)
+
+	successAfterMs(t, 200, finished)
+}
+
 func TestCallingFindClientOnNotStartedRoomShouldSuspendExecution(t *testing.T) {
 	rooms := &RoomsStub{removedRooms: make([]string, 0)}
 	name := "golang"
@@ -129,6 +162,32 @@ func TestShouldRemoveClientButNotCloseRoom(t *testing.T) {
 	assert.Equal(t, 0, len(rooms.removedRooms), "No rooms should be removed")
 }
 
+func TestShouldSendMultipleMessages(t *testing.T) {
+	rooms := &RoomsStub{removedRooms: make([]string, 0)}
+	sender1 := &SenderStub{id: "abc-def"}
+	sender2 := &SenderStub{id: "ghi-jkl"}
+	msg := message.NewCreateRoomMessage("java")
+	name := "golang"
+	msgNumber := 60
+
+	room := NewRoom(name, rooms)
+
+	room.Start()
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	room.AddClient(sender1)
+	room.AddClient(sender2)
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	for i := 0; i < msgNumber; i++ {
+		room.SendToEveryone(msg)
+	}
+	time.Sleep(time.Duration(50) * time.Millisecond)
+
+	assert.Equal(t, msgNumber, len(sender1.messages), "invalid number of received messages")
+	assert.Equal(t, msgNumber, len(sender2.messages), "invalid number of received messages")
+}
+
 type RoomsStub struct {
 	removedRooms []string
 }
@@ -158,5 +217,14 @@ func successAfterMs(t *testing.T, ms int64, finished chan bool) {
 		t.Error("Invalid state")
 	case <-time.After(time.Duration(ms) * time.Millisecond):
 		t.Log("success")
+	}
+}
+
+func failAfterMs(t *testing.T, ms int64, finished chan bool) {
+	select {
+	case <-finished:
+		t.Log("success")
+	case <-time.After(time.Duration(ms) * time.Millisecond):
+		t.Error("Invalid state")
 	}
 }
