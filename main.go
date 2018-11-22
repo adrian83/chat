@@ -15,7 +15,7 @@ import (
 	"github.com/adrian83/chat/chat/ws/client"
 	"github.com/adrian83/chat/chat/ws/connection"
 	"github.com/adrian83/chat/chat/ws/room"
-	 "github.com/adrian83/chat/chat/ws/rooms"
+	"github.com/adrian83/chat/chat/ws/rooms"
 
 	redisSession "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
@@ -50,27 +50,24 @@ func main() {
 	// database
 	// ---------------------------------------
 
-	database, err := db.New(&appConfig.Database)
+	rethink := db.NewRethinkDB(appConfig.Database.Host, appConfig.Database.Port, appConfig.Database.DBName, map[string]string{appConfig.Database.UsersTableName: appConfig.Database.UsersTablePKName})
+	err = rethink.Connect()
 	if err != nil {
-		logger.Errorf("Error while creating RethinkDB session! Error: %v", err)
+		logger.Errorf("Error while creating RethingDB session! Error: %v", err)
 		panic(err)
 	}
-	defer func() {
-		if err1 := database.Close(); err1 != nil {
-			logger.Errorf("Error while closing RethinkDB session! Error: %v", err1)
-		}
-	}()
+
+	defer rethink.Close()
+
+	err = rethink.Setup()
+	if err != nil {
+		logger.Errorf("Error while creating RethinkDB database and/or tables! Error: %v", err)
+		panic(err)
+	}
+
+	
 
 	logger.Info("RethinkDB session created")
-
-	// ---------------------------------------
-	// database setup
-	// ---------------------------------------
-	if err = database.Setup(); err != nil {
-		logger.Errorf("Error during RethinkDB database setup! Error: %v", err)
-		panic(err)
-	}
-	logger.Info("RethinkDB database initialized")
 
 	// ---------------------------------------
 	// session
@@ -100,7 +97,8 @@ func main() {
 	// ---------------------------------------
 	simpleSession := session.New(sessionStore)
 
-	userRepository := db.NewUserRepository(database)
+	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
+	userRepository := db.NewUserRepository(userTable)
 
 	loginHandler := handler.NewLoginHandler(userRepository, simpleSession)
 	logoutHandler := handler.NewLogoutHandler(simpleSession)
