@@ -134,7 +134,7 @@ func (rt *RethinkDB) GetTable(name string) *RethinkTable {
 	}
 }
 
-var errNotFount = fmt.Errorf("not found")
+var ErrNotFount = fmt.Errorf("not found")
 
 // RethinkTable represents RethinkDB table.
 type RethinkTable struct {
@@ -158,7 +158,7 @@ func (t *RethinkTable) Find(property string, value interface{}, result interface
 	cursor, err := t.term.Filter(r.Row.Field(property).Eq(value)).Run(t.rethink.session)
 
 	if cursor.IsNil() {
-		return errNotFount
+		return ErrNotFount
 	}
 
 	if err = cursor.One(result); err != nil {

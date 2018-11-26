@@ -23,21 +23,12 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var (
-	chatRooms = rooms.NewRooms()
-)
-
-func main() {
-
+func initLogger() {
 	logger.SetFormatter(&logger.JSONFormatter{})
-
-	// Output to stdout instead of the default stderr
-	// Can be any io.Writer, see below for File example
 	logger.SetOutput(os.Stdout)
+}
 
-	// ---------------------------------------
-	// application config
-	// ---------------------------------------
+func initConfig() *config.Config {
 	configPath := os.Args[1]
 	logger.Infof("Reading configuration from: %v", configPath)
 	appConfig, err := config.ReadConfig(configPath)
@@ -45,52 +36,72 @@ func main() {
 		logger.Errorf("Error while reading configuration! Error: %v", err)
 		panic(err)
 	}
+	return appConfig
+}
 
-	// ---------------------------------------
-	// database
-	// ---------------------------------------
+func initRethink(dbConfig *config.DatabaseConfig) *db.RethinkDB {
+	tables := map[string]string{dbConfig.UsersTableName: dbConfig.UsersTablePKName}
 
-	rethink := db.NewRethinkDB(appConfig.Database.Host, appConfig.Database.Port, appConfig.Database.DBName, map[string]string{appConfig.Database.UsersTableName: appConfig.Database.UsersTablePKName})
-	err = rethink.Connect()
-	if err != nil {
-		logger.Errorf("Error while creating RethingDB session! Error: %v", err)
+	rethink := db.NewRethinkDB(dbConfig.Host, dbConfig.Port, dbConfig.DBName, tables)
+
+	if err := rethink.Connect(); err != nil {
+		logger.Errorf("Error while creating RethinkDB session! Error: %v", err)
 		panic(err)
 	}
 
-	defer rethink.Close()
-
-	err = rethink.Setup()
-	if err != nil {
+	if err := rethink.Setup(); err != nil {
 		logger.Errorf("Error while creating RethinkDB database and/or tables! Error: %v", err)
 		panic(err)
 	}
 
-	
-
 	logger.Info("RethinkDB session created")
 
-	// ---------------------------------------
-	// session
-	// ---------------------------------------
+	return rethink
+}
+
+func initSession(sessionConfig *config.SessionConfig) (redisSession.Store, func()) {
 	sessionStoreConfig := redisSession.Config{
-		DB:       appConfig.Session.DB,
-		Password: appConfig.Session.Password,
-		Host:     appConfig.Session.Host,
-		Port:     appConfig.Session.Port,
-		IDLength: appConfig.Session.IDLength,
+		DB:       sessionConfig.DB,
+		Password: sessionConfig.Password,
+		Host:     sessionConfig.Host,
+		Port:     sessionConfig.Port,
+		IDLength: sessionConfig.IDLength,
 	}
 
 	sessionStore, err := redisSession.NewStore(sessionStoreConfig)
 	if err != nil {
 		logger.Errorf("Error while creating SessionStore. Error: %v", err)
-		return
+		panic(err)
 	}
-	defer func() {
+	closeFunc := func() {
 		if err1 := sessionStore.Close(); err1 != nil {
 			logger.Errorf("Error while closing SessionStore session! Error: %v", err1)
 		}
-	}()
+	}
 	logger.Info("SessionStore created.")
+	return sessionStore, closeFunc
+}
+
+func main() {
+
+	// initialize logger
+	initLogger()
+
+	// read config
+	appConfig := initConfig()
+
+	// init database
+	dbConfig := &appConfig.Database
+	rethink := initRethink(dbConfig)
+	defer rethink.Close()
+
+	// init session
+	sessionConfig := &appConfig.Session
+	sessionStore, close := initSession(sessionConfig)
+	defer close()
+
+	// create chat rooms
+	chatRooms := rooms.NewRooms()
 
 	// ---------------------------------------
 	// useful structures
@@ -147,7 +158,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err = server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		logger.Warnf("Error while stopping server. Error: %v", err)
 	}
 

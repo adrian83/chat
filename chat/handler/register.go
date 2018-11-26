@@ -72,7 +72,7 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 	logger.Info("RegisterHandler", "RegisterUser", "Basic validation passed")
 
 	user, err := h.userRepo.FindUser(username)
-	if err != nil {
+	if err != nil && err != db.ErrNotFount {
 		RenderError500(w, err)
 		return
 	}
