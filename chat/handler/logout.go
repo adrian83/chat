@@ -3,23 +3,31 @@ package handler
 import (
 	"net/http"
 
-	"github.com/adrian83/chat/chat/session"
+	"github.com/adrian83/go-redis-session"
 )
 
 // LogoutHandler struct responsible for handling logout action.
 type LogoutHandler struct {
-	session *session.Session
+	sessionStore session.Store
 }
 
 // NewLogoutHandler returns new LogoutHandler struct.
-func NewLogoutHandler(session *session.Session) *LogoutHandler {
-	return &LogoutHandler{session: session}
+func NewLogoutHandler(sessionStore session.Store) *LogoutHandler {
+	return &LogoutHandler{
+		sessionStore: sessionStore,
+	}
 }
 
 // Logout processes logout action.
 func (h *LogoutHandler) Logout(w http.ResponseWriter, req *http.Request) {
 
-	if err := h.session.Remove(w, req); err != nil {
+	sessionCookie, err := req.Cookie(sessionIDName)
+	if err != nil {
+		RenderError500(w, err)
+		return
+	}
+
+	if err := h.sessionStore.Delete(sessionCookie.Value); err != nil {
 		RenderError500(w, err)
 		return
 	}

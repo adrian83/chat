@@ -7,20 +7,21 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
+	"fmt"
 
 	"github.com/adrian83/chat/chat/config"
 	"github.com/adrian83/chat/chat/db"
 	"github.com/adrian83/chat/chat/handler"
-	"github.com/adrian83/chat/chat/session"
 	"github.com/adrian83/chat/chat/ws/client"
 	"github.com/adrian83/chat/chat/ws/connection"
 	"github.com/adrian83/chat/chat/ws/room"
 	"github.com/adrian83/chat/chat/ws/rooms"
 
-	redisSession "github.com/adrian83/go-redis-session"
+	 "github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/net/websocket"
+	"github.com/go-redis/redis"
 )
 
 func initLogger() {
@@ -59,27 +60,25 @@ func initRethink(dbConfig *config.DatabaseConfig) *db.RethinkDB {
 	return rethink
 }
 
-func initSession(sessionConfig *config.SessionConfig) (redisSession.Store, func()) {
-	sessionStoreConfig := redisSession.Config{
-		DB:       sessionConfig.DB,
+func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
+
+	options := &redis.Options{
+		Addr:     fmt.Sprintf("%v:%v", sessionConfig.Host, sessionConfig.Port),
 		Password: sessionConfig.Password,
-		Host:     sessionConfig.Host,
-		Port:     sessionConfig.Port,
-		IDLength: sessionConfig.IDLength,
+		DB:       sessionConfig.DB,
 	}
 
-	sessionStore, err := redisSession.NewStore(sessionStoreConfig)
-	if err != nil {
-		logger.Errorf("Error while creating SessionStore. Error: %v", err)
-		panic(err)
-	}
+	client := redis.NewClient(options)
+
+	sessionStore := session.NewStore(client)
+
 	closeFunc := func() {
 		if err1 := sessionStore.Close(); err1 != nil {
 			logger.Errorf("Error while closing SessionStore session! Error: %v", err1)
 		}
 	}
 	logger.Info("SessionStore created.")
-	return sessionStore, closeFunc
+	return sessionStore, closeFunc 
 }
 
 func main() {
@@ -104,21 +103,20 @@ func main() {
 	chatRooms := rooms.NewRooms()
 
 	// ---------------------------------------
-	// useful structures
-	// ---------------------------------------
-	simpleSession := session.New(sessionStore)
+	// useful structures 
+	// --------------------------------------- 
 
 	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
-	userRepository := db.NewUserRepository(userTable)
+	userRepository := db.NewUserRepository(userTable)  
 
-	loginHandler := handler.NewLoginHandler(userRepository, simpleSession)
-	logoutHandler := handler.NewLogoutHandler(simpleSession)
+	loginHandler := handler.NewLoginHandler(userRepository, sessionStore)
+	logoutHandler := handler.NewLogoutHandler(sessionStore)
 	registerHandler := handler.NewRegisterHandler(userRepository)
-	indexHandler := handler.NewIndexHandler(simpleSession)
-	conversationHandler := handler.NewConversationHandler(simpleSession)
-
+	indexHandler := handler.NewIndexHandler(sessionStore)
+	conversationHandler := handler.NewConversationHandler(sessionStore) 
+ 
 	// ---------------------------------------
-	// routing
+	// routing 
 	// ---------------------------------------
 	mux := mux.NewRouter()
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
@@ -135,7 +133,7 @@ func main() {
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
-	mux.Handle("/talk", websocket.Handler(connect(simpleSession, chatRooms)))
+	mux.Handle("/talk", websocket.Handler(connect(sessionStore, chatRooms)))
 
 	// ---------------------------------------
 	// http server
@@ -165,24 +163,31 @@ func main() {
 	logger.Info("Server stopped.")
 }
 
-func connect(simpleSession *session.Session, chatRooms *rooms.DefaultRooms) func(*websocket.Conn) {
+func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*websocket.Conn) {
 	logger.Infof("New connection")
 	return func(wsc *websocket.Conn) {
 
-		sessionID := session.FindSessionID(wsc.Request())
-		if sessionID == "" {
-			logger.Errorf("Error while getting sessionID from WebSocket.")
+		sessionCookie, err := wsc.Request().Cookie("session_id")
+		if err != nil {
+			logger.Errorf("error while getting sessionID from WebSocket request")
 			return
 		}
 
-		user, err := simpleSession.FindUserData(sessionID)
+		session, err := sessionStore.Find(sessionCookie.Value)
+		if err != nil {
+			logger.Errorf("Error while getting user session. Error: %v", err)
+			return
+		}
+
+		user := new(db.User)
+		err = session.Get("user", user)
 		if err != nil {
 			logger.Errorf("Error while getting user data from session. Error: %v", err)
 			return
 		}
 
 		wsConn := connection.NewWebSocketConn(wsc)
-		client := client.NewClient(sessionID, &user, chatRooms, wsConn)
+		client := client.NewClient(sessionCookie.Value, user, chatRooms, wsConn)
 
 		chatRooms.AddClientToRoom(room.MainRoomName(), client)
 

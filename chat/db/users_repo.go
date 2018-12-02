@@ -3,7 +3,7 @@ package db
 // User is a struct containing user data.
 type User struct {
 	ID       string `json:"id" gorethink:"id,omitempty"`
-	Login    string `json:"name" gorethink:"name,omitempty"`
+	Login    string `json:"login" gorethink:"name,omitempty"`
 	Password string `json:"password" gorethink:"password,omitempty"`
 }
 

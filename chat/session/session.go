@@ -4,6 +4,7 @@ import (
 	"github.com/adrian83/chat/chat/db"
 
 	redisSession "github.com/adrian83/go-redis-session"
+	"github.com/google/uuid"
 
 	"net/http"
 	"time"
@@ -26,11 +27,11 @@ func FindSessionID(req *http.Request) string {
 
 // Session struct represents simplified session mechanism.
 type Session struct {
-	sessionStore redisSession.Store
+	sessionStore *redisSession.Store
 }
 
 // New returns pointer to new Session struct.
-func New(sessionStore redisSession.Store) *Session {
+func New(sessionStore *redisSession.Store) *Session {
 	return &Session{sessionStore: sessionStore}
 }
 
@@ -38,45 +39,45 @@ func New(sessionStore redisSession.Store) *Session {
 // struct if session doesn't contain such data, error if something
 // bad has happened.
 func (s *Session) FindUserData(sessionID string) (db.User, error) {
-	session, err := s.sessionStore.FindSession(sessionID)
+	session, err := s.sessionStore.Find(sessionID)
 	if err != nil {
 		return db.User{}, err
 	}
 
-	name, nameOk := session.Get("user.name")
-	id, idOk := session.Get("user.id")
-	if !nameOk || !idOk {
+	user := new(db.User)
+	if err = session.Get("user", user); err != nil {
 		return db.User{}, nil
 	}
 
-	return db.User{
-		ID:    id,
-		Login: name,
-	}, nil
+	return *user, nil
 }
 
 // StoreUserData saves user data to session and returns session ID, error
 // if something bad has happened.
 func (s *Session) StoreUserData(w http.ResponseWriter, user db.User) (string, error) {
-	session, err1 := s.sessionStore.NewSession(defSessionDuration)
-	if err1 != nil {
-		return "", err1
+	sessionID := uuid.New().String()
+	session, err := s.sessionStore.Create(sessionID, defSessionDuration)
+	if err != nil {
+		return "", err
 	}
-	session.Add("user.name", user.Login)
-	session.Add("user.id", user.ID)
-	if err2 := s.sessionStore.SaveSession(session); err2 != nil {
-		return "", err2
+	err = session.Add("user", user)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.sessionStore.Save(session); err != nil {
+		return "", err
 	}
 
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
-		Value:  session.ID(),
+		Value:  sessionID,
 		MaxAge: int(defSessionDuration.Seconds()),
 	}
 
 	http.SetCookie(w, cookie)
 
-	return session.ID(), nil
+	return sessionID, nil
 }
 
 // Remove removes the sessionID from cookie and session from database.
@@ -93,5 +94,5 @@ func (s *Session) Remove(w http.ResponseWriter, req *http.Request) error {
 	}
 	http.SetCookie(w, cookie)
 
-	return s.sessionStore.DeleteSession(c.Value)
+	return s.sessionStore.Delete(c.Value)
 }

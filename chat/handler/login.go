@@ -2,10 +2,11 @@ package handler
 
 import (
 	"github.com/adrian83/chat/chat/db"
-	"github.com/adrian83/chat/chat/session"
 
 	"net/http"
 
+	"github.com/adrian83/go-redis-session"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,13 +17,16 @@ var (
 // LoginHandler struct responsible for handling actions
 // made on login html page.
 type LoginHandler struct {
-	userRepo    *db.UserRepository
-	userSession *session.Session
+	userRepo     *db.UserRepository
+	sessionStore session.Store
 }
 
 // NewLoginHandler returns new LoginHandler struct.
-func NewLoginHandler(userRepo *db.UserRepository, userSession *session.Session) *LoginHandler {
-	return &LoginHandler{userRepo: userRepo, userSession: userSession}
+func NewLoginHandler(userRepo *db.UserRepository, sessionStore session.Store) *LoginHandler {
+	return &LoginHandler{
+		userRepo:     userRepo,
+		sessionStore: sessionStore,
+	}
 }
 
 // ShowLoginPage renders login html page.
@@ -75,12 +79,31 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_, err2 := h.userSession.StoreUserData(w, user)
-	if err2 != nil {
-		RenderError500(w, err2)
+	if err = h.storeInSession(user, w); err != nil {
+		RenderError500(w, err)
 		return
 	}
 
 	http.Redirect(w, req, "/conversation", http.StatusFound)
 
+}
+
+func (h *LoginHandler) storeInSession(user db.User, w http.ResponseWriter) error {
+	sessionID := uuid.New().String()
+	session, err := h.sessionStore.Create(sessionID, defSessionDuration)
+	if err != nil {
+		return err
+	}
+
+	if err = session.Add("user", user); err != nil {
+		return err
+	}
+
+	if err = h.sessionStore.Save(session); err != nil {
+		return err
+	}
+
+	storeSessionCookie(sessionID, w)
+
+	return nil
 }

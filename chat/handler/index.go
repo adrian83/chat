@@ -3,7 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/adrian83/chat/chat/session"
+	"github.com/adrian83/chat/chat/db"
+	session "github.com/adrian83/go-redis-session"
+	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,12 +15,12 @@ var (
 // IndexHandler struct responsible for handling actions
 // made on index html page.
 type IndexHandler struct {
-	session *session.Session
+	sessionStore session.Store
 }
 
 // NewIndexHandler returns new IndexHandler struct.
-func NewIndexHandler(session *session.Session) *IndexHandler {
-	return &IndexHandler{session: session}
+func NewIndexHandler(sessionStore session.Store) *IndexHandler {
+	return &IndexHandler{sessionStore: sessionStore}
 }
 
 // ShowIndexPage renders Index page.
@@ -30,14 +32,25 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		model.AddInfo("You have been logged out.")
 	}
 
-	sessionID := session.FindSessionID(req)
-	if sessionID == "" {
+	sessionCookie, err := req.Cookie(sessionIDName)
+	if err != nil {
+		logger.Info("1")
 		RenderTemplateWithModel(w, indexTmpl, model)
 		return
 	}
 
-	user, err := h.session.FindUserData(sessionID)
+	session, err := h.sessionStore.Find(sessionCookie.Value)
 	if err != nil {
+		logger.Info("2")
+		RenderError500(w, err)
+		return
+	}
+
+	user := new(db.User)
+	err = session.Get("user", user)
+	logger.Infof("values %v", session.Values())
+	if err != nil {
+		logger.Info("3")
 		RenderError500(w, err)
 		return
 	}
