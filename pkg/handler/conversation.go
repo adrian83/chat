@@ -31,21 +31,21 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 	sessionCookie, err := req.Cookie(sessionIDName)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot find session cookie: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
 	session, err := h.sessionStore.Find(sessionCookie.Value)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot find user session: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
 	user := new(db.User)
 	if err = session.Get("user", user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot find user data in session: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
@@ -54,6 +54,6 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 		return
 	}
 
-	RenderTemplateWithModel(w, h.templates.Conversation(), Model(map[string]interface{}{"sessionId": sessionCookie.Value}))
+	RenderTemplateWithModel(w, h.templates.Conversation, Model(map[string]interface{}{"sessionId": sessionCookie.Value}))
 
 }

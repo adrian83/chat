@@ -31,7 +31,7 @@ func NewLoginHandler(templates *TemplateRepository, userRepo *db.UserRepository,
 
 // ShowLoginPage renders login html page.
 func (h *LoginHandler) ShowLoginPage(w http.ResponseWriter, req *http.Request) {
-	RenderTemplate(w, h.templates.Login())
+	RenderTemplate(w, h.templates.Login)
 }
 
 // LoginUser processes user login form.
@@ -41,7 +41,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		model.AddError(fmt.Sprintf("Cannot parse form: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
@@ -59,32 +59,32 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if model.HasErrors() {
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	user, err := h.userRepo.FindUser(username)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	if user.Empty() {
 		model.AddError("User with this username doesn't exist")
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		model.AddError(fmt.Sprintf("Passwords don't match: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	if err = h.storeInSession(user, w); err != nil {
 		model.AddError(fmt.Sprintf("Cannot create session: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *LoginHandler) storeInSession(user db.User, w http.ResponseWriter) error
 		return err
 	}
 
-	storeSessionCookie(sessionID, w)
+	StoreSessionCookie(sessionID, w)
 
 	return nil
 }

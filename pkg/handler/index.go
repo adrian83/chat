@@ -35,25 +35,25 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	userSession, err := h.sessionStore.Find(sessionID)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot find user session: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	user := new(db.User)
 	if err = userSession.Get("user", user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login(), model)
+		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
 	model["loggedIn"] = !user.Empty()
 
-	RenderTemplateWithModel(w, h.templates.Index(), model)
+	RenderTemplateWithModel(w, h.templates.Index, model)
 }

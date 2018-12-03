@@ -6,6 +6,8 @@
 
 <div class="inner cover">
 
+	{{ template "errors.html" .errors }}
+
 	<input id="session-id" type="text" class="form-control" value="{{.sessionId}}" style="display: none">
 
 	<br />

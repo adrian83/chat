@@ -29,13 +29,13 @@ func (h *LogoutHandler) Logout(w http.ResponseWriter, req *http.Request) {
 	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
 	if err := h.sessionStore.Delete(sessionID); err != nil {
 		model.AddError(fmt.Sprintf("Cannot remove user session: %v", err))
-		RenderTemplateWithModel(w, h.templates.ServerError(), model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 

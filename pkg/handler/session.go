@@ -15,7 +15,8 @@ var (
 	errSessionCookieNotFound = fmt.Errorf("cookie with session id not found")
 )
 
-func storeSessionCookie(ID string, w http.ResponseWriter) {
+// StoreSessionCookie stores session cookie with given session id.
+func StoreSessionCookie(ID string, w http.ResponseWriter) {
 
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
