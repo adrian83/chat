@@ -11,13 +11,13 @@ import (
 
 	"github.com/adrian83/chat/chat/config"
 	"github.com/adrian83/chat/chat/db"
-	"github.com/adrian83/chat/chat/handler"
+	"github.com/adrian83/chat/pkg/handler" 
 	"github.com/adrian83/chat/chat/ws/client"
 	"github.com/adrian83/chat/chat/ws/connection"
-	"github.com/adrian83/chat/chat/ws/room"
-	"github.com/adrian83/chat/chat/ws/rooms"
+	"github.com/adrian83/chat/chat/ws/room" 
+	"github.com/adrian83/chat/chat/ws/rooms" 
 
-	 "github.com/adrian83/go-redis-session"
+	"github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/net/websocket"
@@ -129,7 +129,7 @@ func main() {
 	mux.HandleFunc("/logout", logoutHandler.Logout).Methods("GET")
 
 	mux.HandleFunc("/register", registerHandler.ShowRegisterPage).Methods("GET")
-	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST")
+	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST") 
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
@@ -167,13 +167,14 @@ func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*we
 	logger.Infof("New connection")
 	return func(wsc *websocket.Conn) {
 
-		sessionCookie, err := wsc.Request().Cookie("session_id")
+
+		sessionID, err := handler.ReadSessionIDFromCookie(wsc.Request())
 		if err != nil {
-			logger.Errorf("error while getting sessionID from WebSocket request")
+			logger.Error(err)
 			return
 		}
 
-		session, err := sessionStore.Find(sessionCookie.Value)
+		session, err := sessionStore.Find(sessionID)
 		if err != nil {
 			logger.Errorf("Error while getting user session. Error: %v", err)
 			return
@@ -187,7 +188,7 @@ func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*we
 		}
 
 		wsConn := connection.NewWebSocketConn(wsc)
-		client := client.NewClient(sessionCookie.Value, user, chatRooms, wsConn)
+		client := client.NewClient(sessionID, user, chatRooms, wsConn)
 
 		chatRooms.AddClientToRoom(room.MainRoomName(), client)
 

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/adrian83/chat/chat/db"
 
 	"net/http"
@@ -63,7 +65,8 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 	user, err := h.userRepo.FindUser(username)
 	if err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
@@ -74,13 +77,14 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		model.AddError("Passwords don't match: " + err.Error())
+		model.AddError(fmt.Sprintf("Passwords don't match: %v", err))
 		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
 	if err = h.storeInSession(user, w); err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot create session: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 

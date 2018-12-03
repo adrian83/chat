@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/adrian83/go-redis-session"
@@ -21,14 +22,18 @@ func NewLogoutHandler(sessionStore session.Store) *LogoutHandler {
 // Logout processes logout action.
 func (h *LogoutHandler) Logout(w http.ResponseWriter, req *http.Request) {
 
-	sessionCookie, err := req.Cookie(sessionIDName)
+	model := NewModel()
+
+	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
-	if err := h.sessionStore.Delete(sessionCookie.Value); err != nil {
-		RenderError500(w, err)
+	if err := h.sessionStore.Delete(sessionID); err != nil {
+		model.AddError(fmt.Sprintf("Cannot remove user session: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 

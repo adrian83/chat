@@ -23,6 +23,14 @@ func (m Model) AddError(errMsg string) {
 	m["errors"] = append(e, errMsg)
 }
 
+// AddErrors adds multiple error messages to model.
+func (m Model) AddErrors(errMsgs ...string) {
+	e := m["errors"].([]string)
+	for _, msg := range errMsgs {
+		m["errors"] = append(e, msg)
+	}
+}
+
 // AddInfo adds info message to model.
 func (m Model) AddInfo(infoMsg string) {
 	e := m["info"].([]string)
@@ -37,17 +45,15 @@ func (m Model) HasErrors() bool {
 }
 
 // RenderTemplate renders given template with empty model.
-func RenderTemplate(w http.ResponseWriter, tmpl *template.Template) bool {
-	return RenderTemplateWithModel(w, tmpl, NewModel())
+func RenderTemplate(w http.ResponseWriter, tmpl *template.Template) {
+	RenderTemplateWithModel(w, tmpl, NewModel())
 }
 
 // RenderTemplateWithModel renders given template with given model.
-func RenderTemplateWithModel(w http.ResponseWriter, tmpl *template.Template, model Model) bool {
+func RenderTemplateWithModel(w http.ResponseWriter, tmpl *template.Template, model Model) {
 	if err := tmpl.ExecuteTemplate(w, "base", model); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
 	}
-	return true
 }
 
 // NewTemplateBuilder returns new instance of TemplateBuilder struct.

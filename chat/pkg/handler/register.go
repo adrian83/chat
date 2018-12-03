@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/adrian83/chat/chat/db"
@@ -29,22 +30,26 @@ func (h *RegisterHandler) ShowRegisterPage(w http.ResponseWriter, req *http.Requ
 	RenderTemplate(w, registerTmpl)
 }
 
-func (h *RegisterHandler) validateForm(username, password1, password2 string, model Model) {
+func (h *RegisterHandler) validateForm(username, password1, password2 string) []string {
+	errors := make([]string, 0)
+
 	if l := len(username); l < 3 || l > 200 {
-		model.AddError("Username should have more than 3 and less than 200 characters")
+		errors = append(errors, "Username should have more than 3 and less than 200 characters")
 	}
 
 	if l := len(password1); l < 3 || l > 200 {
-		model.AddError("Password should have more than 3 and less than 200 characters")
+		errors = append(errors, "Password should have more than 3 and less than 200 characters")
 	}
 
 	if l := len(password2); l < 3 || l > 200 {
-		model.AddError("Repeated password should have more than 3 and less than 200 characters")
+		errors = append(errors, "Repeated password should have more than 3 and less than 200 characters")
 	}
 
 	if password1 != password2 {
-		model.AddError("Passwords should be the same")
+		errors = append(errors, "Passwords should be the same")
 	}
+
+	return errors
 }
 
 // RegisterUser processes user registration form.
@@ -59,21 +64,21 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 	password1 := req.FormValue("password1")
 	password2 := req.FormValue("password2")
 
+	validationErrors := h.validateForm(username, password1, password2)
+
 	model := NewModel()
 	model["username"] = username
-
-	h.validateForm(username, password1, password2, model)
+	model.AddErrors(validationErrors...)
 
 	if model.HasErrors() {
 		RenderTemplateWithModel(w, registerTmpl, model)
 		return
 	}
 
-	logger.Info("RegisterHandler", "RegisterUser", "Basic validation passed")
-
 	user, err := h.userRepo.FindUser(username)
-	if err != nil && err != db.ErrNotFount {
-		RenderError500(w, err)
+	if err != nil && err != db.ErrNotFound {
+		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
@@ -85,7 +90,8 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	passBytes, err := bcrypt.GenerateFromPassword([]byte(password1), 1)
 	if err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Password encription failed: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
@@ -98,7 +104,8 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	user = db.User{Login: username, Password: string(passBytes)}
 	if err = h.userRepo.SaveUser(user); err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot store user data: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 

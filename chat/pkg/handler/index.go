@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/adrian83/chat/chat/db"
 	session "github.com/adrian83/go-redis-session"
-	logger "github.com/sirupsen/logrus"
 )
 
 var (
@@ -32,26 +32,24 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		model.AddInfo("You have been logged out.")
 	}
 
-	sessionCookie, err := req.Cookie(sessionIDName)
+	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
-		logger.Info("1")
-		RenderTemplateWithModel(w, indexTmpl, model)
+		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
-	session, err := h.sessionStore.Find(sessionCookie.Value)
+	userSession, err := h.sessionStore.Find(sessionID)
 	if err != nil {
-		logger.Info("2")
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot find user session: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
 	user := new(db.User)
-	err = session.Get("user", user)
-	logger.Infof("values %v", session.Values())
-	if err != nil {
-		logger.Info("3")
-		RenderError500(w, err)
+	if err = userSession.Get("user", user); err != nil {
+		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
+		RenderTemplateWithModel(w, loginTmpl, model)
 		return
 	}
 
