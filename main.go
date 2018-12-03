@@ -15,7 +15,7 @@ import (
 	"github.com/adrian83/chat/chat/ws/client"
 	"github.com/adrian83/chat/chat/ws/connection"
 	"github.com/adrian83/chat/chat/ws/room" 
-	"github.com/adrian83/chat/chat/ws/rooms" 
+	"github.com/adrian83/chat/chat/ws/rooms"  
 
 	"github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
