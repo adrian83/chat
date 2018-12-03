@@ -10,24 +10,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	registerTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("register").WithTags("footer", "navigation", "head", "errors").Build()
-)
-
 // RegisterHandler struct responsible for handling actions
 // made on register html page.
 type RegisterHandler struct {
-	userRepo *db.UserRepository
+	userRepo  *db.UserRepository
+	templates *TemplateRepository
 }
 
 // NewRegisterHandler returns new RegisterHandler struct.
-func NewRegisterHandler(userRepo *db.UserRepository) *RegisterHandler {
-	return &RegisterHandler{userRepo: userRepo}
+func NewRegisterHandler(templates *TemplateRepository, userRepo *db.UserRepository) *RegisterHandler {
+	return &RegisterHandler{
+		userRepo:  userRepo,
+		templates: templates,
+	}
 }
 
 // ShowRegisterPage renders register html page.
 func (h *RegisterHandler) ShowRegisterPage(w http.ResponseWriter, req *http.Request) {
-	RenderTemplate(w, registerTmpl)
+	RenderTemplate(w, h.templates.Register())
 }
 
 func (h *RegisterHandler) validateForm(username, password1, password2 string) []string {
@@ -55,8 +55,11 @@ func (h *RegisterHandler) validateForm(username, password1, password2 string) []
 // RegisterUser processes user registration form.
 func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 
+	model := NewModel()
+
 	if err := req.ParseForm(); err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot parse form: %v", err))
+		RenderTemplateWithModel(w, h.templates.ServerError(), model)
 		return
 	}
 
@@ -66,46 +69,45 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	validationErrors := h.validateForm(username, password1, password2)
 
-	model := NewModel()
 	model["username"] = username
 	model.AddErrors(validationErrors...)
 
 	if model.HasErrors() {
-		RenderTemplateWithModel(w, registerTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Register(), model)
 		return
 	}
 
 	user, err := h.userRepo.FindUser(username)
 	if err != nil && err != db.ErrNotFound {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	if !user.Empty() {
 		model.AddError("User with this username already exists")
-		RenderTemplateWithModel(w, registerTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Register(), model)
 		return
 	}
 
 	passBytes, err := bcrypt.GenerateFromPassword([]byte(password1), 1)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Password encription failed: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	logger.Infof("Registering user with username: %s", username)
 
 	if model.HasErrors() {
-		RenderTemplateWithModel(w, registerTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Register(), model)
 		return
 	}
 
 	user = db.User{Login: username, Password: string(passBytes)}
 	if err = h.userRepo.SaveUser(user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot store user data: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 

@@ -16,6 +16,8 @@
     "db_name": "chat_go",
     "users_table_name": "users",
     "users_table_pk_name": "name"
+  },
+  "statics": {
+    "path": "static/"
   }
-
 }

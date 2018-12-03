@@ -29,6 +29,7 @@ type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Session  SessionConfig  `json:"session"`
 	Database DatabaseConfig `json:"database"`
+	Statics  StaticsConfig  `json:"statics"`
 }
 
 // ServerConfig represents http server configuration.
@@ -53,4 +54,9 @@ type DatabaseConfig struct {
 	DBName           string `json:"db_name"`
 	UsersTableName   string `json:"users_table_name"`
 	UsersTablePKName string `json:"users_table_pk_name"`
+}
+
+// StaticsConfig represents static files configuration.
+type StaticsConfig struct {
+	Path string `json:"path"`
 }

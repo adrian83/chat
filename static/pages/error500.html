@@ -5,6 +5,8 @@
   <h1>Ooooops! Something bad has happened!</h1>
   <h3>{{ .message }}</h3>
 
+  {{ template "errors.html" .errors }}
+
 </div>
 
 {{end}}

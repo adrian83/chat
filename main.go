@@ -106,20 +106,24 @@ func main() {
 	// useful structures 
 	// --------------------------------------- 
 
+	staticsConfig := appConfig.Statics
+
 	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
 	userRepository := db.NewUserRepository(userTable)  
 
-	loginHandler := handler.NewLoginHandler(userRepository, sessionStore)
-	logoutHandler := handler.NewLogoutHandler(sessionStore)
-	registerHandler := handler.NewRegisterHandler(userRepository)
-	indexHandler := handler.NewIndexHandler(sessionStore)
-	conversationHandler := handler.NewConversationHandler(sessionStore) 
+	templateRepository := handler.NewTemplateRepository(staticsConfig)
+
+	loginHandler := handler.NewLoginHandler(templateRepository, userRepository, sessionStore)
+	logoutHandler := handler.NewLogoutHandler(templateRepository, sessionStore)
+	registerHandler := handler.NewRegisterHandler(templateRepository, userRepository)
+	indexHandler := handler.NewIndexHandler(templateRepository, sessionStore)
+	conversationHandler := handler.NewConversationHandler(templateRepository, sessionStore) 
  
 	// ---------------------------------------
 	// routing 
 	// ---------------------------------------
 	mux := mux.NewRouter()
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticsConfig.Path))))
 
 	mux.HandleFunc("/", indexHandler.ShowIndexPage)
 

@@ -57,19 +57,23 @@ func RenderTemplateWithModel(w http.ResponseWriter, tmpl *template.Template, mod
 }
 
 // NewTemplateBuilder returns new instance of TemplateBuilder struct.
-func NewTemplateBuilder() *TemplateBuilder {
-	return &TemplateBuilder{paths: make([]string, 0)}
+func NewTemplateBuilder(path string) *TemplateBuilder {
+	return &TemplateBuilder{
+		base:  path,
+		paths: make([]string, 0),
+	}
 }
 
 // TemplateBuilder is a struct used for creating
 // instance of html/template.Template.
 type TemplateBuilder struct {
 	paths []string
+	base  string
 }
 
 // WithMainTemplate sets template which will be used to create Template struct.
 func (b *TemplateBuilder) WithMainTemplate(name string) *TemplateBuilder {
-	b.paths = append(b.paths, fmt.Sprintf("static/pages/templates/%s.html", name))
+	b.paths = append(b.paths, fmt.Sprintf("%vpages/templates/%s.html", b.base, name))
 	return b
 }
 

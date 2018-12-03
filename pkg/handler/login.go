@@ -12,42 +12,42 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	loginTmpl = NewTemplateBuilder().WithMainTemplate("main").WithContent("login").WithTags("footer", "navigation", "head", "errors").Build()
-)
-
 // LoginHandler struct responsible for handling actions
 // made on login html page.
 type LoginHandler struct {
 	userRepo     *db.UserRepository
 	sessionStore session.Store
+	templates    *TemplateRepository
 }
 
 // NewLoginHandler returns new LoginHandler struct.
-func NewLoginHandler(userRepo *db.UserRepository, sessionStore session.Store) *LoginHandler {
+func NewLoginHandler(templates *TemplateRepository, userRepo *db.UserRepository, sessionStore session.Store) *LoginHandler {
 	return &LoginHandler{
 		userRepo:     userRepo,
 		sessionStore: sessionStore,
+		templates:    templates,
 	}
 }
 
 // ShowLoginPage renders login html page.
 func (h *LoginHandler) ShowLoginPage(w http.ResponseWriter, req *http.Request) {
-	RenderTemplate(w, loginTmpl)
+	RenderTemplate(w, h.templates.Login())
 }
 
 // LoginUser processes user login form.
 func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
+	model := NewModel()
+
 	if err := req.ParseForm(); err != nil {
-		RenderError500(w, err)
+		model.AddError(fmt.Sprintf("Cannot parse form: %v", err))
+		RenderTemplateWithModel(w, h.templates.ServerError(), model)
 		return
 	}
 
 	username := req.FormValue("username")
 	password := req.FormValue("password")
 
-	model := NewModel()
 	model["username"] = username
 
 	if username == "" {
@@ -59,32 +59,32 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if model.HasErrors() {
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	user, err := h.userRepo.FindUser(username)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	if user.Empty() {
 		model.AddError("User with this username doesn't exist")
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		model.AddError(fmt.Sprintf("Passwords don't match: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
 	if err = h.storeInSession(user, w); err != nil {
 		model.AddError(fmt.Sprintf("Cannot create session: %v", err))
-		RenderTemplateWithModel(w, loginTmpl, model)
+		RenderTemplateWithModel(w, h.templates.Login(), model)
 		return
 	}
 
