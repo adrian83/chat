@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	sessionIDName      = "session_id"
-	defSessionDuration = time.Duration(1000) * time.Minute
+	sessionIDName   = "session_id"
+	sessionDuration = time.Duration(1000) * time.Minute
 
 	errSessionCookieNotFound = fmt.Errorf("cookie with session id not found")
 )
@@ -21,7 +21,7 @@ func StoreSessionCookie(ID string, w http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
 		Value:  ID,
-		MaxAge: int(defSessionDuration.Seconds()),
+		MaxAge: int(sessionDuration.Seconds()),
 	}
 
 	http.SetCookie(w, cookie)
