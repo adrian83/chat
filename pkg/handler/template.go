@@ -3,7 +3,7 @@ package handler
 import (
 	"html/template"
 
-	"github.com/adrian83/chat/chat/config"
+	"github.com/adrian83/chat/pkg/config"
 )
 
 // NewTemplateRepository returns new TemplateRepository.

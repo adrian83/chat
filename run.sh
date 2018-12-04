@@ -61,7 +61,7 @@ dart-test() {
 
 run-go() {
 	set -e
-		go run main.go $PWD/config.json
+		cd cmd/chat && go run main.go $PWD/../../config.json
 	set +e
 }
 

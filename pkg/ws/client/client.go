@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/chat/ws/message"
-	"github.com/adrian83/chat/chat/ws/rooms"
+	"github.com/adrian83/chat/pkg/ws/message"
+	"github.com/adrian83/chat/pkg/ws/rooms"
 
 	logger "github.com/sirupsen/logrus"
 )

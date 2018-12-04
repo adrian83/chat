@@ -6,23 +6,23 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"time"
+	"time" 
 	"fmt"
 
-	"github.com/adrian83/chat/chat/config"
-	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/pkg/config"
+	"github.com/adrian83/chat/pkg/db"
 	"github.com/adrian83/chat/pkg/handler" 
-	"github.com/adrian83/chat/chat/ws/client"
-	"github.com/adrian83/chat/chat/ws/connection"
-	"github.com/adrian83/chat/chat/ws/room" 
-	"github.com/adrian83/chat/chat/ws/rooms"  
-
+	"github.com/adrian83/chat/pkg/ws/client"
+	"github.com/adrian83/chat/pkg/ws/connection"
+	"github.com/adrian83/chat/pkg/ws/room" 
+	"github.com/adrian83/chat/pkg/ws/rooms"  
+ 
 	"github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/net/websocket"
 	"github.com/go-redis/redis"
-)
+) 
 
 func initLogger() {
 	logger.SetFormatter(&logger.JSONFormatter{})
@@ -107,7 +107,7 @@ func main() {
 	// --------------------------------------- 
 
 	staticsConfig := appConfig.Statics
-
+ 
 	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
 	userRepository := db.NewUserRepository(userTable)  
 

@@ -3,7 +3,7 @@ package handler
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/pkg/db"
 
 	"net/http"
 

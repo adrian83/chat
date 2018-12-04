@@ -3,7 +3,7 @@ package room
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/chat/ws/message"
+	"github.com/adrian83/chat/pkg/ws/message"
 
 	logger "github.com/sirupsen/logrus"
 )

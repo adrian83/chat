@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adrian83/chat/chat/db"
+	"github.com/adrian83/chat/pkg/db"
 	session "github.com/adrian83/go-redis-session"
 )
 

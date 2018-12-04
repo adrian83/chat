@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/chat/ws/message"
-	"github.com/adrian83/chat/chat/ws/rooms"
+	"github.com/adrian83/chat/pkg/ws/message"
+	"github.com/adrian83/chat/pkg/ws/rooms"
 
 	"github.com/stretchr/testify/assert"
 )
