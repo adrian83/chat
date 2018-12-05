@@ -24,11 +24,12 @@ func (m Model) AddError(errMsg string) {
 }
 
 // AddErrors adds multiple error messages to model.
-func (m Model) AddErrors(errMsgs ...string) {
+func (m Model) AddErrors(errMsgs ...error) {
 	e := m["errors"].([]string)
-	for _, msg := range errMsgs {
-		m["errors"] = append(e, msg)
+	for _, err := range errMsgs {
+		e = append(e, err.Error())
 	}
+	m["errors"] = e
 }
 
 // AddInfo adds info message to model.
@@ -73,13 +74,13 @@ type TemplateBuilder struct {
 
 // WithMainTemplate sets template which will be used to create Template struct.
 func (b *TemplateBuilder) WithMainTemplate(name string) *TemplateBuilder {
-	b.paths = append(b.paths, fmt.Sprintf("%vpages/templates/%s.html", b.base, name))
+	b.paths = append(b.paths, fmt.Sprintf("%v/pages/templates/%s.html", b.base, name))
 	return b
 }
 
 // WithContent sets content which will be used to create Template struct.
 func (b *TemplateBuilder) WithContent(name string) *TemplateBuilder {
-	b.paths = append(b.paths, fmt.Sprintf("static/pages/%s.html", name))
+	b.paths = append(b.paths, fmt.Sprintf("%v/pages/%s.html", b.base, name))
 	return b
 }
 
@@ -87,7 +88,7 @@ func (b *TemplateBuilder) WithContent(name string) *TemplateBuilder {
 // to create Template struct.
 func (b *TemplateBuilder) WithTags(names ...string) *TemplateBuilder {
 	for _, name := range names {
-		b.paths = append(b.paths, fmt.Sprintf("static/pages/fragments/%s.html", name))
+		b.paths = append(b.paths, fmt.Sprintf("%v/pages/fragments/%s.html", b.base, name))
 	}
 	return b
 }

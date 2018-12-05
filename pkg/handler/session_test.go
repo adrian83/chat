@@ -34,13 +34,11 @@ func TestReadingUnexistingSessionIdFromCookie(t *testing.T) {
 
 func TestStoreSessionCookie(t *testing.T) {
 	sessionID := "abc"
-
 	response := httptest.NewRecorder()
 
 	StoreSessionCookie(sessionID, response)
 
 	result := response.Result()
-
 	cookies := result.Cookies()
 	for _, cookie := range cookies {
 		if cookie.Name == sessionIDName {
@@ -58,7 +56,6 @@ func TestRemoveSessionCookie(t *testing.T) {
 	RemoveSessionCookie(response)
 
 	result := response.Result()
-
 	cookies := result.Cookies()
 	for _, cookie := range cookies {
 		if cookie.Name == sessionIDName {

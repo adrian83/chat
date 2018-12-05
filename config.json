@@ -18,6 +18,6 @@
     "users_table_pk_name": "name"
   },
   "statics": {
-    "path": "static/"
+    "path": "../../static"
   }
 }
