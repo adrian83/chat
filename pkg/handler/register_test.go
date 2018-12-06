@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -96,19 +97,46 @@ func TestFormValidation(t *testing.T) {
 		}
 
 		handler.RegisterUser(response, request)
-		resp := response.Result()
 
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		newStr := buf.String()
+		respString := responseToString(response.Result())
 
 		for _, err := range data.presentErrs {
-			assert.Contains(t, newStr, err.Error())
+			assert.Contains(t, respString, err.Error())
 		}
 
 		for _, err := range data.missingErrs {
-			assert.NotContains(t, newStr, err.Error())
+			assert.NotContains(t, respString, err.Error())
 		}
 	}
+}
 
+func TestRegistrationShouldFailIfUserRepositoryCannotCheckIfUsernameIsUnique(t *testing.T) {
+	config := config.StaticsConfig{Path: "../../static"}
+	templatesRepository := NewTemplateRepository(config)
+	err := fmt.Errorf("error while getting user data from db")
+
+	userRepository := &userRepositoryMock{findErr: err}
+
+	handler := NewRegisterHandler(templatesRepository, userRepository)
+
+	request := httptest.NewRequest(http.MethodPost, "/test", nil)
+	request.PostForm = map[string][]string{
+		"username":  []string{"John"},
+		"password1": []string{"secret"},
+		"password2": []string{"secret"},
+	}
+
+	response := httptest.NewRecorder()
+
+	handler.RegisterUser(response, request)
+
+	respString := responseToString(response.Result())
+
+	assert.Contains(t, respString, err.Error())
+}
+
+func responseToString(response *http.Response) string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(response.Body)
+	return buf.String()
 }

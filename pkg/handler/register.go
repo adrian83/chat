@@ -42,6 +42,10 @@ func (h *RegisterHandler) ShowRegisterPage(w http.ResponseWriter, req *http.Requ
 	RenderTemplate(w, h.templates.Register)
 }
 
+var (
+	errUserAlreadyExists = fmt.Errorf("User with this username already exists")
+)
+
 // RegisterUser processes user registration form.
 func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
 
@@ -69,12 +73,12 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 	user, err := h.userRepo.FindUser(form.username)
 	if err != nil && err != db.ErrNotFound {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
-		RenderTemplateWithModel(w, h.templates.Login, model)
+		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
 	if !user.Empty() {
-		model.AddError("User with this username already exists")
+		model.AddErrors(errUserAlreadyExists)
 		RenderTemplateWithModel(w, h.templates.Register, model)
 		return
 	}
