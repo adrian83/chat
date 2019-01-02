@@ -94,7 +94,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 func (h *LoginHandler) storeInSession(user db.User, w http.ResponseWriter) error {
 	sessionID := uuid.New().String()
-	session, err := h.sessionStore.Create(sessionID, sessionDuration)
+	session, err := h.sessionStore.Create(sessionID)
 	if err != nil {
 		return err
 	}

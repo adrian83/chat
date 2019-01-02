@@ -70,7 +70,7 @@ func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
 
 	client := redis.NewClient(options)
 
-	sessionStore := session.NewStore(client)
+	sessionStore := session.NewStore(client, handler.SessionValidFor)
 
 	closeFunc := func() {
 		if err1 := sessionStore.Close(); err1 != nil {

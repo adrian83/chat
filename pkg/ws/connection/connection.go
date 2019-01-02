@@ -1,6 +1,9 @@
 package connection
 
-import "golang.org/x/net/websocket"
+import (
+	"github.com/pkg/errors"
+	"golang.org/x/net/websocket"
+)
 
 // NewWebSocketConn returns new instance of wsConnection,
 func NewWebSocketConn(webSocketConn *websocket.Conn) *wsConnection {
@@ -14,13 +17,16 @@ type wsConnection struct {
 }
 
 func (c *wsConnection) Send(msg interface{}) error {
-	return websocket.JSON.Send(c.webSocketConn, msg)
+	err := websocket.JSON.Send(c.webSocketConn, msg)
+	return errors.Wrapf(err, "error while sending message through websocket")
 }
 
 func (c *wsConnection) Receive(msg interface{}) error {
-	return websocket.JSON.Receive(c.webSocketConn, &msg)
+	err := websocket.JSON.Receive(c.webSocketConn, &msg)
+	return errors.Wrapf(err, "error while receiving message from websocket")
 }
 
 func (c *wsConnection) Close() error {
-	return c.webSocketConn.Close()
+	err := c.webSocketConn.Close()
+	return errors.Wrapf(err, "error while closing websocket connection")
 }

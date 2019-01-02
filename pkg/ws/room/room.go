@@ -25,7 +25,7 @@ type Rooms interface {
 
 // NewRoom functions returns new Room struct.
 func NewRoom(name string, rooms Rooms) *Room {
-	room := &Room{
+	return &Room{
 		name:             name,
 		clients:          map[string]message.Sender{},
 		rooms:            rooms,
@@ -35,7 +35,6 @@ func NewRoom(name string, rooms Rooms) *Room {
 		incomingMessages: make(chan message.Message, 50),
 		interrupt:        make(chan bool, 5),
 	}
-	return room
 }
 
 // NewMainRoom returns new unremovable Room struct with name 'main'.

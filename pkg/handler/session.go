@@ -3,14 +3,16 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 )
 
+// SessionValidFor represents time for how long session is stored
+// in redis and for how long cookie with session id exists.
+const SessionValidFor = 3600 // seconds
+
 var (
-	sessionIDName   = "session_id"
-	sessionDuration = time.Duration(1000) * time.Minute
+	sessionIDName = "session_id"
 
 	errSessionCookieNotFound = fmt.Errorf("cookie with session id not found")
 )
@@ -21,7 +23,7 @@ func StoreSessionCookie(ID string, w http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
 		Value:  ID,
-		MaxAge: int(sessionDuration.Seconds()),
+		MaxAge: SessionValidFor,
 	}
 
 	http.SetCookie(w, cookie)

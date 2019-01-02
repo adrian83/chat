@@ -17,6 +17,14 @@ const (
 	maxPasswordLen = 200
 )
 
+var (
+	errInvalidUsername    = fmt.Errorf("Username should have more than 3 and less than 200 characters")
+	errInvalidPassword1   = fmt.Errorf("Password should have more than 3 and less than 200 characters")
+	errInvalidPassword2   = fmt.Errorf("Repeated password should have more than 3 and less than 200 characters")
+	errDifferendPasswords = fmt.Errorf("Passwords should be the same")
+	errUserAlreadyExists  = fmt.Errorf("User with this username already exists")
+)
+
 type userRepository interface {
 	FindUser(username string) (db.User, error)
 	SaveUser(user db.User) error
@@ -41,10 +49,6 @@ func NewRegisterHandler(templates *TemplateRepository, userRepo userRepository) 
 func (h *RegisterHandler) ShowRegisterPage(w http.ResponseWriter, req *http.Request) {
 	RenderTemplate(w, h.templates.Register)
 }
-
-var (
-	errUserAlreadyExists = fmt.Errorf("User with this username already exists")
-)
 
 // RegisterUser processes user registration form.
 func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
@@ -106,13 +110,6 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	http.Redirect(w, req, "/login", http.StatusFound)
 }
-
-var (
-	errInvalidUsername    = fmt.Errorf("Username should have more than 3 and less than 200 characters")
-	errInvalidPassword1   = fmt.Errorf("Password should have more than 3 and less than 200 characters")
-	errInvalidPassword2   = fmt.Errorf("Repeated password should have more than 3 and less than 200 characters")
-	errDifferendPasswords = fmt.Errorf("Passwords should be the same")
-)
 
 func readRegistrationForm(req *http.Request) (*registrationForm, error) {
 	if err := req.ParseForm(); err != nil {

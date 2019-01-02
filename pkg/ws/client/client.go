@@ -9,20 +9,20 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
-// Connection defines interface for connections.
-type Connection interface {
+// connection defines interface for connections.
+type connection interface {
 	Send(msg interface{}) error
 	Receive(msg interface{}) error
 	Close() error
 }
 
 // User is an interface whichh defines persisten data about application user.
-type User interface {
+type user interface {
 	Name() string
 }
 
 // NewClient returns new Client instance
-func NewClient(ID string, user User, rooms *rooms.DefaultRooms, conn Connection) *Client {
+func NewClient(ID string, user user, rooms *rooms.DefaultRooms, conn connection) *Client {
 	return &Client{
 		user:        user,
 		id:          ID,
@@ -39,10 +39,10 @@ func NewClient(ID string, user User, rooms *rooms.DefaultRooms, conn Connection)
 type Client struct {
 	id          string
 	name        string
-	user        User
+	user        user
 	rooms       *rooms.DefaultRooms
 	messages    chan message.Message
-	connnection Connection
+	connnection connection
 	stopSending chan interface{}
 	stopWaiting chan interface{}
 }
