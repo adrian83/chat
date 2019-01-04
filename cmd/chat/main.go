@@ -11,11 +11,11 @@ import (
 
 	"github.com/adrian83/chat/pkg/config"
 	"github.com/adrian83/chat/pkg/db"
-	"github.com/adrian83/chat/pkg/handler" 
-	"github.com/adrian83/chat/pkg/ws/client"
-	"github.com/adrian83/chat/pkg/ws/connection"
-	"github.com/adrian83/chat/pkg/ws/room" 
-	"github.com/adrian83/chat/pkg/ws/rooms"  
+	"github.com/adrian83/chat/pkg/handler"  
+	"github.com/adrian83/chat/pkg/client"
+	"github.com/adrian83/chat/pkg/connection"
+	"github.com/adrian83/chat/pkg/room" 
+	"github.com/adrian83/chat/pkg/rooms"
  
 	"github.com/adrian83/go-redis-session"
 	"github.com/gorilla/mux"

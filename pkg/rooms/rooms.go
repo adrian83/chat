@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/adrian83/chat/pkg/ws/message"
-	"github.com/adrian83/chat/pkg/ws/room"
+	"github.com/adrian83/chat/pkg/message"
+	"github.com/adrian83/chat/pkg/room"
 
 	logger "github.com/sirupsen/logrus"
 )

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/pkg/ws/message"
+	"github.com/adrian83/chat/pkg/message"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/pkg/ws/message"
-	"github.com/adrian83/chat/pkg/ws/rooms"
+	"github.com/adrian83/chat/pkg/message"
+	"github.com/adrian83/chat/pkg/rooms"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +46,6 @@ func TestSendingMessageOnNotStartedClientShouldDoNothing(t *testing.T) {
 	client.Send(createRoomMessage)
 
 	assert.Equal(t, len(connection.sent), 0, "Invalid number of sent messages")
-	assert.Equal(t, 1, user.executed, "User should be asked for name once (during client creation)")
 }
 
 func TestSendingMultipleMessagesOnNotStartedClientShouldStopSender(t *testing.T) {
@@ -171,12 +170,10 @@ func TestErrorWhileSendingMessageShouldStopTheClient(t *testing.T) {
 }
 
 type UserStub struct {
-	name     string
-	executed int
+	name string
 }
 
 func (u *UserStub) Name() string {
-	u.executed++
 	return u.name
 }
 
