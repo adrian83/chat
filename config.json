@@ -7,17 +7,16 @@
     "db": 0,
     "host": "localhost",
     "password": "",
-    "port": 6380,
-    "id_len": 50
+    "port": 6379
   },
   "database": {
     "host": "localhost",
-    "port": 28016,
+    "port": 28015,
     "db_name": "chat_go",
     "users_table_name": "users",
     "users_table_pk_name": "name"
   },
   "statics": {
-    "path": "../../static"
+    "path": "static"
   }
 }

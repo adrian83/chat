@@ -44,7 +44,6 @@ type SessionConfig struct {
 	Password string `json:"password"`
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
-	IDLength int    `json:"id_len"`
 }
 
 // DatabaseConfig represents database configuration.

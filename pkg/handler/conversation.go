@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adrian83/chat/pkg/db"
+	"github.com/adrian83/chat/pkg/user"
 	session "github.com/adrian83/go-redis-session"
 )
 
@@ -42,7 +42,7 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 		return
 	}
 
-	user := new(db.User)
+	user := new(user.User)
 	if err = session.Get("user", user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot find user data in session: %v", err))
 		RenderTemplateWithModel(w, h.templates.ServerError, model)

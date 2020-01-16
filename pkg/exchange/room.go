@@ -1,9 +1,7 @@
-package room
+package exchange
 
 import (
 	"fmt"
-
-	"github.com/adrian83/chat/pkg/message"
 
 	logger "github.com/sirupsen/logrus"
 )
@@ -18,21 +16,16 @@ func MainRoomName() string {
 	return main
 }
 
-// Rooms is an interface for all structs which can manage Room structs.
-type Rooms interface {
-	RemoveRoom(string)
-}
-
 // NewRoom functions returns new Room struct.
 func NewRoom(name string, rooms Rooms) *Room {
 	return &Room{
 		name:             name,
-		clients:          map[string]message.Sender{},
+		clients:          map[string]Sender{},
 		rooms:            rooms,
 		clientExists:     make(chan clientExist, 5),
 		removeClientChan: make(chan string, 5),
-		addClientChan:    make(chan message.Sender, 5),
-		incomingMessages: make(chan message.Message, 50),
+		addClientChan:    make(chan Sender, 5),
+		incomingMessages: make(chan Message, 50),
 		interrupt:        make(chan bool, 5),
 	}
 }
@@ -45,19 +38,19 @@ func NewMainRoom(rooms Rooms) *Room {
 // Room represents chat room.
 type Room struct {
 	name             string
-	clients          map[string]message.Sender
+	clients          map[string]Sender
 	rooms            Rooms
 	removeClientChan chan string
-	addClientChan    chan message.Sender
+	addClientChan    chan Sender
 	clientExists     chan clientExist
-	incomingMessages chan message.Message
+	incomingMessages chan Message
 	interrupt        chan bool
 }
 
 // FindClient returns client with given id if it exist in this room.
-func (ch *Room) FindClient(clientID string) (message.Sender, error) {
+func (ch *Room) FindClient(clientID string) (Sender, error) {
 
-	clientChan := make(chan message.Sender, 1)
+	clientChan := make(chan Sender, 1)
 
 	ch.clientExists <- clientExist{
 		existChan: clientChan,
@@ -82,12 +75,12 @@ func (ch *Room) Name() string {
 }
 
 // SendToEveryone sends message to everyone in this room.
-func (ch *Room) SendToEveryone(msg message.Message) {
+func (ch *Room) SendToEveryone(msg Message) {
 	ch.incomingMessages <- msg
 }
 
 // AddClient adds client to this room.
-func (ch *Room) AddClient(client message.Sender) {
+func (ch *Room) AddClient(client Sender) {
 	ch.addClientChan <- client
 }
 
@@ -129,6 +122,6 @@ func (ch *Room) Start() {
 }
 
 type clientExist struct {
-	existChan chan message.Sender
+	existChan chan Sender
 	clientID  string
 }

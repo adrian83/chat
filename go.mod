@@ -15,3 +15,5 @@ require (
 	gopkg.in/gorethink/gorethink.v4 v4.1.0 // indirect
 	gopkg.in/redis.v5 v5.2.9 // indirect
 )
+
+go 1.13

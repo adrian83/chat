@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adrian83/chat/pkg/db"
+	"github.com/adrian83/chat/pkg/user"
 	session "github.com/adrian83/go-redis-session"
 )
 
@@ -46,7 +46,7 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user := new(db.User)
+	user := new(user.User)
 	if err = userSession.Get("user", user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)

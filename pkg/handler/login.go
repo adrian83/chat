@@ -2,28 +2,31 @@ package handler
 
 import (
 	"fmt"
-
-	"github.com/adrian83/chat/pkg/db"
-
 	"net/http"
 
-	"github.com/adrian83/go-redis-session"
+	"github.com/adrian83/chat/pkg/user"
+	session "github.com/adrian83/go-redis-session"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
+type userService interface {
+	FindUser(string) (*user.User, error)
+}
+
 // LoginHandler struct responsible for handling actions
 // made on login html page.
 type LoginHandler struct {
-	userRepo     *db.UserRepository
+	userService  userService
 	sessionStore session.Store
 	templates    *TemplateRepository
 }
 
 // NewLoginHandler returns new LoginHandler struct.
-func NewLoginHandler(templates *TemplateRepository, userRepo *db.UserRepository, sessionStore session.Store) *LoginHandler {
+func NewLoginHandler(templates *TemplateRepository, userService userService, sessionStore session.Store) *LoginHandler {
 	return &LoginHandler{
-		userRepo:     userRepo,
+		userService:  userService,
 		sessionStore: sessionStore,
 		templates:    templates,
 	}
@@ -63,7 +66,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := h.userRepo.FindUser(username)
+	user, err := h.userService.FindUser(username)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
@@ -82,7 +85,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err = h.storeInSession(user, w); err != nil {
+	if err = h.storeInSession(*user, w); err != nil {
 		model.AddError(fmt.Sprintf("Cannot create session: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
@@ -92,7 +95,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (h *LoginHandler) storeInSession(user db.User, w http.ResponseWriter) error {
+func (h *LoginHandler) storeInSession(user user.User, w http.ResponseWriter) error {
 	sessionID := uuid.New().String()
 	session, err := h.sessionStore.Create(sessionID)
 	if err != nil {

@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/adrian83/chat/pkg/message"
+	"github.com/adrian83/chat/pkg/exchange"
 	"github.com/adrian83/chat/pkg/rooms"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	createRoomMessage = message.NewCreateRoomMessage("golang")
+	createRoomMessage = exchange.NewCreateRoomMessage("golang")
 
 	chatRooms = rooms.NewRooms()
 )
@@ -178,7 +178,7 @@ func (u *UserStub) Name() string {
 }
 
 type msgOrErr struct {
-	msg message.Message
+	msg exchange.Message
 	err error
 }
 

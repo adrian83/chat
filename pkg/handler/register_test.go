@@ -10,36 +10,30 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/adrian83/chat/pkg/config"
-	"github.com/adrian83/chat/pkg/db"
+	"github.com/adrian83/chat/pkg/user"
 )
 
 type userRepositoryMock struct {
 	findErr      error
 	saveErr      error
-	user         db.User
+	user         *user.User
 	saveExecuted bool
 	findExecuted bool
 }
 
-func (ur *userRepositoryMock) FindUser(username string) (db.User, error) {
-	if ur.findErr != nil {
-		return db.User{}, ur.findErr
-	}
-	return ur.user, nil
+func (ur *userRepositoryMock) FindUser(username string) (*user.User, error) {
+	return ur.user, ur.findErr
 }
 
-func (ur *userRepositoryMock) SaveUser(user db.User) error {
-	if ur.saveErr != nil {
-		return ur.saveErr
-	}
-	return nil
+func (ur *userRepositoryMock) SaveUser(user user.User) error {
+	return ur.saveErr
 }
 
 func TestFormValidation(t *testing.T) {
 	config := config.StaticsConfig{Path: "../../static"}
 	templatesRepository := NewTemplateRepository(config)
 
-	userRepository := &userRepositoryMock{user: db.User{ID: "abc", Login: "John", Password: "dyuwqgdjhqg"}}
+	userRepository := &userRepositoryMock{user: &user.User{ID: "abc", Login: "John", Password: "dyuwqgdjhqg"}}
 
 	handler := NewRegisterHandler(templatesRepository, userRepository)
 

@@ -1,4 +1,4 @@
-package message
+package exchange
 
 import (
 	"encoding/json"
@@ -31,6 +31,7 @@ type Rooms interface {
 	RemoveClientFromRoom(string, Sender)
 	SendMessageOnRoom(Message)
 	CreateRoom(string, Sender)
+	RemoveRoom(string)
 }
 
 // Handler defines interface for structs that can do something with given Sender and Rooms.

@@ -1,10 +1,8 @@
-package room
+package exchange
 
 import (
 	"testing"
 	"time"
-
-	"github.com/adrian83/chat/pkg/message"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +38,7 @@ func TestSendingFewMessagesOnNonStartedRoom(t *testing.T) {
 	finished := make(chan bool, 5)
 	go func(room *Room, finished chan bool) {
 		for i := 0; i < 20; i++ {
-			room.SendToEveryone(message.NewCreateRoomMessage("java"))
+			room.SendToEveryone(NewCreateRoomMessage("java"))
 		}
 		finished <- true
 	}(room, finished)
@@ -50,7 +48,7 @@ func TestSendingFewMessagesOnNonStartedRoom(t *testing.T) {
 
 func TestSendingMultipleMessagesOnNonStartedRoomShouldSuspendExecution(t *testing.T) {
 	rooms := &RoomsStub{removedRooms: make([]string, 0)}
-	msg := message.NewCreateRoomMessage("java")
+	msg := NewCreateRoomMessage("java")
 
 	room := NewMainRoom(rooms)
 
@@ -166,7 +164,7 @@ func TestShouldSendMultipleMessages(t *testing.T) {
 	rooms := &RoomsStub{removedRooms: make([]string, 0)}
 	sender1 := &SenderStub{id: "abc-def"}
 	sender2 := &SenderStub{id: "ghi-jkl"}
-	msg := message.NewCreateRoomMessage("java")
+	msg := NewCreateRoomMessage("java")
 	name := "golang"
 	msgNumber := 60
 
@@ -188,21 +186,15 @@ func TestShouldSendMultipleMessages(t *testing.T) {
 	assert.Equal(t, msgNumber, len(sender2.messages), "invalid number of received messages")
 }
 
-type RoomsStub struct {
-	removedRooms []string
-}
-
-func (r *RoomsStub) RemoveRoom(name string) {
-	r.removedRooms = append(r.removedRooms, name)
-}
-
 type SenderStub struct {
-	messages []message.Message
-	id       string
-	idCalled int
+	messages     []Message
+	id           string
+	idCalled     int
+	sendExecuted int
 }
 
-func (s *SenderStub) Send(msg message.Message) {
+func (s *SenderStub) Send(msg Message) {
+	s.sendExecuted++
 	s.messages = append(s.messages, msg)
 }
 

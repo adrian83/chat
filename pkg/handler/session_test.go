@@ -43,7 +43,6 @@ func TestStoreSessionCookie(t *testing.T) {
 	for _, cookie := range cookies {
 		if cookie.Name == sessionIDName {
 			assert.Equal(t, sessionID, cookie.Value, "Invalid cookie value")
-			assert.Equal(t, sessionDuration.Seconds(), float64(cookie.MaxAge), "Invalid max age")
 			return
 		}
 	}

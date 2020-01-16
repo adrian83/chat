@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/pkg/message"
+	"github.com/adrian83/chat/pkg/exchange"
 	"github.com/adrian83/chat/pkg/rooms"
 
 	logger "github.com/sirupsen/logrus"
@@ -27,7 +27,7 @@ func NewClient(ID string, user user, rooms *rooms.DefaultRooms, conn connection)
 		user:        user,
 		id:          ID,
 		rooms:       rooms,
-		messages:    make(chan message.Message, 50),
+		messages:    make(chan exchange.Message, 50),
 		stopSending: make(chan interface{}, 1),
 		stopWaiting: make(chan interface{}, 1),
 		connnection: conn,
@@ -39,7 +39,7 @@ type Client struct {
 	id          string
 	user        user
 	rooms       *rooms.DefaultRooms
-	messages    chan message.Message
+	messages    chan exchange.Message
 	connnection connection
 	stopSending chan interface{}
 	stopWaiting chan interface{}
@@ -70,7 +70,7 @@ func (c *Client) String() string {
 }
 
 // Send sends message through connection.
-func (c *Client) Send(msg message.Message) {
+func (c *Client) Send(msg exchange.Message) {
 	logger.Infof("Client: %v. Adding message to send channel. Message: %v", c.user.Name(), msg.MsgType)
 	c.messages <- msg
 }
@@ -119,7 +119,7 @@ func (c *Client) startReceiving() {
 	go func() {
 
 		for {
-			msg := new(message.Message)
+			msg := new(exchange.Message)
 			if err := c.connnection.Receive(msg); err != nil {
 				logger.Warnf("Client: %v. Error while receiving message. Error: %v", c.user.Name(), err)
 				c.stop()

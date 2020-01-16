@@ -2,27 +2,28 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
-	"time" 
-	"fmt"
+	"time"
 
-	"github.com/adrian83/chat/pkg/config"
-	"github.com/adrian83/chat/pkg/db"
-	"github.com/adrian83/chat/pkg/handler"  
 	"github.com/adrian83/chat/pkg/client"
+	"github.com/adrian83/chat/pkg/config"
 	"github.com/adrian83/chat/pkg/connection"
-	"github.com/adrian83/chat/pkg/room" 
+	"github.com/adrian83/chat/pkg/db"
+	"github.com/adrian83/chat/pkg/exchange"
+	"github.com/adrian83/chat/pkg/handler"
 	"github.com/adrian83/chat/pkg/rooms"
- 
+	"github.com/adrian83/chat/pkg/user"
+
 	"github.com/adrian83/go-redis-session"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/net/websocket"
-	"github.com/go-redis/redis"
-) 
+)
 
 func initLogger() {
 	logger.SetFormatter(&logger.JSONFormatter{})
@@ -78,7 +79,7 @@ func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
 		}
 	}
 	logger.Info("SessionStore created.")
-	return sessionStore, closeFunc 
+	return sessionStore, closeFunc
 }
 
 func main() {
@@ -103,24 +104,24 @@ func main() {
 	chatRooms := rooms.NewRooms()
 
 	// ---------------------------------------
-	// useful structures 
-	// --------------------------------------- 
+	// useful structures
+	// ---------------------------------------
 
 	staticsConfig := appConfig.Statics
- 
+
 	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
-	userRepository := db.NewUserRepository(userTable)  
+	userService := user.NewUserService(userTable)
 
 	templateRepository := handler.NewTemplateRepository(staticsConfig)
 
-	loginHandler := handler.NewLoginHandler(templateRepository, userRepository, sessionStore)
+	loginHandler := handler.NewLoginHandler(templateRepository, userService, sessionStore)
 	logoutHandler := handler.NewLogoutHandler(templateRepository, sessionStore)
-	registerHandler := handler.NewRegisterHandler(templateRepository, userRepository)
+	registerHandler := handler.NewRegisterHandler(templateRepository, userService)
 	indexHandler := handler.NewIndexHandler(templateRepository, sessionStore)
-	conversationHandler := handler.NewConversationHandler(templateRepository, sessionStore) 
- 
+	conversationHandler := handler.NewConversationHandler(templateRepository, sessionStore)
+
 	// ---------------------------------------
-	// routing 
+	// routing
 	// ---------------------------------------
 	mux := mux.NewRouter()
 	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticsConfig.Path))))
@@ -133,7 +134,7 @@ func main() {
 	mux.HandleFunc("/logout", logoutHandler.Logout).Methods("GET")
 
 	mux.HandleFunc("/register", registerHandler.ShowRegisterPage).Methods("GET")
-	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST") 
+	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST")
 
 	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
@@ -171,7 +172,6 @@ func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*we
 	logger.Infof("New connection")
 	return func(wsc *websocket.Conn) {
 
-
 		sessionID, err := handler.ReadSessionIDFromCookie(wsc.Request())
 		if err != nil {
 			logger.Error(err)
@@ -184,7 +184,7 @@ func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*we
 			return
 		}
 
-		user := new(db.User)
+		user := new(user.User)
 		err = session.Get("user", user)
 		if err != nil {
 			logger.Errorf("Error while getting user data from session. Error: %v", err)
@@ -194,7 +194,7 @@ func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*we
 		wsConn := connection.NewWebSocketConn(wsc)
 		client := client.NewClient(sessionID, user, chatRooms, wsConn)
 
-		chatRooms.AddClientToRoom(room.MainRoomName(), client)
+		chatRooms.AddClientToRoom(exchange.MainRoomName(), client)
 
 		logger.Infof("New connection received from %v, %v", client, user)
 

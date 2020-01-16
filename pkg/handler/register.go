@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/adrian83/chat/pkg/db"
+	"github.com/adrian83/chat/pkg/user"
 
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
@@ -25,23 +26,23 @@ var (
 	errUserAlreadyExists  = fmt.Errorf("User with this username already exists")
 )
 
-type userRepository interface {
-	FindUser(username string) (db.User, error)
-	SaveUser(user db.User) error
+type userRegistrationService interface {
+	FindUser(username string) (*user.User, error)
+	SaveUser(user user.User) error
 }
 
 // RegisterHandler struct responsible for handling actions
 // made on register html page.
 type RegisterHandler struct {
-	userRepo  userRepository
-	templates *TemplateRepository
+	userService userRegistrationService
+	templates   *TemplateRepository
 }
 
 // NewRegisterHandler returns new RegisterHandler struct.
-func NewRegisterHandler(templates *TemplateRepository, userRepo userRepository) *RegisterHandler {
+func NewRegisterHandler(templates *TemplateRepository, userService userRegistrationService) *RegisterHandler {
 	return &RegisterHandler{
-		userRepo:  userRepo,
-		templates: templates,
+		userService: userService,
+		templates:   templates,
 	}
 }
 
@@ -74,14 +75,14 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	user, err := h.userRepo.FindUser(form.username)
+	usr, err := h.userService.FindUser(form.username)
 	if err != nil && err != db.ErrNotFound {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}
 
-	if !user.Empty() {
+	if !usr.Empty() {
 		model.AddErrors(errUserAlreadyExists)
 		RenderTemplateWithModel(w, h.templates.Register, model)
 		return
@@ -101,8 +102,8 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	user = db.User{Login: form.username, Password: string(passBytes)}
-	if err = h.userRepo.SaveUser(user); err != nil {
+	usr = &user.User{Login: form.username, Password: string(passBytes)}
+	if err = h.userService.SaveUser(*usr); err != nil {
 		model.AddError(fmt.Sprintf("Cannot store user data: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
