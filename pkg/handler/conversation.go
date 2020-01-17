@@ -25,7 +25,6 @@ func NewConversationHandler(templates *TemplateRepository, sessionStore session.
 
 // ShowConversationPage renders conversation page.
 func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *http.Request) {
-
 	model := NewModel()
 
 	sessionCookie, err := req.Cookie(sessionIDName)
@@ -42,8 +41,8 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 		return
 	}
 
-	user := new(user.User)
-	if err = session.Get("user", user); err != nil {
+	var user user.User
+	if err = session.Get("user", &user); err != nil {
 		model.AddError(fmt.Sprintf("Cannot find user data in session: %v", err))
 		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return

@@ -9,7 +9,7 @@ type User struct {
 
 // Empty returns 'true' it the User struct is empty, false otherwise.
 func (u *User) Empty() bool {
-	return u.ID == "" && u.Login == "" && u.Password == ""
+	return u == nil || (u.ID == "" && u.Login == "" && u.Password == "")
 }
 
 func (u *User) Name() string {

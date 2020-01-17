@@ -61,7 +61,7 @@ func (rt *RethinkDB) Setup() error {
 		}
 
 		if !tableExists {
-			if err = rt.createTable(tableName, primaryKey); err != nil {
+			if err := rt.createTable(tableName, primaryKey); err != nil {
 				return err
 			}
 		}
@@ -69,7 +69,7 @@ func (rt *RethinkDB) Setup() error {
 	return nil
 }
 
-// Close closes conection to RethinkDB.
+// Close closes connection to RethinkDB.
 func (rt *RethinkDB) Close() {
 	if err := rt.session.Close(); err != nil {
 		logger.Errorf("Error while closing RethinkDB session! Error: %v", err)
@@ -82,11 +82,13 @@ func (rt *RethinkDB) UUID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	uuid := new(string)
-	if err = cursor.One(uuid); err != nil {
+
+	var uuid string
+	if err := cursor.One(&uuid); err != nil {
 		return "", err
 	}
-	return *uuid, nil
+
+	return uuid, nil
 }
 
 func (rt *RethinkDB) createTable(tableName, primaryKey string) error {
@@ -118,11 +120,11 @@ func (rt *RethinkDB) createDB() error {
 }
 
 func (rt *RethinkDB) boolResp(cursor *r.Cursor) (bool, error) {
-	resp := new(bool)
-	if err := cursor.One(resp); err != nil {
+	var resp bool
+	if err := cursor.One(&resp); err != nil {
 		return false, err
 	}
-	return *resp, nil
+	return resp, nil
 }
 
 // GetTable returns table with given name.
@@ -154,14 +156,17 @@ func (t *RethinkTable) Insert(entity interface{}) error {
 }
 
 // Find searches for first element with given property equal to given value.
-func (t *RethinkTable) Find(property string, value interface{}, result interface{}) error {
+func (t *RethinkTable) Find(property string, value, result interface{}) error {
 	cursor, err := t.term.Filter(r.Row.Field(property).Eq(value)).Run(t.rethink.session)
+	if err != nil {
+		return err
+	}
 
 	if cursor.IsNil() {
 		return ErrNotFound
 	}
 
-	if err = cursor.One(result); err != nil {
+	if err := cursor.One(result); err != nil {
 		return err
 	}
 

@@ -19,11 +19,11 @@ const (
 )
 
 var (
-	errInvalidUsername    = fmt.Errorf("Username should have more than 3 and less than 200 characters")
-	errInvalidPassword1   = fmt.Errorf("Password should have more than 3 and less than 200 characters")
-	errInvalidPassword2   = fmt.Errorf("Repeated password should have more than 3 and less than 200 characters")
-	errDifferendPasswords = fmt.Errorf("Passwords should be the same")
-	errUserAlreadyExists  = fmt.Errorf("User with this username already exists")
+	ErrInvalidUsername    = fmt.Errorf("Username should have more than 3 and less than 200 characters")
+	ErrInvalidPassword1   = fmt.Errorf("Password should have more than 3 and less than 200 characters")
+	ErrInvalidPassword2   = fmt.Errorf("Repeated password should have more than 3 and less than 200 characters")
+	ErrDifferendPasswords = fmt.Errorf("Passwords should be the same")
+	ErrUserAlreadyExists  = fmt.Errorf("User with this username already exists")
 )
 
 type userRegistrationService interface {
@@ -83,14 +83,14 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 	}
 
 	if !usr.Empty() {
-		model.AddErrors(errUserAlreadyExists)
+		model.AddErrors(ErrUserAlreadyExists)
 		RenderTemplateWithModel(w, h.templates.Register, model)
 		return
 	}
 
 	passBytes, err := bcrypt.GenerateFromPassword([]byte(form.password1), 1)
 	if err != nil {
-		model.AddError(fmt.Sprintf("Password encription failed: %v", err))
+		model.AddError(fmt.Sprintf("Password encryption failed: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
@@ -134,19 +134,19 @@ func (rf *registrationForm) validate() []error {
 	errors := make([]error, 0)
 
 	if l := len(rf.username); l < minUsernameLen || l > maxUsernameLen {
-		errors = append(errors, errInvalidUsername)
+		errors = append(errors, ErrInvalidUsername)
 	}
 
 	if l := len(rf.password1); l < minPasswordLen || l > maxPasswordLen {
-		errors = append(errors, errInvalidPassword1)
+		errors = append(errors, ErrInvalidPassword1)
 	}
 
 	if l := len(rf.password2); l < minPasswordLen || l > maxPasswordLen {
-		errors = append(errors, errInvalidPassword2)
+		errors = append(errors, ErrInvalidPassword2)
 	}
 
 	if rf.password1 != rf.password2 {
-		errors = append(errors, errDifferendPasswords)
+		errors = append(errors, ErrDifferendPasswords)
 	}
 
 	return errors

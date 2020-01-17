@@ -2,42 +2,20 @@ package exchange
 
 import (
 	"encoding/json"
-
-	logger "github.com/sirupsen/logrus"
 )
 
 const (
-	userJoinedRoomMT = "USER_JOINED_ROOM"
-	userLeftRoomMT   = "USER_LEFT_ROOM"
-	logoutMT         = "LOGOUT_USER"
-	textMsgMT        = "TEXT_MSG"
-	createRoomMT     = "CREATE_ROOM"
-	removeRoomMT     = "REMOVE_ROOM"
-	roomsNamesMT     = "ROOMS_LIST"
-	errorMsgMT       = "ERROR"
+	MsgUserJoinedRoomMT = "USER_JOINED_ROOM"
+	MsgUserLeftRoomMT   = "USER_LEFT_ROOM"
+	MsgLogoutMT         = "LOGOUT_USER"
+	MsgTextMsgMT        = "TEXT_MSG"
+	MsgCreateRoomMT     = "CREATE_ROOM"
+	MsgRemoveRoomMT     = "REMOVE_ROOM"
+	MsgRoomsNamesMT     = "ROOMS_LIST"
+	MsgErrorMsgMT       = "ERROR"
 
 	system = "system"
 )
-
-// Sender defines interface for structs that can send messages.
-type Sender interface {
-	Send(Message)
-	ID() string
-}
-
-// Rooms defines interface for structs that can manage clients and rooms.
-type Rooms interface {
-	AddClientToRoom(string, Sender)
-	RemoveClientFromRoom(string, Sender)
-	SendMessageOnRoom(Message)
-	CreateRoom(string, Sender)
-	RemoveRoom(string)
-}
-
-// Handler defines interface for structs that can do something with given Sender and Rooms.
-type Handler interface {
-	DoWith(client Sender, rooms Rooms)
-}
 
 // Message represents ALL messages exchanged in the app. This may not be the
 // best idea, but in such small app maybe it won't be catastrophic. We will see.
@@ -56,31 +34,10 @@ func (m *Message) String() string {
 	return string(bts)
 }
 
-// DoWith is an implemetation of Handler interface and defines behaviour of message.
-// Different types of messages can use differently given sender and rooms.
-func (m *Message) DoWith(client Sender, rooms Rooms) {
-
-	switch m.MsgType {
-	case userJoinedRoomMT:
-		rooms.AddClientToRoom(m.Room, client)
-	case textMsgMT:
-		rooms.SendMessageOnRoom(*m)
-	case createRoomMT:
-		rooms.CreateRoom(m.Room, client)
-	case logoutMT:
-		client.Send(*m)
-	case userLeftRoomMT:
-		rooms.RemoveClientFromRoom(m.Room, client)
-	default:
-		logger.Warnf("Message. Unknown message: '%v'", m.MsgType)
-	}
-
-}
-
 // NewCreateRoomMessage returns message which can be used for creating new room.
-func NewCreateRoomMessage(roomName string) Message {
-	return Message{
-		MsgType:    createRoomMT,
+func NewCreateRoomMessage(roomName string) *Message {
+	return &Message{
+		MsgType:    MsgCreateRoomMT,
 		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
@@ -88,9 +45,9 @@ func NewCreateRoomMessage(roomName string) Message {
 }
 
 // NewRemoveRoomMessage returns message which can be used for removing room.
-func NewRemoveRoomMessage(roomName string) Message {
-	return Message{
-		MsgType:    removeRoomMT,
+func NewRemoveRoomMessage(roomName string) *Message {
+	return &Message{
+		MsgType:    MsgRemoveRoomMT,
 		Room:       roomName,
 		SenderID:   system,
 		SenderName: system,
@@ -98,9 +55,9 @@ func NewRemoveRoomMessage(roomName string) Message {
 }
 
 // RoomsNamesMessage returns message which contains names of all rooms.
-func RoomsNamesMessage(roomNames []string) Message {
-	return Message{
-		MsgType:    roomsNamesMT,
+func RoomsNamesMessage(roomNames []string) *Message {
+	return &Message{
+		MsgType:    MsgRoomsNamesMT,
 		SenderID:   system,
 		SenderName: system,
 		Rooms:      roomNames,
@@ -108,9 +65,9 @@ func RoomsNamesMessage(roomNames []string) Message {
 }
 
 // ErrorMessage returns error message.
-func ErrorMessage(content string) Message {
-	return Message{
-		MsgType:    errorMsgMT,
+func ErrorMessage(content string) *Message {
+	return &Message{
+		MsgType:    MsgErrorMsgMT,
 		SenderID:   system,
 		SenderName: system,
 		Content:    content,
@@ -118,9 +75,9 @@ func ErrorMessage(content string) Message {
 }
 
 // NewUserJoinedRoomMessage returns  new UserJoinedRoomMessage message.
-func NewUserJoinedRoomMessage(room, senderID string) Message {
-	return Message{
-		MsgType:    userJoinedRoomMT,
+func NewUserJoinedRoomMessage(room, senderID string) *Message {
+	return &Message{
+		MsgType:    MsgUserJoinedRoomMT,
 		SenderID:   senderID,
 		SenderName: senderID,
 		Room:       room,
@@ -128,9 +85,9 @@ func NewUserJoinedRoomMessage(room, senderID string) Message {
 }
 
 // NewUserLeftRoomMessage returns new UserLeftRoomMessage message.
-func NewUserLeftRoomMessage(room, senderID string) Message {
-	return Message{
-		MsgType:    userLeftRoomMT,
+func NewUserLeftRoomMessage(room, senderID string) *Message {
+	return &Message{
+		MsgType:    MsgUserLeftRoomMT,
 		SenderID:   senderID,
 		SenderName: senderID,
 		Room:       room,

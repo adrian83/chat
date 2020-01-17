@@ -36,5 +36,6 @@ func (s *Service) FindUser(name string) (*User, error) {
 	if err := s.db.Find(nameProp, name, &user); err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }

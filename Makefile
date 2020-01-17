@@ -18,8 +18,12 @@ fe-get:
 	cd static && pub get 
 
 fe-build:
-	echo "building frontend " 
+	echo "building frontend" 
 	cd static && webdev build
+
+fe-test:
+	echo "running frontend tests" 
+	cd static && pub run test web/*test.dart
 
 fe-all: fe-get fe-build
 

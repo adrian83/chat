@@ -46,14 +46,14 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user := new(user.User)
-	if err = userSession.Get("user", user); err != nil {
+	var usr user.User
+	if err = userSession.Get("user", &usr); err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
-	model["loggedIn"] = !user.Empty()
+	model["loggedIn"] = !usr.Empty()
 
 	RenderTemplateWithModel(w, h.templates.Index, model)
 }

@@ -7,18 +7,16 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
-	"github.com/adrian83/chat/pkg/client"
 	"github.com/adrian83/chat/pkg/config"
-	"github.com/adrian83/chat/pkg/connection"
 	"github.com/adrian83/chat/pkg/db"
 	"github.com/adrian83/chat/pkg/exchange"
 	"github.com/adrian83/chat/pkg/handler"
-	"github.com/adrian83/chat/pkg/rooms"
 	"github.com/adrian83/chat/pkg/user"
 
-	"github.com/adrian83/go-redis-session"
+	session "github.com/adrian83/go-redis-session"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	logger "github.com/sirupsen/logrus"
@@ -34,10 +32,12 @@ func initConfig() *config.Config {
 	configPath := os.Args[1]
 	logger.Infof("Reading configuration from: %v", configPath)
 	appConfig, err := config.ReadConfig(configPath)
+
 	if err != nil {
 		logger.Errorf("Error while reading configuration! Error: %v", err)
 		panic(err)
 	}
+
 	return appConfig
 }
 
@@ -62,7 +62,6 @@ func initRethink(dbConfig *config.DatabaseConfig) *db.RethinkDB {
 }
 
 func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
-
 	options := &redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", sessionConfig.Host, sessionConfig.Port),
 		Password: sessionConfig.Password,
@@ -78,12 +77,13 @@ func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
 			logger.Errorf("Error while closing SessionStore session! Error: %v", err1)
 		}
 	}
+
 	logger.Info("SessionStore created.")
+
 	return sessionStore, closeFunc
 }
 
 func main() {
-
 	// initialize logger
 	initLogger()
 
@@ -91,17 +91,15 @@ func main() {
 	appConfig := initConfig()
 
 	// init database
-	dbConfig := &appConfig.Database
-	rethink := initRethink(dbConfig)
+	rethink := initRethink(&appConfig.Database)
 	defer rethink.Close()
 
 	// init session
-	sessionConfig := &appConfig.Session
-	sessionStore, close := initSession(sessionConfig)
-	defer close()
+	sessionStore, closeFnc := initSession(&appConfig.Session)
+	defer closeFnc()
 
 	// create chat rooms
-	chatRooms := rooms.NewRooms()
+	chatRooms := exchange.NewRooms()
 
 	// ---------------------------------------
 	// useful structures
@@ -123,33 +121,34 @@ func main() {
 	// ---------------------------------------
 	// routing
 	// ---------------------------------------
-	mux := mux.NewRouter()
-	mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticsConfig.Path))))
+	router := mux.NewRouter()
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticsConfig.Path))))
 
-	mux.HandleFunc("/", indexHandler.ShowIndexPage)
+	router.HandleFunc("/", indexHandler.ShowIndexPage)
 
-	mux.HandleFunc("/login", loginHandler.ShowLoginPage).Methods("GET")
-	mux.HandleFunc("/login", loginHandler.LoginUser).Methods("POST")
+	router.HandleFunc("/login", loginHandler.ShowLoginPage).Methods("GET")
+	router.HandleFunc("/login", loginHandler.LoginUser).Methods("POST")
 
-	mux.HandleFunc("/logout", logoutHandler.Logout).Methods("GET")
+	router.HandleFunc("/logout", logoutHandler.Logout).Methods("GET")
 
-	mux.HandleFunc("/register", registerHandler.ShowRegisterPage).Methods("GET")
-	mux.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST")
+	router.HandleFunc("/register", registerHandler.ShowRegisterPage).Methods("GET")
+	router.HandleFunc("/register", registerHandler.RegisterUser).Methods("POST")
 
-	mux.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
+	router.HandleFunc("/conversation", conversationHandler.ShowConversationPage).Methods("GET")
 
-	mux.Handle("/talk", websocket.Handler(connect(sessionStore, chatRooms)))
+	router.Handle("/talk", websocket.Handler(connect(sessionStore, chatRooms)))
 
 	// ---------------------------------------
 	// http server
 	// ---------------------------------------
 
-	stopChan := make(chan os.Signal)
-	signal.Notify(stopChan, os.Interrupt, os.Kill)
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
 	serverAddress := appConfig.Server.Host + ":" + strconv.Itoa(appConfig.Server.Port)
 	logger.Infof("Starting server on: %v", serverAddress)
-	server := &http.Server{Addr: serverAddress, Handler: mux}
+	server := &http.Server{Addr: serverAddress, Handler: router}
+
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			logger.Errorf("Server error! Error: %v", err)
@@ -168,35 +167,42 @@ func main() {
 	logger.Info("Server stopped.")
 }
 
-func connect(sessionStore session.Store, chatRooms *rooms.DefaultRooms) func(*websocket.Conn) {
+func connect(sessionStore session.Store, chatRooms *exchange.Rooms) func(*websocket.Conn) {
 	logger.Infof("New connection")
-	return func(wsc *websocket.Conn) {
 
+	return func(wsc *websocket.Conn) {
 		sessionID, err := handler.ReadSessionIDFromCookie(wsc.Request())
 		if err != nil {
 			logger.Error(err)
 			return
 		}
 
-		session, err := sessionStore.Find(sessionID)
+		sess, err := sessionStore.Find(sessionID)
 		if err != nil {
 			logger.Errorf("Error while getting user session. Error: %v", err)
 			return
 		}
 
-		user := new(user.User)
-		err = session.Get("user", user)
-		if err != nil {
+		var user user.User
+		if err = sess.Get("user", &user); err != nil {
 			logger.Errorf("Error while getting user data from session. Error: %v", err)
 			return
 		}
 
-		wsConn := connection.NewWebSocketConn(wsc)
-		client := client.NewClient(sessionID, user, chatRooms, wsConn)
+		router := exchange.NewRouter()
+
+		wsConn := exchange.NewWebSocketConn(wsc)
+		client := exchange.NewClient(sessionID, &user, chatRooms, wsConn, router)
+
+		router.RegisterRoute(exchange.NewRoute(exchange.MsgUserJoinedRoomMT, exchange.NewAddClientToRoomHandler(chatRooms, client)))
+		router.RegisterRoute(exchange.NewRoute(exchange.MsgTextMsgMT, exchange.NewSendMsgToRoomHandler(chatRooms)))
+		router.RegisterRoute(exchange.NewRoute(exchange.MsgCreateRoomMT, exchange.NewCreateRoomHandler(chatRooms, client)))
+		router.RegisterRoute(exchange.NewRoute(exchange.MsgUserLeftRoomMT, exchange.NewRemoveClientFromRoomHandler(chatRooms, client)))
+		router.RegisterRoute(exchange.NewRoute(exchange.MsgLogoutMT, exchange.NewLogoutHandler(client)))
 
 		chatRooms.AddClientToRoom(exchange.MainRoomName(), client)
 
-		logger.Infof("New connection received from %v, %v", client, user)
+		logger.Infof("New connection received from %v, %v", client, &user)
 
 		client.Start()
 	}

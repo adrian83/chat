@@ -73,7 +73,7 @@ type TemplateBuilder struct {
 }
 
 // WithMainTemplate sets template which will be used to create Template struct.
-func (b *TemplateBuilder) WithMainTemplate(name string) *TemplateBuilder {
+func (b *TemplateBuilder) WithTemplate(name string) *TemplateBuilder {
 	b.paths = append(b.paths, fmt.Sprintf("%v/pages/templates/%s.html", b.base, name))
 	return b
 }

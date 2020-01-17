@@ -8,20 +8,19 @@ import (
 
 // ReadConfig reads configuration from given path.
 func ReadConfig(configPath string) (*Config, error) {
-
-	config := new(Config)
+	var config Config
 
 	configBytes, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return config, err
+		return &config, err
 	}
 
 	configReader := bytes.NewReader(configBytes)
-	if err := json.NewDecoder(configReader).Decode(config); err != nil {
-		return config, err
+	if err := json.NewDecoder(configReader).Decode(&config); err != nil {
+		return &config, err
 	}
 
-	return config, nil
+	return &config, nil
 }
 
 // Config is a struct representing whole application configuration.

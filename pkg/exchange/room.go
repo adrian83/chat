@@ -17,51 +17,50 @@ func MainRoomName() string {
 }
 
 // NewRoom functions returns new Room struct.
-func NewRoom(name string, rooms Rooms) *Room {
+func NewRoom(name string, rooms *Rooms) *Room {
 	return &Room{
 		name:             name,
-		clients:          map[string]Sender{},
+		clients:          map[string]*Client{},
 		rooms:            rooms,
 		clientExists:     make(chan clientExist, 5),
 		removeClientChan: make(chan string, 5),
-		addClientChan:    make(chan Sender, 5),
-		incomingMessages: make(chan Message, 50),
+		addClientChan:    make(chan *Client, 5),
+		incomingMessages: make(chan *Message, 50),
 		interrupt:        make(chan bool, 5),
 	}
 }
 
 // NewMainRoom returns new unremovable Room struct with name 'main'.
-func NewMainRoom(rooms Rooms) *Room {
+func NewMainRoom(rooms *Rooms) *Room {
 	return NewRoom(main, rooms)
 }
 
 // Room represents chat room.
 type Room struct {
 	name             string
-	clients          map[string]Sender
-	rooms            Rooms
+	clients          map[string]*Client
+	rooms            *Rooms
 	removeClientChan chan string
-	addClientChan    chan Sender
+	addClientChan    chan *Client
 	clientExists     chan clientExist
-	incomingMessages chan Message
+	incomingMessages chan *Message
 	interrupt        chan bool
 }
 
 // FindClient returns client with given id if it exist in this room.
-func (ch *Room) FindClient(clientID string) (Sender, error) {
-
-	clientChan := make(chan Sender, 1)
+func (ch *Room) FindClient(clientID string) (*Client, error) {
+	clientChan := make(chan *Client, 1)
 
 	ch.clientExists <- clientExist{
 		existChan: clientChan,
 		clientID:  clientID,
 	}
 
-	sender := <-clientChan
-	if sender == nil {
+	client := <-clientChan
+	if client == nil {
 		return nil, fmt.Errorf("client with id %v cannot be found", clientID)
 	}
-	return sender, nil
+	return client, nil
 }
 
 // Main returns true if this room is a main room.
@@ -75,17 +74,25 @@ func (ch *Room) Name() string {
 }
 
 // SendToEveryone sends message to everyone in this room.
-func (ch *Room) SendToEveryone(msg Message) {
+func (ch *Room) SendToEveryone(msg *Message) {
 	ch.incomingMessages <- msg
 }
 
 // AddClient adds client to this room.
-func (ch *Room) AddClient(client Sender) {
+func (ch *Room) AddClient(client *Client) {
+	if ch == nil {
+		logger.Infof("cannot add client: %v to channel, channel doesn't exist", client.ID())
+		return
+	}
 	ch.addClientChan <- client
 }
 
 // RemoveClient removes client from this room.
 func (ch *Room) RemoveClient(clientID string) {
+	if ch == nil {
+		logger.Infof("cannot remove client: %v from channel, channel doesn't exist", clientID)
+		return
+	}
 	ch.removeClientChan <- clientID
 }
 
@@ -99,6 +106,7 @@ func (ch *Room) Start() {
 
 			case clientID := <-ch.removeClientChan:
 				delete(ch.clients, clientID)
+
 				if len(ch.clients) == 0 {
 					logger.Infof("Room: '%v' is empty. Should be removed.", ch.Name())
 					ch.rooms.RemoveRoom(ch.Name())
@@ -122,6 +130,6 @@ func (ch *Room) Start() {
 }
 
 type clientExist struct {
-	existChan chan Sender
+	existChan chan *Client
 	clientID  string
 }

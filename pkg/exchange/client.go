@@ -1,20 +1,10 @@
-package client
+package exchange
 
 import (
 	"fmt"
 
-	"github.com/adrian83/chat/pkg/exchange"
-	"github.com/adrian83/chat/pkg/rooms"
-
 	logger "github.com/sirupsen/logrus"
 )
-
-// connection defines interface for connections.
-type connection interface {
-	Send(msg interface{}) error
-	Receive(msg interface{}) error
-	Close() error
-}
 
 // User is an interface whichh defines persisten data about application user.
 type user interface {
@@ -22,15 +12,16 @@ type user interface {
 }
 
 // NewClient returns new Client instance
-func NewClient(ID string, user user, rooms *rooms.DefaultRooms, conn connection) *Client {
+func NewClient(id string, user user, rooms *Rooms, conn *WsConnection, router *Router) *Client {
 	return &Client{
 		user:        user,
-		id:          ID,
+		id:          id,
 		rooms:       rooms,
-		messages:    make(chan exchange.Message, 50),
+		connnection: conn,
+		router:      router,
+		messages:    make(chan *Message, 50),
 		stopSending: make(chan interface{}, 1),
 		stopWaiting: make(chan interface{}, 1),
-		connnection: conn,
 	}
 }
 
@@ -38,9 +29,10 @@ func NewClient(ID string, user user, rooms *rooms.DefaultRooms, conn connection)
 type Client struct {
 	id          string
 	user        user
-	rooms       *rooms.DefaultRooms
-	messages    chan exchange.Message
-	connnection connection
+	rooms       *Rooms
+	router      *Router
+	connnection *WsConnection
+	messages    chan *Message
 	stopSending chan interface{}
 	stopWaiting chan interface{}
 }
@@ -66,11 +58,11 @@ func (c *Client) ID() string {
 
 // String is a string representation of Client struct.
 func (c *Client) String() string {
-	return fmt.Sprintf("{\"name\":\"%v\"}", c.user.Name())
+	return fmt.Sprintf(`{"name":"%v"}`, c.user.Name())
 }
 
 // Send sends message through connection.
-func (c *Client) Send(msg exchange.Message) {
+func (c *Client) Send(msg *Message) {
 	logger.Infof("Client: %v. Adding message to send channel. Message: %v", c.user.Name(), msg.MsgType)
 	c.messages <- msg
 }
@@ -119,8 +111,8 @@ func (c *Client) startReceiving() {
 	go func() {
 
 		for {
-			msg := new(exchange.Message)
-			if err := c.connnection.Receive(msg); err != nil {
+			var msg Message
+			if err := c.connnection.Receive(&msg); err != nil {
 				logger.Warnf("Client: %v. Error while receiving message. Error: %v", c.user.Name(), err)
 				c.stop()
 				break
@@ -131,8 +123,11 @@ func (c *Client) startReceiving() {
 
 			logger.Infof("Client: %v. Received message. Message: %v", c.user.Name(), msg.MsgType)
 
-			msg.DoWith(c, c.rooms)
+			if err := c.router.FindRoute(msg.MsgType).Handle(&msg); err != nil {
+				logger.Warnf("Client: %v. Error while handling message: %v. Error: %v", c.user.Name(), msg, err)
+			}
 		}
+
 		logger.Infof("Client: %v. Stopping receiving messages", c.user.Name())
 	}()
 

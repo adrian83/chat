@@ -1,4 +1,4 @@
-package connection
+package exchange
 
 import (
 	"github.com/pkg/errors"
@@ -6,27 +6,27 @@ import (
 )
 
 // NewWebSocketConn returns new instance of wsConnection,
-func NewWebSocketConn(webSocketConn *websocket.Conn) *wsConnection {
-	return &wsConnection{
+func NewWebSocketConn(webSocketConn *websocket.Conn) *WsConnection {
+	return &WsConnection{
 		webSocketConn: webSocketConn,
 	}
 }
 
-type wsConnection struct {
+type WsConnection struct {
 	webSocketConn *websocket.Conn
 }
 
-func (c *wsConnection) Send(msg interface{}) error {
+func (c *WsConnection) Send(msg interface{}) error {
 	err := websocket.JSON.Send(c.webSocketConn, msg)
 	return errors.Wrapf(err, "error while sending message through websocket")
 }
 
-func (c *wsConnection) Receive(msg interface{}) error {
+func (c *WsConnection) Receive(msg interface{}) error {
 	err := websocket.JSON.Receive(c.webSocketConn, &msg)
 	return errors.Wrapf(err, "error while receiving message from websocket")
 }
 
-func (c *wsConnection) Close() error {
+func (c *WsConnection) Close() error {
 	err := c.webSocketConn.Close()
 	return errors.Wrapf(err, "error while closing websocket connection")
 }

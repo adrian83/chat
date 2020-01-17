@@ -45,36 +45,36 @@ func TestFormValidation(t *testing.T) {
 		{
 			form:        &registrationForm{username: "John", password1: "secret", password2: "secret"},
 			presentErrs: nil,
-			missingErrs: []error{errInvalidUsername, errInvalidPassword1, errInvalidPassword2, errDifferendPasswords},
+			missingErrs: []error{ErrInvalidUsername, ErrInvalidPassword1, ErrInvalidPassword2, ErrDifferendPasswords},
 		},
 		{
 			form:        &registrationForm{username: "", password1: "secret", password2: "secret"},
-			presentErrs: []error{errInvalidUsername},
-			missingErrs: []error{errInvalidPassword1, errInvalidPassword2, errDifferendPasswords},
+			presentErrs: []error{ErrInvalidUsername},
+			missingErrs: []error{ErrInvalidPassword1, ErrInvalidPassword2, ErrDifferendPasswords},
 		},
 		{
 			form:        &registrationForm{username: "John", password1: "", password2: "secret"},
-			presentErrs: []error{errInvalidPassword1, errDifferendPasswords},
-			missingErrs: []error{errInvalidUsername, errInvalidPassword2},
+			presentErrs: []error{ErrInvalidPassword1, ErrDifferendPasswords},
+			missingErrs: []error{ErrInvalidUsername, ErrInvalidPassword2},
 		},
 		{
 			form:        &registrationForm{username: "John", password1: "secret", password2: ""},
-			presentErrs: []error{errInvalidPassword2, errDifferendPasswords},
-			missingErrs: []error{errInvalidUsername, errInvalidPassword1},
+			presentErrs: []error{ErrInvalidPassword2, ErrDifferendPasswords},
+			missingErrs: []error{ErrInvalidUsername, ErrInvalidPassword1},
 		},
 		{
 			form:        &registrationForm{username: "John", password1: "secret", password2: "other"},
-			presentErrs: []error{errDifferendPasswords},
-			missingErrs: []error{errInvalidUsername, errInvalidPassword1, errInvalidPassword2},
+			presentErrs: []error{ErrDifferendPasswords},
+			missingErrs: []error{ErrInvalidUsername, ErrInvalidPassword1, ErrInvalidPassword2},
 		},
 		{
 			form:        &registrationForm{username: "", password1: "", password2: ""},
-			presentErrs: []error{errInvalidUsername, errInvalidPassword1, errInvalidPassword2},
-			missingErrs: []error{errDifferendPasswords},
+			presentErrs: []error{ErrInvalidUsername, ErrInvalidPassword1, ErrInvalidPassword2},
+			missingErrs: []error{ErrDifferendPasswords},
 		},
 		{
 			form:        &registrationForm{username: "", password1: "b", password2: "a"},
-			presentErrs: []error{errInvalidUsername, errInvalidPassword1, errInvalidPassword2, errDifferendPasswords},
+			presentErrs: []error{ErrInvalidUsername, ErrInvalidPassword1, ErrInvalidPassword2, ErrDifferendPasswords},
 			missingErrs: nil,
 		},
 	}
@@ -130,7 +130,7 @@ func TestRegistrationShouldFailIfUserRepositoryCannotCheckIfUsernameIsUnique(t *
 }
 
 func responseToString(response *http.Response) string {
-	buf := new(bytes.Buffer)
+	var buf bytes.Buffer
 	buf.ReadFrom(response.Body)
 	return buf.String()
 }
