@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adrian83/chat/pkg/db"
 	"github.com/adrian83/chat/pkg/user"
 
 	logger "github.com/sirupsen/logrus"
@@ -19,11 +18,11 @@ const (
 )
 
 var (
-	ErrInvalidUsername    = fmt.Errorf("Username should have more than 3 and less than 200 characters")
-	ErrInvalidPassword1   = fmt.Errorf("Password should have more than 3 and less than 200 characters")
-	ErrInvalidPassword2   = fmt.Errorf("Repeated password should have more than 3 and less than 200 characters")
-	ErrDifferendPasswords = fmt.Errorf("Passwords should be the same")
-	ErrUserAlreadyExists  = fmt.Errorf("User with this username already exists")
+	ErrInvalidUsername    = fmt.Errorf("username should have more than 3 and less than 200 characters")
+	ErrInvalidPassword1   = fmt.Errorf("password should have more than 3 and less than 200 characters")
+	ErrInvalidPassword2   = fmt.Errorf("repeated password should have more than 3 and less than 200 characters")
+	ErrDifferendPasswords = fmt.Errorf("passwords should be the same")
+	ErrUserAlreadyExists  = fmt.Errorf("user with this username already exists")
 )
 
 type userRegistrationService interface {
@@ -53,7 +52,6 @@ func (h *RegisterHandler) ShowRegisterPage(w http.ResponseWriter, req *http.Requ
 
 // RegisterUser processes user registration form.
 func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request) {
-
 	model := NewModel()
 
 	form, err := readRegistrationForm(req)
@@ -76,7 +74,7 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 	}
 
 	usr, err := h.userService.FindUser(form.username)
-	if err != nil && err != db.ErrNotFound {
+	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return

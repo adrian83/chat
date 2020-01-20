@@ -34,7 +34,7 @@ func (rt *RethinkDB) Connect() error {
 		Database: rt.name,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot connect to RethingDB, error: %w", err)
 	}
 
 	rt.session = session
@@ -45,34 +45,35 @@ func (rt *RethinkDB) Connect() error {
 func (rt *RethinkDB) Setup() error {
 	dbExists, err := rt.containsDB()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot check if database exist, error: %w", err)
 	}
 
 	if !dbExists {
 		if err := rt.createDB(); err != nil {
-			return err
+			return fmt.Errorf("cannot create database, error: %w", err)
 		}
 	}
 
 	for tableName, primaryKey := range rt.tables {
 		tableExists, err := rt.containsTable(tableName)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot check if table %v exist, error: %w", tableName, err)
 		}
 
 		if !tableExists {
 			if err := rt.createTable(tableName, primaryKey); err != nil {
-				return err
+				return fmt.Errorf("cannot create table %v with primary key %v, error: %w", tableName, primaryKey, err)
 			}
 		}
 	}
+
 	return nil
 }
 
 // Close closes connection to RethinkDB.
 func (rt *RethinkDB) Close() {
 	if err := rt.session.Close(); err != nil {
-		logger.Errorf("Error while closing RethinkDB session! Error: %v", err)
+		logger.Errorf("cannot close RethinkDB session, error: %w", err)
 	}
 }
 
@@ -80,12 +81,12 @@ func (rt *RethinkDB) Close() {
 func (rt *RethinkDB) UUID() (string, error) {
 	cursor, err := r.UUID().Run(rt.session)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot create UUID, error: %w", err)
 	}
 
 	var uuid string
 	if err := cursor.One(&uuid); err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot fetch UUID from cursor, error: %w", err)
 	}
 
 	return uuid, nil
@@ -93,7 +94,8 @@ func (rt *RethinkDB) UUID() (string, error) {
 
 func (rt *RethinkDB) createTable(tableName, primaryKey string) error {
 	_, err := r.DB(rt.name).TableCreate(tableName, r.TableCreateOpts{PrimaryKey: primaryKey}).Run(rt.session)
-	return err
+
+	return fmt.Errorf("cannot create table %v with primary key %v, error: %w", tableName, primaryKey, err)
 }
 
 func (rt *RethinkDB) containsDB() (bool, error) {
@@ -136,8 +138,6 @@ func (rt *RethinkDB) GetTable(name string) *RethinkTable {
 	}
 }
 
-var ErrNotFound = fmt.Errorf("not found")
-
 // RethinkTable represents RethinkDB table.
 type RethinkTable struct {
 	name    string
@@ -163,7 +163,7 @@ func (t *RethinkTable) Find(property string, value, result interface{}) error {
 	}
 
 	if cursor.IsNil() {
-		return ErrNotFound
+		return nil
 	}
 
 	if err := cursor.One(result); err != nil {

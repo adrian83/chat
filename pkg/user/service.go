@@ -2,19 +2,19 @@ package user
 
 const nameProp = "name"
 
+//
 type Database interface {
 	UUID() (string, error)
 	Insert(interface{}) error
 	Find(property string, value interface{}, result interface{}) error
 }
 
-// UserRepository struct representing repository for user data.
+// Service struct representing repository for user data.
 type Service struct {
 	db Database
 }
 
-// NewUserRepository returns new instance of UserRepository struct
-// based on RethinkDB session struct.
+// NewUserService returns new instance of Service.
 func NewUserService(db Database) *Service {
 	return &Service{db: db}
 }
@@ -26,7 +26,9 @@ func (s *Service) SaveUser(user User) error {
 	if err != nil {
 		return err
 	}
+
 	user.ID = uuid
+
 	return s.db.Insert(user)
 }
 

@@ -69,6 +69,7 @@ func (c *Client) Send(msg *Message) {
 
 func (c *Client) closeConnection() {
 	logger.Infof("Client: %v. Closing connection", c.user.Name())
+
 	if err := c.connnection.Close(); err != nil {
 		logger.Warnf("Client: %v. Error while closing connection. Error: %v", c.user.Name(), err)
 	}
@@ -82,6 +83,7 @@ func (c *Client) stop() {
 // StartSending starts infinite loop which is sending messages.
 func (c *Client) startSending() {
 	logger.Infof("Client: %v. Starting sending messages", c.user.Name())
+
 	go func() {
 	mainLoop:
 		for {
@@ -102,19 +104,19 @@ func (c *Client) startSending() {
 		}
 		logger.Infof("Client: %v. Stopping sending messages", c.user.Name())
 	}()
-
 }
 
 // startReceiving starts infinite loop which is processing received messages.
 func (c *Client) startReceiving() {
 	logger.Infof("Client: %v. Starting receiving messages", c.user.Name())
-	go func() {
 
+	go func() {
 		for {
 			var msg Message
 			if err := c.connnection.Receive(&msg); err != nil {
 				logger.Warnf("Client: %v. Error while receiving message. Error: %v", c.user.Name(), err)
 				c.stop()
+
 				break
 			}
 
@@ -130,5 +132,4 @@ func (c *Client) startReceiving() {
 
 		logger.Infof("Client: %v. Stopping receiving messages", c.user.Name())
 	}()
-
 }

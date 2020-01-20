@@ -54,5 +54,4 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 	}
 
 	RenderTemplateWithModel(w, h.templates.Conversation, Model(map[string]interface{}{"sessionId": sessionCookie.Value}))
-
 }

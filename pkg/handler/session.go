@@ -19,7 +19,6 @@ var (
 
 // StoreSessionCookie stores session cookie with given session id.
 func StoreSessionCookie(ID string, w http.ResponseWriter) {
-
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
 		Value:  ID,
@@ -31,7 +30,6 @@ func StoreSessionCookie(ID string, w http.ResponseWriter) {
 
 // RemoveSessionCookie removes cookie wirt session id.
 func RemoveSessionCookie(w http.ResponseWriter) {
-
 	cookie := &http.Cookie{
 		Name:   sessionIDName,
 		Value:  "",

@@ -39,7 +39,6 @@ func (h *LoginHandler) ShowLoginPage(w http.ResponseWriter, req *http.Request) {
 
 // LoginUser processes user login form.
 func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
-
 	model := NewModel()
 
 	if err := req.ParseForm(); err != nil {
@@ -66,26 +65,26 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := h.userService.FindUser(username)
+	usr, err := h.userService.FindUser(username)
 	if err != nil {
 		model.AddError(fmt.Sprintf("Cannot get data about user: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
-	if user.Empty() {
+	if usr.Empty() {
 		model.AddError("User with this username doesn't exist")
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(password)); err != nil {
 		model.AddError(fmt.Sprintf("Passwords don't match: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
 
-	if err = h.storeInSession(*user, w); err != nil {
+	if err = h.storeInSession(*usr, w); err != nil {
 		model.AddError(fmt.Sprintf("Cannot create session: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
@@ -95,18 +94,19 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (h *LoginHandler) storeInSession(user user.User, w http.ResponseWriter) error {
+func (h *LoginHandler) storeInSession(usr user.User, w http.ResponseWriter) error {
 	sessionID := uuid.New().String()
-	session, err := h.sessionStore.Create(sessionID)
+
+	sess, err := h.sessionStore.Create(sessionID)
 	if err != nil {
 		return err
 	}
 
-	if err = session.Add("user", user); err != nil {
+	if err := sess.Add("user", usr); err != nil {
 		return err
 	}
 
-	if err = h.sessionStore.Save(session); err != nil {
+	if err := h.sessionStore.Save(sess); err != nil {
 		return err
 	}
 
