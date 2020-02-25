@@ -26,15 +26,15 @@ func NewIndexHandler(templates *TemplateRepository, sessionStore session.Store) 
 // ShowIndexPage renders Index page.
 func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 	model := NewModel()
-	model["loggedIn"] = false
 
-	if reason := req.URL.Query().Get("reason"); reason == "logout" {
+	if afterLogout(req) {
 		model.AddInfo("You have been logged out.")
+		RenderTemplateWithModel(w, h.templates.Index, model)
+		return
 	}
 
 	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
-		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
 		RenderTemplateWithModel(w, h.templates.Login, model)
 		return
 	}
@@ -53,7 +53,17 @@ func (h *IndexHandler) ShowIndexPage(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	model["loggedIn"] = !usr.Empty()
+	model.AddUser(&usr)
 
 	RenderTemplateWithModel(w, h.templates.Index, model)
+}
+
+const (
+	reason = "reason"
+	logout = "logout"
+)
+
+func afterLogout(req *http.Request) bool {
+	reason := req.URL.Query().Get(reason)
+	return reason == logout
 }

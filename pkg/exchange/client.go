@@ -6,7 +6,7 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
-// User is an interface whichh defines persisten data about application user.
+// User is an interface which defines persisten data about application user.
 type user interface {
 	Name() string
 }

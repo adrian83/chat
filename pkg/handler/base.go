@@ -4,6 +4,14 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/adrian83/chat/pkg/user"
+)
+
+const (
+	errorsField = "errors"
+	infoField   = "info"
+	userField   = "user"
 )
 
 // Model is a struct with all needed data for rendering template.
@@ -12,36 +20,42 @@ type Model map[string]interface{}
 // NewModel function returns new instance of Model struct.
 func NewModel() Model {
 	m := Model(make(map[string]interface{}))
-	m["errors"] = make([]string, 0)
-	m["info"] = make([]string, 0)
+	m[errorsField] = make([]string, 0)
+	m[infoField] = make([]string, 0)
 	return m
+}
+
+func (m Model) AddUser(usr *user.User) {
+	if usr != nil && !usr.Empty() {
+		m[userField] = usr
+	}
 }
 
 // AddError adds error message to model.
 func (m Model) AddError(errMsg string) {
-	e := m["errors"].([]string)
-	m["errors"] = append(e, errMsg)
+	e := m[errorsField].([]string)
+	m[errorsField] = append(e, errMsg)
 }
 
 // AddErrors adds multiple error messages to model.
 func (m Model) AddErrors(errMsgs ...error) {
-	e := m["errors"].([]string)
+	e := m[errorsField].([]string)
 	for _, err := range errMsgs {
 		e = append(e, err.Error())
 	}
-	m["errors"] = e
+	m[errorsField] = e
 }
 
 // AddInfo adds info message to model.
 func (m Model) AddInfo(infoMsg string) {
-	e := m["info"].([]string)
-	m["info"] = append(e, infoMsg)
+	e := m[infoField].([]string)
+	m[infoField] = append(e, infoMsg)
 }
 
 // HasErrors returns 'true' if at least one erros message is in the
 // model, 'false' otherwise.
 func (m Model) HasErrors() bool {
-	e := m["errors"].([]string)
+	e := m[errorsField].([]string)
 	return len(e) > 0
 }
 

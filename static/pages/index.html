@@ -14,7 +14,7 @@
 	<div class="jumbotron">
 	  <h1>Hello</h1>
 	  <p>Where do you want to go?</p>
-		{{if .loggedIn }}
+		{{if .user }}
 			<p><a class="btn btn-primary btn-lg" href="/conversation" role="button">Conversation</a></p>
 			<p><a class="btn btn-primary btn-lg" href="/logout" role="button">Logout</a></p>
 		{{else}}

@@ -1,60 +1,29 @@
 package config
 
 import (
-	"bytes"
-	"encoding/json"
-	"io/ioutil"
+	"github.com/kelseyhightower/envconfig"
 )
 
-// ReadConfig reads configuration from given path.
-func ReadConfig(configPath string) (*Config, error) {
-	var config Config
-
-	configBytes, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return &config, err
+// ReadConfig reads configuration properties from Environment.
+func ReadConfig(prefix string) (*Config, error) {
+	var cfg Config
+	if err := envconfig.Process(prefix, &cfg); err != nil {
+		return nil, err
 	}
 
-	configReader := bytes.NewReader(configBytes)
-	if err := json.NewDecoder(configReader).Decode(&config); err != nil {
-		return &config, err
-	}
-
-	return &config, nil
+	return &cfg, nil
 }
 
 // Config is a struct representing whole application configuration.
 type Config struct {
-	Server   ServerConfig   `json:"server"`
-	Session  SessionConfig  `json:"session"`
-	Database DatabaseConfig `json:"database"`
-	Statics  StaticsConfig  `json:"statics"`
-}
-
-// ServerConfig represents http server configuration.
-type ServerConfig struct {
-	Port int    `json:"port"`
-	Host string `json:"host"`
-}
-
-// SessionConfig represents session configuration.
-type SessionConfig struct {
-	DB       int    `json:"db"`
-	Password string `json:"password"`
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-}
-
-// DatabaseConfig represents database configuration.
-type DatabaseConfig struct {
-	Host             string `json:"host"`
-	Port             int    `json:"port"`
-	DBName           string `json:"db_name"`
-	UsersTableName   string `json:"users_table_name"`
-	UsersTablePKName string `json:"users_table_pk_name"`
-}
-
-// StaticsConfig represents static files configuration.
-type StaticsConfig struct {
-	Path string `json:"path"`
+	ServerPort        int    `json:"serverPort" envconfig:"SERVER_PORT"`
+	ServerHost        string `json:"serverHost" envconfig:"SERVER_HOST"`
+	SessionDbName     int    `json:"sessionDbName" envconfig:"SESSION_DB_NAME"`
+	SessionDbPassword string `json:"sessionDbPassword" envconfig:"SESSION_DB_PASSWORD"`
+	SessionDbHost     string `json:"sessionDbHost" envconfig:"SESSION_DB_HOST"`
+	SessionDbPort     int    `json:"sessionDbPort" envconfig:"SESSION_DB_PORT"`
+	DatabaseHost      string `json:"databaseHost" envconfig:"DATABASE_HOST"`
+	DatabasePort      int    `json:"databasePort" envconfig:"DATABASE_PORT"`
+	DatabaseName      string `json:"databaseName" envconfig:"DATABASE_NAME"`
+	StaticsPath       string `json:"staticsPath" envconfig:"STATICS_PATH"`
 }

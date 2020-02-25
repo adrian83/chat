@@ -65,7 +65,6 @@ func (h *RegisterHandler) RegisterUser(w http.ResponseWriter, req *http.Request)
 
 	logger.Infof("Validation errors: %v", validationErrors)
 
-	model["username"] = form.username
 	model.AddErrors(validationErrors...)
 
 	if model.HasErrors() {

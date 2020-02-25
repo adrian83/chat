@@ -8,22 +8,26 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
+const (
+	usersTableName    = "users"
+	usersTableNameKey = "name"
+)
+
 // RethinkDB is a struct that allows communication with RethinkDB.
 type RethinkDB struct {
-	host    string
-	name    string
-	port    int
-	tables  map[string]string
+	host string
+	name string
+	port int
+
 	session *r.Session
 }
 
 // NewRethinkDB returns new instance of RethinkDB (not connected).
-func NewRethinkDB(host string, port int, name string, tables map[string]string) *RethinkDB {
+func NewRethinkDB(host string, port int, name string) *RethinkDB {
 	return &RethinkDB{
-		host:   host,
-		name:   name,
-		port:   port,
-		tables: tables,
+		host: host,
+		name: name,
+		port: port,
 	}
 }
 
@@ -54,16 +58,14 @@ func (rt *RethinkDB) Setup() error {
 		}
 	}
 
-	for tableName, primaryKey := range rt.tables {
-		tableExists, err := rt.containsTable(tableName)
-		if err != nil {
-			return fmt.Errorf("cannot check if table %v exist, error: %w", tableName, err)
-		}
+	tableExists, err := rt.containsTable(usersTableName)
+	if err != nil {
+		return fmt.Errorf("cannot check if table %v exist, error: %w", usersTableName, err)
+	}
 
-		if !tableExists {
-			if err := rt.createTable(tableName, primaryKey); err != nil {
-				return fmt.Errorf("cannot create table %v with primary key %v, error: %w", tableName, primaryKey, err)
-			}
+	if !tableExists {
+		if err := rt.createTable(usersTableName, usersTableNameKey); err != nil {
+			return fmt.Errorf("cannot create table %v with primary key %v, error: %w", usersTableName, usersTableNameKey, err)
 		}
 	}
 
@@ -129,11 +131,11 @@ func (rt *RethinkDB) boolResp(cursor *r.Cursor) (bool, error) {
 	return resp, nil
 }
 
-// GetTable returns table with given name.
-func (rt *RethinkDB) GetTable(name string) *RethinkTable {
+// GetUserTable returns users table.
+func (rt *RethinkDB) GetUserTable() *RethinkTable {
 	return &RethinkTable{
-		name:    name,
-		term:    r.DB(rt.name).Table(name),
+		name:    usersTableName,
+		term:    r.DB(rt.name).Table(usersTableName),
 		rethink: rt,
 	}
 }

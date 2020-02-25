@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/adrian83/go-redis-session"
+	session "github.com/adrian83/go-redis-session"
 )
 
 // LogoutHandler struct responsible for handling logout action.
@@ -23,12 +23,11 @@ func NewLogoutHandler(templates *TemplateRepository, sessionStore session.Store)
 
 // Logout processes logout action.
 func (h *LogoutHandler) Logout(w http.ResponseWriter, req *http.Request) {
-
 	model := NewModel()
 
 	sessionID, err := ReadSessionIDFromCookie(req)
 	if err != nil {
-		model.AddError(fmt.Sprintf("Cannot find session id: %v", err))
+		model.AddError(fmt.Sprintf("Cannot find session with id: %v", err))
 		RenderTemplateWithModel(w, h.templates.ServerError, model)
 		return
 	}

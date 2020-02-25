@@ -39,9 +39,23 @@ be-test:
 	echo "running backend tests"
 	go test ./... -cover
 
+
+be-run: export SERVER_PORT=7070
+be-run: export SERVER_HOST=0.0.0.0
+be-run: export DATABASE_NAME=chat
+be-run: export DATABASE_HOST=localhost
+be-run: export DATABASE_PORT=28015
+be-run: export STATICS_PATH=../../../library-fe/build
+be-run: export STATICS_PATH=static
+be-run: export SESSION_DB_NAME=0
+be-run: export SESSION_DB_PASSWORD=
+be-run: export SESSION_DB_HOST=localhost
+be-run: export SESSION_DB_PORT=6379
+
+
 be-run: 
 	echo "running backend"
-	go run cmd/chat/main.go config.json
+	go run cmd/chat/main.go
 
 be-all: be-fmt be-test be-run
 

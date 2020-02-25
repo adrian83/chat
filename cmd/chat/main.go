@@ -23,15 +23,19 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const (
+	configPrefix = "chat"
+)
+
 func initLogger() {
 	logger.SetFormatter(&logger.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
 }
 
 func initConfig() *config.Config {
-	configPath := os.Args[1]
-	logger.Infof("Reading configuration from: %v", configPath)
-	appConfig, err := config.ReadConfig(configPath)
+
+	logger.Info("Reading configuration from environment variables")
+	appConfig, err := config.ReadConfig(configPrefix)
 
 	if err != nil {
 		logger.Errorf("Error while reading configuration! Error: %v", err)
@@ -41,10 +45,9 @@ func initConfig() *config.Config {
 	return appConfig
 }
 
-func initRethink(dbConfig *config.DatabaseConfig) *db.RethinkDB {
-	tables := map[string]string{dbConfig.UsersTableName: dbConfig.UsersTablePKName}
+func initRethink(config *config.Config) *db.RethinkDB {
 
-	rethink := db.NewRethinkDB(dbConfig.Host, dbConfig.Port, dbConfig.DBName, tables)
+	rethink := db.NewRethinkDB(config.DatabaseHost, config.DatabasePort, config.DatabaseName)
 
 	if err := rethink.Connect(); err != nil {
 		logger.Errorf("Error while creating RethinkDB session! Error: %v", err)
@@ -61,11 +64,11 @@ func initRethink(dbConfig *config.DatabaseConfig) *db.RethinkDB {
 	return rethink
 }
 
-func initSession(sessionConfig *config.SessionConfig) (session.Store, func()) {
+func initSession(config *config.Config) (session.Store, func()) {
 	options := &redis.Options{
-		Addr:     fmt.Sprintf("%v:%v", sessionConfig.Host, sessionConfig.Port),
-		Password: sessionConfig.Password,
-		DB:       sessionConfig.DB,
+		Addr:     fmt.Sprintf("%v:%v", config.SessionDbHost, config.SessionDbPort),
+		Password: config.SessionDbPassword,
+		DB:       config.SessionDbName,
 	}
 
 	client := redis.NewClient(options)
@@ -91,11 +94,11 @@ func main() {
 	appConfig := initConfig()
 
 	// init database
-	rethink := initRethink(&appConfig.Database)
+	rethink := initRethink(appConfig)
 	defer rethink.Close()
 
 	// init session
-	sessionStore, closeFnc := initSession(&appConfig.Session)
+	sessionStore, closeFnc := initSession(appConfig)
 	defer closeFnc()
 
 	// create chat rooms
@@ -105,12 +108,10 @@ func main() {
 	// useful structures
 	// ---------------------------------------
 
-	staticsConfig := appConfig.Statics
-
-	userTable := rethink.GetTable(appConfig.Database.UsersTableName)
+	userTable := rethink.GetUserTable()
 	userService := user.NewUserService(userTable)
 
-	templateRepository := handler.NewTemplateRepository(staticsConfig)
+	templateRepository := handler.NewTemplateRepository(appConfig.StaticsPath)
 
 	loginHandler := handler.NewLoginHandler(templateRepository, userService, sessionStore)
 	logoutHandler := handler.NewLogoutHandler(templateRepository, sessionStore)
@@ -122,7 +123,7 @@ func main() {
 	// routing
 	// ---------------------------------------
 	router := mux.NewRouter()
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticsConfig.Path))))
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(appConfig.StaticsPath))))
 
 	router.HandleFunc("/", indexHandler.ShowIndexPage)
 
@@ -145,7 +146,7 @@ func main() {
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
-	serverAddress := appConfig.Server.Host + ":" + strconv.Itoa(appConfig.Server.Port)
+	serverAddress := appConfig.ServerHost + ":" + strconv.Itoa(appConfig.ServerPort)
 	logger.Infof("Starting server on: %v", serverAddress)
 	server := &http.Server{Addr: serverAddress, Handler: router}
 

@@ -60,6 +60,7 @@ func (ch *Room) FindClient(clientID string) (*Client, error) {
 	if client == nil {
 		return nil, fmt.Errorf("client with id %v cannot be found", clientID)
 	}
+
 	return client, nil
 }
 

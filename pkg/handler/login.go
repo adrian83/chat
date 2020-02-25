@@ -47,18 +47,7 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	username := req.FormValue("username")
-	password := req.FormValue("password")
-
-	model["username"] = username
-
-	if username == "" {
-		model.AddError("Username cannot be empty")
-	}
-
-	if password == "" {
-		model.AddError("Password cannot be empty")
-	}
+	username, password := h.validateLoginForm(req, model)
 
 	if model.HasErrors() {
 		RenderTemplateWithModel(w, h.templates.Login, model)
@@ -92,6 +81,21 @@ func (h *LoginHandler) LoginUser(w http.ResponseWriter, req *http.Request) {
 
 	http.Redirect(w, req, "/conversation", http.StatusFound)
 
+}
+
+func (h *LoginHandler) validateLoginForm(req *http.Request, model Model) (string, string) {
+	username := req.FormValue("username")
+	password := req.FormValue("password")
+
+	if username == "" {
+		model.AddError("Username cannot be empty")
+	}
+
+	if password == "" {
+		model.AddError("Password cannot be empty")
+	}
+
+	return username, password
 }
 
 func (h *LoginHandler) storeInSession(usr user.User, w http.ResponseWriter) error {
