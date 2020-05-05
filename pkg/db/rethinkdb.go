@@ -65,7 +65,7 @@ func (rt *RethinkDB) Setup() error {
 
 	if !tableExists {
 		if err := rt.createTable(usersTableName, usersTableNameKey); err != nil {
-			return fmt.Errorf("cannot create table %v with primary key %v, error: %w", usersTableName, usersTableNameKey, err)
+			return err
 		}
 	}
 
@@ -75,7 +75,7 @@ func (rt *RethinkDB) Setup() error {
 // Close closes connection to RethinkDB.
 func (rt *RethinkDB) Close() {
 	if err := rt.session.Close(); err != nil {
-		logger.Errorf("cannot close RethinkDB session, error: %w", err)
+		logger.Errorf("cannot close RethinkDB session, error: %v", err)
 	}
 }
 

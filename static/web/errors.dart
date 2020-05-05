@@ -1,6 +1,7 @@
 import 'dart:html';
 
 import 'package:logging/logging.dart';
+import 'package:uuid/uuid.dart';
 
 import 'messages.dart';
 import 'utils.dart';
@@ -9,17 +10,14 @@ import 'html_utils.dart';
 class ErrorsPanel implements MessageConsumer {
   final Logger logger = new Logger('ErrorsPanel');
 
-  int _id = 0;
-
   void onMessage(Message msg) {
     if (msg is ErrorMsg) {
-      var errorElem = _create(this._id, msg.content);
+      var errorElem = _create(Uuid().v4(), msg.content);
       findOne("#errors-list").withChild(errorElem);
-      _id += 1;
     }
   }
 
-  Element _create(int id, String text) {
+  Element _create(String id, String text) {
     logger.info("Displaing error with id '$id' and text '$text'");
 
     var spanText = span().withText(text).get();
@@ -51,7 +49,7 @@ class ErrorsPanel implements MessageConsumer {
         .get();
   }
 
-  String _closeErrorScript(int id) {
+  String _closeErrorScript(String id) {
     return "var element = document.getElementById('error-$id'); element.parentNode.removeChild(element);";
   }
 }

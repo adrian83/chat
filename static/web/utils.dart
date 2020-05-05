@@ -4,13 +4,10 @@ String removeWhitespace(String text) {
 }
 
 class Pair<T,P> {
-  T _first;
-  P _second;
+  T fst;
+  P snd;
 
-  Pair(this._first, this._second);
-
-  T get fst => _first;
-  P get snd  => _second;
+  Pair(this.fst, this.snd);
 }
 
 Pair<String, String> strPair(String fst, String snd) {
