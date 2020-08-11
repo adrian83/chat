@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	r "github.com/dancannon/gorethink"
 	logger "github.com/sirupsen/logrus"
+	r "gopkg.in/gorethink/gorethink.v4"
 )
 
 const (

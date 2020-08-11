@@ -15,7 +15,7 @@ deps:
 
 fe-get:
 	echo "getting frontend dependencies" 
-	cd static && pub get 
+	cd static && pub upgrade && pub get 
 
 fe-build:
 	echo "building frontend" 
