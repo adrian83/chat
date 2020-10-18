@@ -9,12 +9,12 @@ import (
 
 // LogoutHandler struct responsible for handling logout action.
 type LogoutHandler struct {
-	sessionStore session.Store
+	sessionStore *session.Store
 	templates    *TemplateRepository
 }
 
 // NewLogoutHandler returns new LogoutHandler struct.
-func NewLogoutHandler(templates *TemplateRepository, sessionStore session.Store) *LogoutHandler {
+func NewLogoutHandler(templates *TemplateRepository, sessionStore *session.Store) *LogoutHandler {
 	return &LogoutHandler{
 		sessionStore: sessionStore,
 		templates:    templates,

@@ -64,7 +64,7 @@ func initRethink(config *config.Config) *db.RethinkDB {
 	return rethink
 }
 
-func initSession(config *config.Config) (session.Store, func()) {
+func initSession(config *config.Config) (*session.Store, func()) {
 	options := &redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", config.SessionDbHost, config.SessionDbPort),
 		Password: config.SessionDbPassword,
@@ -168,7 +168,7 @@ func main() {
 	logger.Info("Server stopped.")
 }
 
-func connect(sessionStore session.Store, chatRooms *exchange.Rooms) func(*websocket.Conn) {
+func connect(sessionStore *session.Store, chatRooms *exchange.Rooms) func(*websocket.Conn) {
 	logger.Infof("New connection")
 
 	return func(wsc *websocket.Conn) {

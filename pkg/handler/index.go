@@ -11,12 +11,12 @@ import (
 // IndexHandler struct responsible for handling actions
 // made on index html page.
 type IndexHandler struct {
-	sessionStore session.Store
+	sessionStore *session.Store
 	templates    *TemplateRepository
 }
 
 // NewIndexHandler returns new IndexHandler struct.
-func NewIndexHandler(templates *TemplateRepository, sessionStore session.Store) *IndexHandler {
+func NewIndexHandler(templates *TemplateRepository, sessionStore *session.Store) *IndexHandler {
 	return &IndexHandler{
 		sessionStore: sessionStore,
 		templates:    templates,

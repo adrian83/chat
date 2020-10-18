@@ -19,12 +19,12 @@ type userService interface {
 // made on login html page.
 type LoginHandler struct {
 	userService  userService
-	sessionStore session.Store
+	sessionStore *session.Store
 	templates    *TemplateRepository
 }
 
 // NewLoginHandler returns new LoginHandler struct.
-func NewLoginHandler(templates *TemplateRepository, userService userService, sessionStore session.Store) *LoginHandler {
+func NewLoginHandler(templates *TemplateRepository, userService userService, sessionStore *session.Store) *LoginHandler {
 	return &LoginHandler{
 		userService:  userService,
 		sessionStore: sessionStore,

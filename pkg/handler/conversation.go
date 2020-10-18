@@ -11,12 +11,12 @@ import (
 // ConversationHandler struct responsible for handling actions
 // made on index html page.
 type ConversationHandler struct {
-	sessionStore session.Store
+	sessionStore *session.Store
 	templates    *TemplateRepository
 }
 
 // NewConversationHandler returns new ConversationHandler struct.
-func NewConversationHandler(templates *TemplateRepository, sessionStore session.Store) *ConversationHandler {
+func NewConversationHandler(templates *TemplateRepository, sessionStore *session.Store) *ConversationHandler {
 	return &ConversationHandler{
 		sessionStore: sessionStore,
 		templates:    templates,
