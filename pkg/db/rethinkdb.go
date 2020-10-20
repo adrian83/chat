@@ -97,7 +97,7 @@ func (rt *RethinkDB) UUID() (string, error) {
 func (rt *RethinkDB) createTable(tableName, primaryKey string) error {
 	_, err := r.DB(rt.name).TableCreate(tableName, r.TableCreateOpts{PrimaryKey: primaryKey}).Run(rt.session)
 
-	return fmt.Errorf("cannot create table %v with primary key %v, error: %w", tableName, primaryKey, err)
+	return fmt.Errorf("cannot create table %v with primary key %v, error: %v", tableName, primaryKey, err.Error())
 }
 
 func (rt *RethinkDB) containsDB() (bool, error) {

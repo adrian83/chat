@@ -42,6 +42,8 @@ func initConfig() *config.Config {
 		panic(err)
 	}
 
+	logger.Infof("Reading configuration from environment variables: %v", appConfig)
+
 	return appConfig
 }
 

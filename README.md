@@ -1,26 +1,28 @@
 # CHAT-GO
 Simple chat application written in [Go](https://golang.org/) and [Dart](https://www.dartlang.org/) programming languages with [Redis](//http://redis.io) as a session storage and [RethinkDB](https://www.rethinkdb.com/) as a main data storage.
 
+## Running
 
-### PREREQUISITES
-1. Go
-2. Dart
-3. Docker
+### Running with docker compose
 
+#### Prerequisites
+- Docker
+- Docker Compose
 
-### RUNNING
-1. `./run.sh dart`
-2. `./run.sh go-deps-get`
-3. `./run.sh run-infra`
-4. `./run.sh run-go`
+#### Steps
+1. Run `docker-compose up`
+2. Navigate in browser to `localhost:7070`
 
+### Running locally
 
-### QUALITY
-1. No unit tests for now.
-2. Checked with [metalinter](https://github.com/alecthomas/gometalinter)
+#### Prerequisites
+- Docker
+- Go
+- Dart (with webdev)
+- Gnu Make
 
-
-### INFO FOR FUTURE ME
-1. Write unit tests (Go and Dart)
-2. Dart code refactoring
-3. ...
+#### Steps
+1. Start Infrastructure (RethinkDB and Redis): `make deps`
+2. Build frontend `make fe-all`
+3. Start backend: `make be-all`
+4. Navigate in browser to `localhost:7070`
