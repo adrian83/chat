@@ -2,7 +2,6 @@ package user
 
 const nameProp = "name"
 
-//
 type Database interface {
 	UUID() (string, error)
 	Insert(interface{}) error

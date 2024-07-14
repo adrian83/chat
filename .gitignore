@@ -1,7 +1,0 @@
-static/build
-static/.packages
-static/packages
-static/.pub
-static/pubspec.lock
-static/.dart_tool
-infrastructure/

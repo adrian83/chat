@@ -1,5 +1,5 @@
 # CHAT-GO
-Simple chat application written in [Go](https://golang.org/) and [Dart](https://www.dartlang.org/) programming languages with [Redis](//http://redis.io) as a session storage and [RethinkDB](https://www.rethinkdb.com/) as a main data storage.
+Simple chat application written in [Go](https://golang.org/) and [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript") programming languages with [Redis](//http://redis.io) as a session storage and [RethinkDB](https://www.rethinkdb.com/) as a main data storage.
 
 ## Running
 
@@ -18,7 +18,6 @@ Simple chat application written in [Go](https://golang.org/) and [Dart](https://
 #### Prerequisites
 - Docker
 - Go
-- Dart (with webdev)
 - Gnu Make
 
 #### Steps

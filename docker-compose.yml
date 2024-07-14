@@ -3,21 +3,32 @@ services:
   rethink:
     image: "rethinkdb:2.4.0"
     ports:
-    - "28015:28015"
-    - "8080:8080"
+      - "28015:28015"
+      - "8080:8080"
 
   redis:
     image: "redis:5.0.7"
     ports:
-    - "6379:6379"
+      - "6379:6379"
 
-  chat:
-    build: .
-    ports:
-    - "7070:7070"
-    volumes:
-    - .:/chat-backend
-    depends_on:
-    - 'redis'
-    - 'rethink'
+  # chat:
+  #   build: .
+  #   ports:
+  #   - "7070:7070"
+  #   volumes:
+  #   - .:/chat-backend
+  #   depends_on:
+  #   - 'redis'
+  #   - 'rethink'
+  #   environment:
+  #     - SERVER_PORT=7070
+  #     - SERVER_HOST=0.0.0.0
+  #     - DATABASE_NAME=chat
+  #     - DATABASE_HOST=rethink
+  #     - DATABASE_PORT=28015
+  #     - STATICS_PATH=static
+  #     - SESSION_DB_NAME=0
+  #     - SESSION_DB_HOST=redis
+  #     - SESSION_DB_PORT=6379
+
 
