@@ -11,24 +11,24 @@ services:
     ports:
       - "6379:6379"
 
-  # chat:
-  #   build: .
-  #   ports:
-  #   - "7070:7070"
-  #   volumes:
-  #   - .:/chat-backend
-  #   depends_on:
-  #   - 'redis'
-  #   - 'rethink'
-  #   environment:
-  #     - SERVER_PORT=7070
-  #     - SERVER_HOST=0.0.0.0
-  #     - DATABASE_NAME=chat
-  #     - DATABASE_HOST=rethink
-  #     - DATABASE_PORT=28015
-  #     - STATICS_PATH=static
-  #     - SESSION_DB_NAME=0
-  #     - SESSION_DB_HOST=redis
-  #     - SESSION_DB_PORT=6379
+  chat:
+    build: .
+    ports:
+    - "7070:7070"
+    volumes:
+    - .:/chat-backend
+    depends_on:
+    - 'redis'
+    - 'rethink'
+    environment:
+      - SERVER_PORT=7070
+      - SERVER_HOST=0.0.0.0
+      - DATABASE_NAME=chat
+      - DATABASE_HOST=rethink
+      - DATABASE_PORT=28015
+      - STATICS_PATH=static
+      - SESSION_DB_NAME=0
+      - SESSION_DB_HOST=redis
+      - SESSION_DB_PORT=6379
 
 

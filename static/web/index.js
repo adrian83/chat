@@ -2,6 +2,9 @@
 const senderId = document.getElementById('session-id').value;
 const senderName = document.getElementById('username').value;
 
+var errorId = 1;
+
+
 console.log("senderId: " + senderId);
 console.log("senderName: " + senderName);
 
@@ -22,7 +25,7 @@ const MSG_ROOMS_LIST = "ROOMS_LIST";
 const MSG_REMOVE_ROOM = "REMOVE_ROOM";
 const MSG_USER_JOINED_ROOM = "USER_JOINED_ROOM";
 const MSG_LOGOUT = "LOGOUT_USER";
-
+const MSG_ERROR = "ERROR"
 
 
 
@@ -57,6 +60,17 @@ function sendCreateRoomMessage() {
     var roomName = document.getElementById(ID_ROOM_NAME_INPUT).value;
     var msgDict = {
         "msgType": MSG_CREATE_ROOM,
+        "senderId": senderId,
+        "room": roomName
+    };
+    send(msgDict)
+}
+
+
+function enterRoom(roomName) {
+    console.log("enterRoom");
+    var msgDict = {
+        "msgType": MSG_USER_JOINED_ROOM,
         "senderId": senderId,
         "room": roomName
     };
@@ -161,6 +175,13 @@ function addRoomTab(roomName) {
     msgTextInput.id = createMessageInputId(roomName);
     msgTextInput.classList.add("form-control");
 
+
+    msgTextInput.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            generateSendMessageOnClickListener(roomName, msgTextInput)();
+        }
+    });
+
     var sendMsgButton = document.createElement("button");
     sendMsgButton.type = "button";
     sendMsgButton.innerText = "Send";
@@ -194,7 +215,8 @@ function createSelectRoomOnClickListener(roomName) {
         var opened = isTabOpened(roomName);
         
         if(!opened) {
-            addRoomTab(roomName);
+            //addRoomTab(roomName);
+            enterRoom(roomName);
         }
 
         setFocusOnTab(roomName);
@@ -283,10 +305,55 @@ function displayMessage(roomName, senderName, content) {
     conversationDiv.appendChild(textParagraph);
 }
 
+function createCloseErrorOnClickListener(errId) {
+    return function() { 
+        var element = document.getElementById('error-' + errId); 
+        element.parentNode.removeChild(element);
+    }
+}
+
+
+function handleErrors(message) {
+    console.log("handleErrors: " + message);
+    var textSpan = document.createElement("span");
+    textSpan.textContent = message;
+
+    var closeSpan = document.createElement("span");
+    closeSpan.text = "x";
+    addAttribute(closeSpan, "aria-hidden", "true");
+
+    var closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.classList.add("close");
+    closeButton.innerText = "X"
+    closeButton.onclick = createCloseErrorOnClickListener(errorId);
+    addAttribute(closeButton, "data-dismiss", "alert");
+    addAttribute(closeButton, "aria-label", "Close");
+    closeButton.appendChild(closeSpan);
+
+    var errorPanel = document.createElement("div");
+    errorPanel.id = "error-" + errorId;
+    errorPanel.classList.add("alert");
+    errorPanel.classList.add("alert-danger");
+    errorPanel.classList.add("alert-dismissible");
+    addAttribute(errorPanel, "role", "alert");
+    errorPanel.appendChild(closeButton);
+    errorPanel.appendChild(textSpan);
+
+    var errorList = document.getElementById("errors-list");
+    errorList.appendChild(errorPanel);
+
+    errorId += 1;
+}
+
+function addAttribute(elem, name, value) {
+    var attr = document.createAttribute(name);
+    attr.value = value;
+    elem.setAttributeNode(attr);
+}
+
 
 function logout() {
-    // _closeClient();
-    // changeLocation('/logout');
     wsSocket.close();
     window.location.href = "/logout";
 }
@@ -321,9 +388,13 @@ function handleMessage(message) {
             removeRoomFromRoomsList(room);
             break;
         case MSG_TEXT:
-            displayMessage(jsonMsg['room'], jsonMsg['senderName'], jsonMsg['content'])
+            displayMessage(jsonMsg['room'], jsonMsg['senderName'], jsonMsg['content']);
             break;
-        case 'LOGOUT_USER':
+        case MSG_ERROR:
+            var content = jsonMsg['content'];
+            handleErrors(content);
+            break;
+        case MSG_LOGOUT:
             logout();
             break;
         default:
