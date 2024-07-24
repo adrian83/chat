@@ -56,25 +56,26 @@ function send(msgDict) {
 
 
 function sendCreateRoomMessage() {
-    console.log("sendCreateRoomMessage");
-    var roomName = document.getElementById(ID_ROOM_NAME_INPUT).value;
+    var roomNameInput = document.getElementById(ID_ROOM_NAME_INPUT);
+    var roomName = roomNameInput.value;
     var msgDict = {
         "msgType": MSG_CREATE_ROOM,
         "senderId": senderId,
         "room": roomName
     };
-    send(msgDict)
+    send(msgDict);
+
+    roomNameInput.value = "";
 }
 
 
 function enterRoom(roomName) {
-    console.log("enterRoom");
     var msgDict = {
         "msgType": MSG_USER_JOINED_ROOM,
         "senderId": senderId,
         "room": roomName
     };
-    send(msgDict)
+    send(msgDict);
 }
 
 
@@ -88,8 +89,6 @@ function onConnect(event) {
 
 
 function setFocusOnTab(roomName) {
-    console.log("setFocusOnTab: " + roomName);
-
     var tabs = document.getElementById(ID_ROOM_TABS_LIST).getElementsByTagName('li');
     for (let i = 0; i < tabs.length; i++) {
         tabs[i].classList.remove("active");
@@ -110,7 +109,7 @@ function setFocusOnTab(roomName) {
 function isTabOpened(roomName) {
     var rooms = document.getElementById(ID_ROOM_TABS_LIST).getElementsByTagName('a');
     for (let i = 0; i < rooms.length; i++) {
-        if(rooms[i].text == roomName) {
+        if (rooms[i].text == roomName) {
             return true;
         }
     }
@@ -119,33 +118,33 @@ function isTabOpened(roomName) {
 
 
 function generateSendMessageOnClickListener(room, msgInput) {
-    return function() {
+    return function () {
         var text = msgInput.value;
-        if(!text){
+        if (!text) {
             return;
-        } 
-        
+        }
+
         msg = {
             "senderId": senderId,
             "room": room,
             "senderName": senderName
-        } 
-        
-        if(text == "exit") {
-            if(room == MAIN_ROOM_NAME) {
+        }
+
+        if (text == "exit") {
+            if (room == MAIN_ROOM_NAME) {
                 return;
             }
             msg["msgType"] = MSG_USER_LEFT_ROOM;
-        } else if(text == "logout") {
+        } else if (text == "logout") {
             msg["msgType"] = MSG_LOGOUT;
         } else {
             msg["msgType"] = MSG_TEXT;
             msg["content"] = text;
         }
-        
+
         console.log("Sending message: '" + msg + "'");
-    
-        send(msg)
+
+        send(msg);
 
         msgInput.value = "";
     }
@@ -157,7 +156,6 @@ function addRoomTab(roomName) {
     roomLink.text = roomName;
     roomLink.href = "#";
     roomLink.onclick = () => setFocusOnTab(roomName);
-    
 
     var roomListElem = document.createElement("li");
     roomListElem.id = createRoomTabId(roomName);
@@ -175,8 +173,7 @@ function addRoomTab(roomName) {
     msgTextInput.id = createMessageInputId(roomName);
     msgTextInput.classList.add("form-control");
 
-
-    msgTextInput.addEventListener("keydown", function(event) {
+    msgTextInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
             generateSendMessageOnClickListener(roomName, msgTextInput)();
         }
@@ -211,11 +208,10 @@ function addRoomTab(roomName) {
 
 
 function createSelectRoomOnClickListener(roomName) {
-    return function() { 
+    return function () {
         var opened = isTabOpened(roomName);
-        
-        if(!opened) {
-            //addRoomTab(roomName);
+
+        if (!opened) {
             enterRoom(roomName);
         }
 
@@ -232,16 +228,13 @@ function existingRooms() {
         var roomName = rooms[i].text;
         names.push(roomName);
     }
-    console.log("existing rooms: " + names);
     return names;
 }
 
 
 function addRoomToRoomsList(roomName) {
-    console.log("addRoomToRoomsList: " + roomName);
-
     var existingRoomsList = existingRooms();
-    if(existingRoomsList.includes(roomName)){
+    if (existingRoomsList.includes(roomName)) {
         return;
     }
 
@@ -257,8 +250,6 @@ function addRoomToRoomsList(roomName) {
 
 
 function removeRoomTab(roomName) {
-    console.log("removeRoomTab: " + roomName);
-
     const tabsPanel = document.getElementById(ID_ROOM_TABS_LIST);
     const tab = document.getElementById(createRoomTabId(roomName));
     tabsPanel.removeChild(tab);
@@ -266,26 +257,25 @@ function removeRoomTab(roomName) {
     setFocusOnTab(MAIN_ROOM_NAME);
 }
 
+
 function removeRoomFromRoomsList(roomName) {
-    console.log("removeRoomFromRoomsList: " + roomName);
     var ul = document.getElementById(ID_ROOM_NAMES_LIST);
     var items = ul.getElementsByTagName("li");
 
     var toDel = null;
     for (var i = 0; i < items.length; ++i) {
-        if(items[i].text == roomName){
+        if (items[i].text == roomName) {
             toDel = items[i];
             break;
         }
     }
-    if(toDel != null) {
+    if (toDel != null) {
         toDel.remove();
     }
 }
 
 
 function refreshRoomsList(roomList) {
-    console.log("refreshRoomsList" + roomList);
     var rooms = document.getElementById(ID_ROOM_NAMES_LIST);
     while (rooms.firstChild) {
         rooms.firstChild.remove();
@@ -305,16 +295,16 @@ function displayMessage(roomName, senderName, content) {
     conversationDiv.appendChild(textParagraph);
 }
 
+
 function createCloseErrorOnClickListener(errId) {
-    return function() { 
-        var element = document.getElementById('error-' + errId); 
+    return function () {
+        var element = document.getElementById('error-' + errId);
         element.parentNode.removeChild(element);
     }
 }
 
 
 function handleErrors(message) {
-    console.log("handleErrors: " + message);
     var textSpan = document.createElement("span");
     textSpan.textContent = message;
 
@@ -345,6 +335,7 @@ function handleErrors(message) {
 
     errorId += 1;
 }
+
 
 function addAttribute(elem, name, value) {
     var attr = document.createAttribute(name);
@@ -398,8 +389,8 @@ function handleMessage(message) {
             logout();
             break;
         default:
-          console.log(`Unknown message type ${msgType}.`);
-      }
+            console.log(`Unknown message type ${msgType}.`);
+    }
 }
 
 
