@@ -118,6 +118,7 @@ func (ch *Room) Start() {
 				ch.clients[client.ID()] = client
 
 			case msg := <-ch.incomingMessages:
+				logger.Infof("Sending msg to %v room members.", len(ch.clients))
 				for _, client := range ch.clients {
 					logger.Infof("Sending msg to %v from room '%v'.", client, ch.name)
 					client.Send(msg)

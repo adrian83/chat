@@ -53,5 +53,10 @@ func (h *ConversationHandler) ShowConversationPage(w http.ResponseWriter, req *h
 		return
 	}
 
-	RenderTemplateWithModel(w, h.templates.Conversation, Model(map[string]interface{}{"sessionId": sessionCookie.Value}))
+	var modelDict = map[string]interface{}{
+		"sessionId": sessionCookie.Value,
+		"username":  user.Name(),
+	}
+
+	RenderTemplateWithModel(w, h.templates.Conversation, Model(modelDict))
 }

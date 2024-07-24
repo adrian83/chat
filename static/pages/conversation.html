@@ -1,5 +1,5 @@
 {{ define "js" }}
-<script defer src="/static/build/main.dart.js"></script>
+<script defer src="/static/web/index.js"></script>
 {{ end }}
 
 {{define "content"}}
@@ -7,8 +7,9 @@
 <div class="inner cover">
 
 	{{ template "errors.html" .errors }}
-
+	<!-- this should go to jwt -->
 	<input id="session-id" type="text" class="form-control" value="{{.sessionId}}" style="display: none">
+	<input id="username" type="text" class="form-control" value="{{.username}}" style="display: none">
 
 	<br />
 
@@ -16,7 +17,7 @@
 
 	<div class="row" id="errors-list"></div>
 
-	<div id="panels" class="row" style="display:none;">
+	<div id="panels" class="row" style="display:none;"> 
 		<div class="col-lg-8">
 
 			<div>
@@ -31,12 +32,13 @@
 			<div id="ch-list" class="list-group"></div>
 
 			<div class="input-group">
-				<input id="ch-name" type="text" class="form-control" placeholder="room name"> <span class="input-group-btn">
+				<input id="ch-name" type="text" class="form-control" placeholder="room name"> 
+				<span class="input-group-btn">
 					<button id="ch-create" class="btn btn-default" type="button">Send</button>
 				</span>
 			</div>
 
-			<ul id="ch-list" class="list-group"></ul>
+			<ul id="ch-list2" class="list-group"></ul>
 
 		</div>
 	</div>
